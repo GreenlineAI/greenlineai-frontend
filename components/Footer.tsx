@@ -117,11 +117,11 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="mailto:hello@greenlineai.com"
+                  href="mailto:contact@greenline-ai.com"
                   className="flex items-center gap-2 text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   <Mail className="h-4 w-4" />
-                  hello@greenlineai.com
+                  contact@greenline-ai.com
                 </a>
               </li>
               <li>
