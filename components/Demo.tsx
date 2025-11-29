@@ -5,7 +5,7 @@ import Button from "./ui/Button";
 import Card from "./ui/Card";
 
 export default function Demo() {
-  const demoPhone = process.env.NEXT_PUBLIC_DEMO_PHONE || "(555) 123-4567";
+  const demoPhone = process.env.NEXT_PUBLIC_DEMO_PHONE || "(408) 365-4503";
 
   const handleCallDemo = () => {
     window.location.href = `tel:${demoPhone}`;

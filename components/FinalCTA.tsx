@@ -4,7 +4,7 @@ import { Phone, Calendar, Clock, DollarSign, CheckCircle } from "lucide-react";
 import Button from "./ui/Button";
 
 export default function FinalCTA() {
-  const demoPhone = process.env.NEXT_PUBLIC_DEMO_PHONE || "(555) 123-4567";
+  const demoPhone = process.env.NEXT_PUBLIC_DEMO_PHONE || "(408) 365-4503";
 
   const handleBookDemo = () => {
     const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "#contact";
