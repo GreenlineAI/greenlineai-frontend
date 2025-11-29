@@ -107,7 +107,7 @@ export default function FAQ() {
           </p>
           <button
             onClick={() => {
-              const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "#contact";
+              const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
               if (calendlyUrl.startsWith("http")) {
                 window.open(calendlyUrl, "_blank");
               } else {

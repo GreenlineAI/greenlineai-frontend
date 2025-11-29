@@ -7,7 +7,7 @@ export default function FinalCTA() {
   const demoPhone = process.env.NEXT_PUBLIC_DEMO_PHONE || "(408) 365-4503";
 
   const handleBookDemo = () => {
-    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "#contact";
+    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
     if (calendlyUrl.startsWith("http")) {
       window.open(calendlyUrl, "_blank");
     } else {

@@ -12,7 +12,7 @@ export default function Hero() {
   };
 
   const handleSeeDemo = () => {
-    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "#demo";
+    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
     if (calendlyUrl.startsWith("http")) {
       window.open(calendlyUrl, "_blank");
     } else {
