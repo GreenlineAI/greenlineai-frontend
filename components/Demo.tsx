@@ -1,22 +1,37 @@
 "use client";
 
-import { Phone, Play } from "lucide-react";
+import { Calendar, Play, CheckCircle, Clock, Headphones } from "lucide-react";
 import Button from "./ui/Button";
 import Card from "./ui/Card";
 
 export default function Demo() {
-  const demoPhone = process.env.NEXT_PUBLIC_DEMO_PHONE || "(408) 365-4503";
+  const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
 
-  const handleCallDemo = () => {
-    window.location.href = `tel:${demoPhone}`;
+  const handleBookDemo = () => {
+    window.open(calendlyUrl, "_blank");
   };
 
-  const suggestedQuestions = [
-    "How much do you charge for lawn maintenance?",
-    "Can I get an estimate for landscaping my backyard?",
-    "Do you offer spring cleanup services?",
-    "What's your availability for next week?",
-    "Do you handle commercial properties?",
+  const demoFeatures = [
+    "See the AI handle real landscaping calls",
+    "Customize responses for your business",
+    "Ask any questions about setup",
+    "Get a personalized ROI estimate",
+    "No obligation, completely free",
+  ];
+
+  const whatYoullSee = [
+    {
+      title: "Live Call Demonstration",
+      description: "Watch the AI answer calls, book appointments, and handle customer questions in real-time.",
+    },
+    {
+      title: "Customization Options",
+      description: "See how we tailor the AI's voice, knowledge, and responses to match your business.",
+    },
+    {
+      title: "Integration Walkthrough",
+      description: "Learn how it connects with your calendar, CRM, and existing phone system.",
+    },
   ];
 
   return (
@@ -24,76 +39,83 @@ export default function Demo() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Hear It In Action
+            See It In Action
           </h2>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-            Don't take our word for it. Call the AI right now and ask it
-            landscaping questions.
+            Book a free 15-minute demo and experience the AI receptionist
+            firsthand. We'll show you exactly how it works for landscaping businesses.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left: Call to action */}
+          {/* Left: Book Demo CTA */}
           <div>
             <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8 md:p-12">
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-accent-500 rounded-full mb-6">
-                  <Phone className="h-10 w-10 text-white" />
+                  <Headphones className="h-10 w-10 text-white" />
                 </div>
 
                 <h3 className="text-3xl font-bold mb-4">
-                  Try It Right Now
+                  Book Your Free Demo
                 </h3>
 
                 <p className="text-lg text-slate-300 mb-8">
-                  Call our demo line and experience the AI receptionist
-                  firsthand. It's available 24/7.
+                  In just 15 minutes, you'll see exactly how our AI can transform
+                  your landscaping business's phone experience.
                 </p>
 
-                {/* Phone Number - Large and prominent */}
-                <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-8 mb-6 shadow-2xl">
-                  <div className="text-sm font-semibold text-primary-100 mb-2">
-                    DEMO LINE
-                  </div>
-                  <a
-                    href={`tel:${demoPhone}`}
-                    className="text-4xl md:text-5xl font-bold text-white hover:text-accent-300 transition-colors"
-                  >
-                    {demoPhone}
-                  </a>
+                {/* Features list */}
+                <div className="text-left mb-8 space-y-3">
+                  {demoFeatures.map((feature, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-accent-400 flex-shrink-0" />
+                      <span className="text-slate-200">{feature}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <Button
                   size="lg"
                   variant="accent"
-                  onClick={handleCallDemo}
+                  onClick={handleBookDemo}
                   className="w-full gap-2"
                 >
-                  <Phone className="h-5 w-5" />
-                  Call Now
+                  <Calendar className="h-5 w-5" />
+                  Schedule Free Demo
                 </Button>
+
+                <p className="text-sm text-slate-400 mt-4 flex items-center justify-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Takes only 15 minutes
+                </p>
               </div>
             </Card>
           </div>
 
-          {/* Right: Suggested questions */}
+          {/* Right: What you'll see */}
           <div>
             <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
               <Play className="h-6 w-6 text-accent-500" />
-              Try Asking These Questions
+              What You'll Experience
             </h3>
 
             <div className="space-y-4">
-              {suggestedQuestions.map((question, index) => (
+              {whatYoullSee.map((item, index) => (
                 <Card
                   key={index}
-                  className="bg-white/10 backdrop-blur-sm border-white/20 p-4 hover:bg-white/20 transition-all cursor-default"
+                  className="bg-white/10 backdrop-blur-sm border-white/20 p-6"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold">
                       {index + 1}
                     </div>
-                    <p className="text-white font-medium pt-1">{question}</p>
+                    <div>
+                      <h4 className="text-white font-semibold text-lg mb-1">
+                        {item.title}
+                      </h4>
+                      <p className="text-slate-300">{item.description}</p>
+                    </div>
                   </div>
                 </Card>
               ))}
@@ -101,12 +123,11 @@ export default function Demo() {
 
             <div className="mt-8 p-6 bg-accent-500/20 border border-accent-500/30 rounded-xl">
               <p className="text-accent-200 text-sm font-semibold mb-2">
-                💡 PRO TIP
+                COMING SOON
               </p>
               <p className="text-white">
-                Try to stump it! Ask complex questions, speak naturally, or even
-                throw in some curveballs. You'll see how it handles real-world
-                conversations.
+                Try our AI directly in your browser! We're building a web demo
+                so you can talk to the AI without scheduling a call.
               </p>
             </div>
           </div>
