@@ -62,12 +62,12 @@ export default function Footer() {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => scrollToSection("contact")}
+                <a
+                  href="/contact"
                   className="text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   Contact
-                </button>
+                </a>
               </li>
             </ul>
           </div>
@@ -136,7 +136,7 @@ export default function Footer() {
               <li>
                 <div className="flex items-start gap-2 text-slate-400">
                   <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
-                  <span>123 Business Ave<br />Suite 100<br />San Francisco, CA 94105</span>
+                  <span>3129 S. Hacienda Blvd #524<br />Hacienda Heights, CA 91745</span>
                 </div>
               </li>
             </ul>

@@ -76,12 +76,12 @@ export default function Header() {
             >
               Demo
             </button>
-            <button
-              onClick={() => scrollToSection("contact")}
+            <a
+              href="/contact"
               className="text-slate-700 hover:text-primary-600 font-medium transition-colors"
             >
               Contact
-            </button>
+            </a>
           </nav>
 
           {/* CTA Button */}
@@ -127,12 +127,12 @@ export default function Header() {
               >
                 Demo
               </button>
-              <button
-                onClick={() => scrollToSection("contact")}
+              <a
+                href="/contact"
                 className="text-slate-700 hover:text-primary-600 font-medium text-left transition-colors"
               >
                 Contact
-              </button>
+              </a>
               <Button variant="accent" onClick={handleBookDemo} className="w-full">
                 Book Free Demo
               </Button>
