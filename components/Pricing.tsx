@@ -1,70 +1,71 @@
 "use client";
 
-import { Check, Star, Database, Phone, Building } from "lucide-react";
+import { Check, Star, Phone, Zap, Building, Headphones, MessageSquare, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 export default function Pricing() {
   const plans = [
     {
-      name: "Lead Lists",
-      subtitle: "Pay per lead",
-      price: "$0.50",
-      priceUnit: "/lead",
-      icon: Database,
-      popular: false,
-      description: "Verified home services business contacts delivered to your inbox",
-      features: [
-        "Verified phone & email contacts",
-        "Business name, address, rating",
-        "Industry classification",
-        "Geographic targeting",
-        "CSV export or CRM sync",
-        "Fresh data (updated weekly)",
-      ],
-      cta: "Get Sample Leads",
-      note: "Bulk pricing: $200-500 for 100+ leads",
-    },
-    {
-      name: "Outreach Service",
-      subtitle: "Done for you",
-      price: "$750",
+      name: "Starter",
+      subtitle: "For small teams",
+      price: "$297",
       priceUnit: "/month",
       icon: Phone,
-      popular: true,
-      description: "We call and email your prospects with AI-powered personalization",
+      popular: false,
+      description: "Perfect for businesses testing AI voice outreach",
       features: [
-        "500 leads contacted/month",
-        "AI voice + email outreach",
-        "Multi-touch campaigns",
-        "Appointment booking",
-        "White-labeled reports",
-        "Dedicated account manager",
-        "CRM integration included",
+        "500 AI call minutes/month",
+        "1 AI voice agent",
+        "Basic call scripts",
+        "Call recording & transcripts",
+        "Email notifications",
+        "Standard support",
       ],
-      cta: "Book Strategy Call",
-      note: "Custom volumes available",
+      cta: "Start Free Trial",
+      note: "14-day free trial, no credit card required",
     },
     {
-      name: "White-Label",
-      subtitle: "Your own platform",
-      price: "$1,500",
+      name: "Professional",
+      subtitle: "Most popular",
+      price: "$697",
+      priceUnit: "/month",
+      icon: Headphones,
+      popular: true,
+      description: "Full-featured AI calling for growing businesses",
+      features: [
+        "2,000 AI call minutes/month",
+        "3 AI voice agents",
+        "Custom voice & scripts",
+        "Smart call scheduling",
+        "Meeting booking integration",
+        "CRM integration (HubSpot, Salesforce)",
+        "Real-time analytics dashboard",
+        "Priority support",
+      ],
+      cta: "Book Strategy Call",
+      note: "Most chosen by landscaping businesses",
+    },
+    {
+      name: "Enterprise",
+      subtitle: "Unlimited scale",
+      price: "$1,497",
       priceUnit: "/month",
       icon: Building,
       popular: false,
-      description: "Fully branded AI sales platform for your agency or clients",
+      description: "White-label AI calling platform for agencies",
       features: [
-        "Custom domain & branding",
-        "Your own Vapi AI assistant",
-        "Client management dashboard",
-        "Lead import & management",
-        "Campaign analytics",
-        "API access",
-        "Multi-user support",
-        "Dedicated onboarding",
+        "Unlimited AI call minutes",
+        "Unlimited AI voice agents",
+        "White-label branding",
+        "Multi-location support",
+        "Custom integrations & API",
+        "Dedicated account manager",
+        "Team training & onboarding",
+        "SLA guarantee",
       ],
-      cta: "Schedule Demo",
-      note: "$2,500 one-time setup fee",
+      cta: "Contact Sales",
+      note: "Custom enterprise pricing available",
     },
   ];
 
@@ -77,12 +78,16 @@ export default function Pricing() {
     <section id="pricing" className="py-20 bg-white">
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+            <Zap className="h-4 w-4" />
+            AI-Powered Voice Calling
+          </div>
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Choose How You Want to Grow
+            Scale Your Outreach with AI Voice Agents
           </h2>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Start with lead lists, scale to done-for-you outreach, or white-label
-            the entire platform. Flexible options for any agency size.
+            Our AI makes hundreds of personalized calls daily, books meetings, and
+            follows up automatically. Start with a free trial.
           </p>
         </div>
 
@@ -154,12 +159,44 @@ export default function Pricing() {
           })}
         </div>
 
+        {/* Key Benefits */}
+        <div className="grid sm:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12">
+          <div className="text-center p-4">
+            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Clock className="h-6 w-6 text-primary-600" />
+            </div>
+            <div className="font-semibold text-slate-900">24/7 Calling</div>
+            <div className="text-sm text-slate-600">Never miss a lead</div>
+          </div>
+          <div className="text-center p-4">
+            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <MessageSquare className="h-6 w-6 text-primary-600" />
+            </div>
+            <div className="font-semibold text-slate-900">Natural Voice</div>
+            <div className="text-sm text-slate-600">Human-like conversations</div>
+          </div>
+          <div className="text-center p-4">
+            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Headphones className="h-6 w-6 text-primary-600" />
+            </div>
+            <div className="font-semibold text-slate-900">Smart Follow-up</div>
+            <div className="text-sm text-slate-600">Automated persistence</div>
+          </div>
+          <div className="text-center p-4">
+            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Phone className="h-6 w-6 text-primary-600" />
+            </div>
+            <div className="font-semibold text-slate-900">Live Transfer</div>
+            <div className="text-sm text-slate-600">Hot leads to your team</div>
+          </div>
+        </div>
+
         {/* Guarantees */}
         <div className="text-center space-y-4">
           <div className="flex flex-wrap justify-center items-center gap-6 text-slate-600">
             <div className="flex items-center gap-2">
               <Check className="h-5 w-5 text-primary-600" />
-              <span>TCPA & GDPR compliant</span>
+              <span>TCPA compliant</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-5 w-5 text-primary-600" />
@@ -167,42 +204,46 @@ export default function Pricing() {
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-5 w-5 text-primary-600" />
-              <span>30-day money-back guarantee</span>
+              <span>14-day free trial</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-primary-600" />
+              <span>No setup fees</span>
             </div>
           </div>
         </div>
 
         {/* ROI Calculator */}
-        <div className="mt-16 bg-gradient-to-r from-primary-50 to-accent-50 rounded-2xl p-8 md:p-12">
+        <div className="mt-16 bg-gradient-to-r from-primary-50 to-blue-50 rounded-2xl p-8 md:p-12">
           <div className="max-w-3xl mx-auto text-center">
             <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
-              Close Just 2 Deals to Cover Your Investment
+              Book 5+ Meetings Per Week on Autopilot
             </h3>
             <p className="text-lg text-slate-600 mb-6">
-              Our clients average $5,000+ revenue per closed deal. With 85% contact
-              rates and AI-powered follow-up, your ROI compounds fast.
+              Our AI agents make 200+ calls daily. With a 15% contact rate and
+              intelligent objection handling, you'll fill your calendar fast.
             </p>
             <div className="grid sm:grid-cols-3 gap-6 text-left">
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="text-3xl font-bold text-primary-600 mb-1">
-                  $750
+                  200+
                 </div>
-                <div className="text-sm text-slate-600">Monthly investment</div>
+                <div className="text-sm text-slate-600">Calls per day per agent</div>
               </div>
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="text-3xl font-bold text-slate-900 mb-1">
                   15-25%
                 </div>
                 <div className="text-sm text-slate-600">
-                  Response rate on outreach
+                  Average connection rate
                 </div>
               </div>
               <div className="bg-white rounded-lg p-4 shadow-sm">
-                <div className="text-3xl font-bold text-accent-600 mb-1">
-                  10x+
+                <div className="text-3xl font-bold text-green-600 mb-1">
+                  5-10x
                 </div>
                 <div className="text-sm text-slate-600">
-                  Average client ROI
+                  Typical ROI in 90 days
                 </div>
               </div>
             </div>
