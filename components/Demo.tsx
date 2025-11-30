@@ -152,9 +152,8 @@ export default function Demo() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     size="lg"
-                    variant="default"
                     onClick={handleBookDemo}
-                    className="gap-2"
+                    className="gap-2 bg-white text-slate-900 hover:bg-slate-100"
                   >
                     <Calendar className="h-5 w-5" />
                     Book Strategy Call
