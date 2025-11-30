@@ -1,5 +1,5 @@
 import { Settings, Phone, Rocket } from "lucide-react";
-import Card from "./ui/Card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function HowItWorks() {
   const steps = [
@@ -57,7 +57,7 @@ export default function HowItWorks() {
                 const Icon = step.icon;
                 return (
                   <div key={index} className="relative">
-                    <Card hover className="p-8">
+                    <Card className="p-8 hover:shadow-md transition-shadow">
                       {/* Number badge */}
                       <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg">
                         {step.number}

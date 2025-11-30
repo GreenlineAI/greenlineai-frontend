@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://greenline-ai.com"),
   title: "GreenLine AI | B2B Lead Generation for Home Services",
   description: "Pre-qualified leads, AI-powered outreach, and white-label solutions for marketing agencies and SaaS companies selling to home services businesses.",
   keywords: "b2b lead generation, home services leads, landscaping leads, ai sales, white label lead gen, marketing agency tools",

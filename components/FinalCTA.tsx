@@ -1,7 +1,7 @@
 "use client";
 
 import { Calendar, Zap, DollarSign, CheckCircle } from "lucide-react";
-import Button from "./ui/Button";
+import { Button } from "@/components/ui/button";
 
 export default function FinalCTA() {
   const handleBookDemo = () => {
@@ -32,7 +32,7 @@ export default function FinalCTA() {
         <div className="flex flex-col items-center gap-6 mb-12">
           <Button
             size="lg"
-            variant="accent"
+            variant="default"
             onClick={handleBookDemo}
             className="text-xl px-12 py-6 shadow-2xl hover:shadow-accent-500/50 gap-3"
           >

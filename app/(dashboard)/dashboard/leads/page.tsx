@@ -1,204 +1,233 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { Plus, Download, Upload, AlertCircle } from "lucide-react";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import LeadsTable from "@/components/dashboard/LeadsTable";
-import LeadsFilters from "@/components/dashboard/LeadsFilters";
-import { useLeads } from "@/lib/supabase/use-leads";
-import { Lead } from "@/lib/types";
-import { LeadFilters } from "@/lib/types";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus, Phone, Star, Download, Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { DataTable, type Column } from '@/components/shared/DataTable';
+import { Pagination } from '@/components/shared/Pagination';
+import { PageHeader } from '@/components/shared/PageHeader';
+import { LeadStatusBadge, LeadScoreBadge } from '@/components/shared/StatusBadge';
+import { LeadFilters } from '@/components/leads/LeadFilters';
+import { LeadDetailSheet } from '@/components/leads/LeadDetailSheet';
+import { BulkActions } from '@/components/leads/BulkActions';
+import { useLeads } from '@/hooks/use-leads';
+import type { Lead, LeadFilters as LeadFiltersType } from '@/lib/types';
+import { format } from 'date-fns';
+
+const defaultFilters: LeadFiltersType = {
+  search: '',
+  status: 'all',
+  score: 'all',
+  industry: 'all',
+  state: 'all',
+  minRating: null,
+  maxRating: null,
+};
 
 export default function LeadsPage() {
-  const { leads, loading, usingMockData, deleteLead } = useLeads();
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [filters, setFilters] = useState<LeadFilters>({
-    search: "",
-    status: "all",
-    score: "all",
-    industry: "all",
-    state: "all",
-    minRating: null,
-    maxRating: null,
+  const router = useRouter();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [filters, setFilters] = useState<LeadFiltersType>(defaultFilters);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const { data, isLoading } = useLeads({
+    page,
+    pageSize,
+    filters,
+    sortBy: 'created_at',
+    sortOrder: 'desc',
   });
 
-  // Filter leads based on current filters
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
-      // Search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        const matchesSearch =
-          lead.businessName.toLowerCase().includes(searchLower) ||
-          lead.contactName?.toLowerCase().includes(searchLower) ||
-          lead.city.toLowerCase().includes(searchLower) ||
-          lead.email?.toLowerCase().includes(searchLower) ||
-          lead.phone.includes(filters.search);
-        if (!matchesSearch) return false;
-      }
-
-      // Status filter
-      if (filters.status !== "all" && lead.status !== filters.status) {
-        return false;
-      }
-
-      // Score filter
-      if (filters.score !== "all" && lead.score !== filters.score) {
-        return false;
-      }
-
-      // Industry filter
-      if (filters.industry !== "all" && lead.industry !== filters.industry) {
-        return false;
-      }
-
-      // State filter
-      if (filters.state !== "all" && lead.state !== filters.state) {
-        return false;
-      }
-
-      // Rating filters
-      if (filters.minRating !== null) {
-        if (!lead.googleRating || lead.googleRating < filters.minRating) {
-          return false;
-        }
-      }
-      if (filters.maxRating !== null) {
-        if (!lead.googleRating || lead.googleRating >= filters.maxRating) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [leads, filters]);
-
-  const handleViewLead = (lead: Lead) => {
-    // TODO: Open lead detail modal or navigate to detail page
-    console.log("View lead:", lead);
-  };
-
-  const handleCallLead = (lead: Lead) => {
-    // TODO: Initiate AI call
-    console.log("Call lead:", lead);
-  };
-
-  const handleDeleteLead = async (lead: Lead) => {
-    if (confirm(`Are you sure you want to delete ${lead.businessName}?`)) {
-      await deleteLead(lead.id);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen">
-        <DashboardHeader title="Leads" subtitle="Loading..." />
-        <main className="p-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+  const columns: Column<Lead>[] = [
+    {
+      key: 'businessName',
+      header: 'Business',
+      cell: (lead) => (
+        <div>
+          <p className="font-medium">{lead.businessName}</p>
+          <p className="text-sm text-muted-foreground">
+            {lead.city}, {lead.state}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+      cell: (lead) => (
+        <div className="flex items-center gap-2">
+          <Phone className="h-4 w-4 text-muted-foreground" />
+          <span className="font-mono text-sm">{lead.phone}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'rating',
+      header: 'Rating',
+      cell: (lead) => (
+        lead.googleRating !== null ? (
+          <div className="flex items-center gap-1">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <span>{lead.googleRating}</span>
+            {lead.reviewCount !== null && (
+              <span className="text-muted-foreground">({lead.reviewCount})</span>
+            )}
           </div>
-        </main>
-      </div>
-    );
-  }
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )
+      ),
+      className: 'w-[120px]',
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (lead) => <LeadStatusBadge status={lead.status} />,
+      className: 'w-[140px]',
+    },
+    {
+      key: 'score',
+      header: 'Score',
+      cell: (lead) => <LeadScoreBadge score={lead.score} />,
+      className: 'w-[80px]',
+    },
+    {
+      key: 'lastContacted',
+      header: 'Last Contacted',
+      cell: (lead) => (
+        lead.lastContacted ? (
+          <span className="text-sm">
+            {format(new Date(lead.lastContacted), 'MMM d, yyyy')}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground">Never</span>
+        )
+      ),
+      className: 'w-[130px]',
+    },
+  ];
+
+  const handleRowClick = (lead: Lead) => {
+    setSelectedLead(lead);
+    setDetailOpen(true);
+  };
+
+  const handleCallNow = (lead: Lead) => {
+    router.push(`/dashboard/dialer?leadId=${lead.id}`);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setPage(1);
+  };
+
+  // Quick stats
+  const leads = data?.leads || [];
+  const hotCount = leads.filter((l) => l.score === 'hot').length;
+  const warmCount = leads.filter((l) => l.score === 'warm').length;
+  const coldCount = leads.filter((l) => l.score === 'cold').length;
+  const meetingsCount = leads.filter((l) => l.status === 'meeting_scheduled').length;
 
   return (
-    <div className="min-h-screen">
-      <DashboardHeader
-        title="Leads"
-        subtitle={`${filteredLeads.length} of ${leads.length} leads`}
-        actions={
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-              <Upload className="h-4 w-4" />
-              Import
-            </button>
-            <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-              <Download className="h-4 w-4" />
-              Export
-            </button>
-            <button className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
-              <Plus className="h-4 w-4" />
-              Add Lead
-            </button>
-          </div>
-        }
-      />
-
-      <main className="p-6 space-y-6">
-        {/* Demo data notice */}
-        {usingMockData && (
-          <div className="flex items-center gap-3 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
-            <AlertCircle className="h-5 w-5 text-yellow-600" />
-            <p className="text-sm text-yellow-800">
-              Showing demo data. Run the schema.sql in your Supabase SQL editor to set up the database.
-            </p>
-          </div>
-        )}
-
-        {/* Filters */}
-        <LeadsFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-          showAdvanced={showAdvancedFilters}
-          onToggleAdvanced={() => setShowAdvancedFilters(!showAdvancedFilters)}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b bg-card px-6 py-4">
+        <PageHeader
+          title="Leads"
+          description={`${data?.total || 0} total leads`}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button variant="outline">
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+              <Button variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Lead
+              </Button>
+            </div>
+          }
         />
+      </div>
 
-        {/* Quick stats */}
+      <main className="p-6 space-y-4">
+        {/* Filters */}
+        <LeadFilters filters={filters} onFiltersChange={setFilters} />
+
+        {/* Quick Stats */}
         <div className="flex items-center gap-6 text-sm">
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
-            <span className="text-slate-600">
-              Hot: {leads.filter((l) => l.score === "hot").length}
-            </span>
+            <span className="h-2 w-2 rounded-full bg-red-500" />
+            <span className="text-muted-foreground">Hot: {hotCount}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-yellow-500" />
-            <span className="text-slate-600">
-              Warm: {leads.filter((l) => l.score === "warm").length}
-            </span>
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span className="text-muted-foreground">Warm: {warmCount}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-slate-400" />
-            <span className="text-slate-600">
-              Cold: {leads.filter((l) => l.score === "cold").length}
-            </span>
+            <span className="h-2 w-2 rounded-full bg-blue-500" />
+            <span className="text-muted-foreground">Cold: {coldCount}</span>
           </div>
-          <div className="text-slate-400">|</div>
-          <div className="text-slate-600">
-            {leads.filter((l) => l.status === "meeting_scheduled").length} meetings scheduled
+          <div className="text-muted-foreground">|</div>
+          <div className="text-muted-foreground">
+            {meetingsCount} meetings scheduled
           </div>
         </div>
 
-        {/* Leads Table */}
-        <LeadsTable
-          leads={filteredLeads}
-          onViewLead={handleViewLead}
-          onCallLead={handleCallLead}
-          onDeleteLead={handleDeleteLead}
-        />
+        {/* Bulk Actions */}
+        {selectedIds.size > 0 && (
+          <BulkActions
+            selectedCount={selectedIds.size}
+            selectedIds={selectedIds}
+            onClearSelection={() => setSelectedIds(new Set())}
+          />
+        )}
 
-        {/* Pagination placeholder */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
-            Showing {filteredLeads.length} of {leads.length} leads
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              disabled
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-400"
-            >
-              Previous
-            </button>
-            <button
-              disabled
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-400"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        {/* Table */}
+        <Card>
+          <CardContent className="p-0">
+            <DataTable
+              columns={columns}
+              data={data?.leads || []}
+              isLoading={isLoading}
+              selectable
+              selectedIds={selectedIds}
+              onSelectChange={setSelectedIds}
+              getRowId={(lead) => lead.id}
+              onRowClick={handleRowClick}
+              emptyMessage="No leads found. Import some leads to get started."
+            />
+          </CardContent>
+        </Card>
+
+        {/* Pagination */}
+        {data && data.total > 0 && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={data.total}
+            onPageChange={setPage}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        )}
       </main>
+
+      {/* Lead Detail Sheet */}
+      <LeadDetailSheet
+        lead={selectedLead}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onCallNow={handleCallNow}
+      />
     </div>
   );
 }

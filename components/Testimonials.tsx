@@ -1,7 +1,7 @@
 "use client";
 
 import { Star, MapPin } from "lucide-react";
-import Card from "./ui/Card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Testimonials() {
   const testimonials = [
@@ -46,7 +46,7 @@ export default function Testimonials() {
         {/* Desktop: 3 columns */}
         <div className="hidden md:grid md:grid-cols-3 gap-8 mb-12">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} hover className="p-6 flex flex-col">
+            <Card key={index} className="p-6 flex flex-col hover:shadow-md transition-shadow">
               {/* Stars */}
               <div className="flex gap-1 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (

@@ -4,8 +4,8 @@ import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
 import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -217,7 +217,7 @@ export default function ContactPage() {
 
                         <Button
                           type="submit"
-                          variant="accent"
+                          variant="default"
                           size="lg"
                           className="w-full gap-2"
                           disabled={isSubmitting}
@@ -251,8 +251,7 @@ export default function ContactPage() {
                     const content = (
                       <Card
                         key={index}
-                        hover={!!item.href}
-                        className="p-6 flex items-start gap-4"
+                        className={`p-6 flex items-start gap-4 ${item.href ? 'hover:shadow-md transition-shadow cursor-pointer' : ''}`}
                       >
                         <div className="bg-primary-100 p-3 rounded-lg flex-shrink-0">
                           <Icon className="h-6 w-6 text-primary-600" />
@@ -292,7 +291,7 @@ export default function ContactPage() {
                     landscaping customer service.
                   </p>
                   <Button
-                    variant="accent"
+                    variant="default"
                     size="lg"
                     className="w-full gap-2"
                     onClick={() =>

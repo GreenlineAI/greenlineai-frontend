@@ -2,8 +2,8 @@
 
 import { ArrowLeft, Calendar, Headphones, MessageCircle } from "lucide-react";
 import Link from "next/link";
-import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import VapiDemo from "@/components/VapiDemo";
 
 export default function VoiceDemoPage() {
@@ -106,7 +106,7 @@ export default function VoiceDemoPage() {
                 </p>
                 <Button
                   size="lg"
-                  variant="accent"
+                  variant="default"
                   onClick={handleBookDemo}
                   className="gap-2 w-full sm:w-auto"
                 >

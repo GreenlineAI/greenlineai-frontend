@@ -2,8 +2,8 @@
 
 import { Calendar, CheckCircle, ArrowRight, Headphones, Database, Shield, Zap } from "lucide-react";
 import Link from "next/link";
-import Button from "./ui/Button";
-import Card from "./ui/Card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Demo() {
   const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
@@ -152,7 +152,7 @@ export default function Demo() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     size="lg"
-                    variant="accent"
+                    variant="default"
                     onClick={handleBookDemo}
                     className="gap-2"
                   >

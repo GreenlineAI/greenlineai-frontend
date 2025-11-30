@@ -7,6 +7,8 @@ import {
   Users,
   Megaphone,
   Phone,
+  PhoneCall,
+  History,
   BarChart3,
   Settings,
   LogOut,
@@ -19,8 +21,9 @@ import { useUser } from "@/lib/supabase/hooks";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Leads", href: "/dashboard/leads", icon: Users },
+  { name: "Dialer", href: "/dashboard/dialer", icon: PhoneCall },
   { name: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone },
-  { name: "Outreach", href: "/dashboard/outreach", icon: Phone },
+  { name: "Call History", href: "/dashboard/calls", icon: History },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

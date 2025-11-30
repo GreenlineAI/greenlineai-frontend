@@ -206,6 +206,7 @@ export interface Database {
           sentiment: 'positive' | 'neutral' | 'negative' | null
           meeting_booked: boolean
           vapi_call_id: string | null
+          recording_url: string | null
           created_at: string
         }
         Insert: {
@@ -220,6 +221,7 @@ export interface Database {
           sentiment?: 'positive' | 'neutral' | 'negative' | null
           meeting_booked?: boolean
           vapi_call_id?: string | null
+          recording_url?: string | null
           created_at?: string
         }
         Update: {
@@ -230,6 +232,35 @@ export interface Database {
           sentiment?: 'positive' | 'neutral' | 'negative' | null
           meeting_booked?: boolean
           vapi_call_id?: string | null
+          recording_url?: string | null
+        }
+      }
+      call_analytics: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          calls_made: number
+          calls_connected: number
+          avg_duration: number
+          meetings_booked: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          calls_made?: number
+          calls_connected?: number
+          avg_duration?: number
+          meetings_booked?: number
+          created_at?: string
+        }
+        Update: {
+          calls_made?: number
+          calls_connected?: number
+          avg_duration?: number
+          meetings_booked?: number
         }
       }
     }

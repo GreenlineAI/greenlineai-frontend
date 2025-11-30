@@ -279,6 +279,8 @@ export const mockDashboardStats: DashboardStats = {
   responseRate: 18.5,
   meetingsBooked: 47,
   conversionRate: 15.1,
+  callsToday: 23,
+  callsThisWeek: 156,
 };
 
 export const industries = [

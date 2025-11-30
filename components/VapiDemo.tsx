@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import Vapi from "@vapi-ai/web";
-import Button from "./ui/Button";
+import { Button } from "@/components/ui/button";
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || "";
 const VAPI_ASSISTANT_ID = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || "";

@@ -97,7 +97,21 @@ CREATE TABLE outreach_calls (
   sentiment TEXT CHECK (sentiment IN ('positive', 'neutral', 'negative')),
   meeting_booked BOOLEAN DEFAULT FALSE,
   vapi_call_id TEXT,
+  recording_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Call analytics table (for dashboard metrics)
+CREATE TABLE call_analytics (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  calls_made INTEGER DEFAULT 0,
+  calls_connected INTEGER DEFAULT 0,
+  avg_duration INTEGER DEFAULT 0,
+  meetings_booked INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
 );
 
 -- Campaign leads junction table
@@ -118,6 +132,8 @@ CREATE INDEX idx_campaigns_user_id ON campaigns(user_id);
 CREATE INDEX idx_campaigns_status ON campaigns(status);
 CREATE INDEX idx_outreach_calls_user_id ON outreach_calls(user_id);
 CREATE INDEX idx_outreach_calls_lead_id ON outreach_calls(lead_id);
+CREATE INDEX idx_call_analytics_user_id ON call_analytics(user_id);
+CREATE INDEX idx_call_analytics_date ON call_analytics(date);
 
 -- Row Level Security (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -125,6 +141,7 @@ ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE outreach_calls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaign_leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE call_analytics ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 
@@ -214,6 +231,19 @@ CREATE POLICY "Users can delete own campaign leads"
       AND campaigns.user_id = auth.uid()
     )
   );
+
+-- Call analytics: Users can manage their own analytics
+CREATE POLICY "Users can view own analytics"
+  ON call_analytics FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own analytics"
+  ON call_analytics FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own analytics"
+  ON call_analytics FOR UPDATE
+  USING (auth.uid() = user_id);
 
 -- Function to handle new user creation
 CREATE OR REPLACE FUNCTION public.handle_new_user()

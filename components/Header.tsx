@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Menu, X, Sprout } from "lucide-react";
-import Button from "./ui/Button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function Header() {
@@ -86,7 +86,7 @@ export default function Header() {
 
           {/* CTA Button */}
           <div className="hidden md:block">
-            <Button variant="accent" onClick={handleBookDemo}>
+            <Button variant="default" onClick={handleBookDemo}>
               Book Free Demo
             </Button>
           </div>
@@ -133,7 +133,7 @@ export default function Header() {
               >
                 Contact
               </a>
-              <Button variant="accent" onClick={handleBookDemo} className="w-full">
+              <Button variant="default" onClick={handleBookDemo} className="w-full">
                 Book Free Demo
               </Button>
             </nav>

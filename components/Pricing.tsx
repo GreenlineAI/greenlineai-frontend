@@ -1,8 +1,8 @@
 "use client";
 
 import { Check, Star, Database, Phone, Building } from "lucide-react";
-import Button from "./ui/Button";
-import Card from "./ui/Card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export default function Pricing() {
   const plans = [
@@ -92,8 +92,7 @@ export default function Pricing() {
             return (
               <Card
                 key={index}
-                hover
-                className={`p-8 relative ${
+                className={`p-8 relative hover:shadow-md transition-shadow ${
                   plan.popular ? "ring-2 ring-primary-600 shadow-xl" : ""
                 }`}
               >
@@ -144,7 +143,7 @@ export default function Pricing() {
                 )}
 
                 <Button
-                  variant={plan.popular ? "accent" : "primary"}
+                  variant={plan.popular ? "default" : "outline"}
                   className="w-full"
                   onClick={handleGetStarted}
                 >

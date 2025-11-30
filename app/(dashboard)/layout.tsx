@@ -1,4 +1,6 @@
 import Sidebar from "@/components/dashboard/Sidebar";
+import { QueryProvider } from "@/lib/providers/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function DashboardLayout({
   children,
@@ -6,14 +8,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-slate-50">
-      {/* Sidebar */}
-      <Sidebar />
+    <QueryProvider>
+      <div className="flex h-screen bg-background">
+        {/* Sidebar */}
+        <Sidebar />
 
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        {children}
+        {/* Main content */}
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </div>
-    </div>
+      <Toaster />
+    </QueryProvider>
   );
 }

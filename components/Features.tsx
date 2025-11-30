@@ -9,7 +9,7 @@ import {
   Users,
   Building,
 } from "lucide-react";
-import Card from "./ui/Card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Features() {
   const features = [
@@ -86,7 +86,7 @@ export default function Features() {
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <Card key={index} hover className="p-6">
+              <Card key={index} className="p-6 hover:shadow-md transition-shadow">
                 <div className="bg-primary-100 w-14 h-14 rounded-xl flex items-center justify-center mb-4">
                   <Icon className="h-7 w-7 text-primary-600" />
                 </div>

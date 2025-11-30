@@ -1,143 +1,313 @@
-import { Users, Phone, Calendar, TrendingUp } from "lucide-react";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import StatsCard from "@/components/dashboard/StatsCard";
-import { mockDashboardStats, mockLeads, mockCampaigns } from "@/lib/mock-data";
+'use client';
+
+import Link from 'next/link';
+import {
+  Users,
+  Phone,
+  Calendar,
+  TrendingUp,
+  PhoneCall,
+  Upload,
+  Flame,
+  ArrowRight,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatsCard } from '@/components/shared/StatsCard';
+import { LeadScoreBadge, CampaignStatusBadge, CallStatusBadge } from '@/components/shared/StatusBadge';
+import { CallsLineChart } from '@/components/charts/CallsLineChart';
+import { CallOutcomesChart } from '@/components/charts/CallOutcomesChart';
+import { useDashboardStats, useDailyCallStats, useCallOutcomes } from '@/hooks/use-analytics';
+import { useLeads } from '@/hooks/use-leads';
+import { useCampaigns } from '@/hooks/use-campaigns';
+import { useRecentCalls } from '@/hooks/use-calls';
+import { useUser } from '@/lib/supabase/hooks';
+import { format } from 'date-fns';
 
 export default function DashboardPage() {
-  const stats = mockDashboardStats;
-  const recentLeads = mockLeads.slice(0, 5);
-  const activeCampaigns = mockCampaigns.filter((c) => c.status === "active");
+  const { user } = useUser();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: dailyStats, isLoading: dailyStatsLoading } = useDailyCallStats(30);
+  const { data: callOutcomes, isLoading: outcomesLoading } = useCallOutcomes();
+  const { data: leadsData, isLoading: leadsLoading } = useLeads({ page: 1, pageSize: 5 });
+  const { data: campaigns, isLoading: campaignsLoading } = useCampaigns();
+  const { data: recentCalls, isLoading: callsLoading } = useRecentCalls(10);
+
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  const activeCampaigns = campaigns?.filter((c) => c.status === 'active') || [];
 
   return (
-    <div className="min-h-screen">
-      <DashboardHeader
-        title="Dashboard"
-        subtitle="Welcome back, Marcus"
-      />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b bg-card px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              Welcome back, {userName}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/leads">
+                <Upload className="mr-2 h-4 w-4" />
+                Import Leads
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dashboard/dialer">
+                <PhoneCall className="mr-2 h-4 w-4" />
+                Start Calling
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      <main className="p-6">
+      <main className="p-6 space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <StatsCard
-            title="Total Leads"
-            value={stats.totalLeads.toLocaleString()}
-            change={`+${stats.leadsThisMonth} this month`}
-            changeType="positive"
-            icon={Users}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {statsLoading ? (
+            <>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-16 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
+            <>
+              <StatsCard
+                title="Total Leads"
+                value={stats?.totalLeads?.toLocaleString() || '0'}
+                icon={Users}
+                trend={{ value: 12, isPositive: true }}
+                description="vs last month"
+              />
+              <StatsCard
+                title="Calls Today"
+                value={stats?.callsToday?.toLocaleString() || '0'}
+                icon={Phone}
+                description={`${stats?.callsThisWeek || 0} this week`}
+              />
+              <StatsCard
+                title="Meetings Booked"
+                value={stats?.meetingsBooked?.toLocaleString() || '0'}
+                icon={Calendar}
+                trend={{ value: 8, isPositive: true }}
+                description="this month"
+              />
+              <StatsCard
+                title="Conversion Rate"
+                value={`${stats?.conversionRate || 0}%`}
+                icon={TrendingUp}
+                trend={{ value: 2.3, isPositive: true }}
+                description="vs last month"
+              />
+            </>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
+                <Link href="/dashboard/dialer">
+                  <PhoneCall className="h-5 w-5 text-primary" />
+                  <span>Start Dialing</span>
+                </Link>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
+                <Link href="/dashboard/leads">
+                  <Upload className="h-5 w-5 text-primary" />
+                  <span>Import Leads</span>
+                </Link>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
+                <Link href="/dashboard/leads?score=hot">
+                  <Flame className="h-5 w-5 text-red-500" />
+                  <span>Hot Leads</span>
+                </Link>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
+                <Link href="/dashboard/campaigns/new">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  <span>New Campaign</span>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <CallsLineChart
+            data={dailyStats || []}
+            isLoading={dailyStatsLoading}
+            title="Calls (Last 30 Days)"
           />
-          <StatsCard
-            title="Contacted"
-            value={stats.totalContacted.toLocaleString()}
-            change={`${stats.responseRate}% response rate`}
-            changeType="neutral"
-            icon={Phone}
-            iconColor="bg-accent-100 text-accent-600"
-          />
-          <StatsCard
-            title="Meetings Booked"
-            value={stats.meetingsBooked}
-            change="+12 this week"
-            changeType="positive"
-            icon={Calendar}
-            iconColor="bg-green-100 text-green-600"
-          />
-          <StatsCard
-            title="Conversion Rate"
-            value={`${stats.conversionRate}%`}
-            change="+2.3% from last month"
-            changeType="positive"
-            icon={TrendingUp}
-            iconColor="bg-purple-100 text-purple-600"
+          <CallOutcomesChart
+            data={callOutcomes || []}
+            isLoading={outcomesLoading}
+            title="Call Outcomes"
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Bottom Section */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Recent Leads */}
-          <div className="rounded-xl border border-slate-200 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-              <h2 className="font-semibold text-slate-900">Recent Leads</h2>
-              <a
-                href="/dashboard/leads"
-                className="text-sm font-medium text-primary-600 hover:text-primary-700"
-              >
-                View all
-              </a>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {recentLeads.map((lead) => (
-                <div key={lead.id} className="flex items-center justify-between px-6 py-4">
-                  <div>
-                    <p className="font-medium text-slate-900">{lead.businessName}</p>
-                    <p className="text-sm text-slate-500">
-                      {lead.city}, {lead.state} &bull; {lead.industry}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        lead.score === "hot"
-                          ? "bg-green-100 text-green-700"
-                          : lead.score === "warm"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {lead.score}
-                    </span>
-                    {lead.googleRating && (
-                      <span className="text-sm text-slate-500">
-                        {lead.googleRating} ★
-                      </span>
-                    )}
-                  </div>
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Recent Leads</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/leads">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {leadsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-14 w-full" />
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Campaigns */}
-          <div className="rounded-xl border border-slate-200 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-              <h2 className="font-semibold text-slate-900">Active Campaigns</h2>
-              <a
-                href="/dashboard/campaigns"
-                className="text-sm font-medium text-primary-600 hover:text-primary-700"
-              >
-                View all
-              </a>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {activeCampaigns.map((campaign) => (
-                <div key={campaign.id} className="px-6 py-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium text-slate-900">{campaign.name}</p>
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                      Active
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-6 text-sm text-slate-500">
-                    <span>{campaign.leadsCount} leads</span>
-                    <span>{campaign.contactedCount} contacted</span>
-                    <span>{campaign.meetingsBooked} meetings</span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
+              ) : (
+                <div className="space-y-3">
+                  {leadsData?.leads.map((lead) => (
                     <div
-                      className="h-2 rounded-full bg-primary-600"
-                      style={{
-                        width: `${(campaign.contactedCount / campaign.leadsCount) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-              {activeCampaigns.length === 0 && (
-                <div className="px-6 py-8 text-center text-slate-500">
-                  No active campaigns
+                      key={lead.id}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{lead.businessName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {lead.city}, {lead.state}
+                        </p>
+                      </div>
+                      <LeadScoreBadge score={lead.score} />
+                    </div>
+                  ))}
+                  {(!leadsData?.leads || leadsData.leads.length === 0) && (
+                    <p className="text-center text-sm text-muted-foreground py-4">
+                      No leads yet
+                    </p>
+                  )}
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Active Campaigns */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Active Campaigns</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/campaigns">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {campaignsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activeCampaigns.slice(0, 3).map((campaign) => {
+                    const progress = campaign.leadsCount > 0
+                      ? (campaign.contactedCount / campaign.leadsCount) * 100
+                      : 0;
+                    return (
+                      <div
+                        key={campaign.id}
+                        className="rounded-lg border p-3 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium">{campaign.name}</p>
+                          <CampaignStatusBadge status={campaign.status} />
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{campaign.leadsCount} leads</span>
+                          <span>{campaign.meetingsBooked} meetings</span>
+                        </div>
+                        <Progress value={progress} className="h-2" />
+                      </div>
+                    );
+                  })}
+                  {activeCampaigns.length === 0 && (
+                    <p className="text-center text-sm text-muted-foreground py-4">
+                      No active campaigns
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Recent Calls</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/calls">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {callsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentCalls?.slice(0, 5).map((call) => (
+                    <div
+                      key={call.id}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">
+                          {call.lead?.businessName || 'Unknown'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(call.createdAt), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CallStatusBadge status={call.status} />
+                        {call.meetingBooked && (
+                          <span className="text-xs text-green-600 font-medium">Booked</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {(!recentCalls || recentCalls.length === 0) && (
+                    <p className="text-center text-sm text-muted-foreground py-4">
+                      No calls yet
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

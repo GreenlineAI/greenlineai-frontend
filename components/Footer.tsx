@@ -1,6 +1,6 @@
 "use client";
 
-import { Sprout, Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Headphones } from "lucide-react";
+import { Sprout, Mail, Phone, MapPin, LinkedinIcon, TwitterIcon, FacebookIcon, Headphones } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
@@ -63,12 +63,12 @@ export default function Footer() {
                 </button>
               </li>
               <li>
-                <a
+                <Link
                   href="/contact"
                   className="text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -152,7 +152,7 @@ export default function Footer() {
                 className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
                 aria-label="LinkedIn"
               >
-                <Linkedin className="h-5 w-5" />
+                <LinkedinIcon className="h-5 w-5" />
               </a>
               <a
                 href="https://twitter.com"
@@ -161,7 +161,7 @@ export default function Footer() {
                 className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
                 aria-label="Twitter"
               >
-                <Twitter className="h-5 w-5" />
+                <TwitterIcon className="h-5 w-5" />
               </a>
               <a
                 href="https://facebook.com"
@@ -170,7 +170,7 @@ export default function Footer() {
                 className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
                 aria-label="Facebook"
               >
-                <Facebook className="h-5 w-5" />
+                <FacebookIcon className="h-5 w-5" />
               </a>
             </div>
           </div>

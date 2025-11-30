@@ -1,8 +1,8 @@
 "use client";
 
 import { Calendar, Database, TrendingUp, Users, Zap, Target } from "lucide-react";
-import Button from "./ui/Button";
-import Card from "./ui/Card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Hero() {
   const handleBookDemo = () => {
@@ -64,7 +64,7 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button
                 size="lg"
-                variant="accent"
+                variant="default"
                 onClick={handleBookDemo}
                 className="gap-2"
               >
