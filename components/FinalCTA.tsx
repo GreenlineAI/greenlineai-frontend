@@ -32,9 +32,8 @@ export default function FinalCTA() {
         <div className="flex flex-col items-center gap-6 mb-12">
           <Button
             size="lg"
-            variant="default"
             onClick={handleBookDemo}
-            className="text-xl px-12 py-6 shadow-2xl hover:shadow-accent-500/50 gap-3"
+            className="bg-white text-primary-700 hover:bg-primary-50 text-xl px-12 py-6 shadow-2xl hover:shadow-white/30 gap-3"
           >
             <Calendar className="h-6 w-6" />
             Book Strategy Call
@@ -48,7 +47,7 @@ export default function FinalCTA() {
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              <span>30-day money-back guarantee</span>
+              <span>30-day free trial</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
@@ -78,7 +77,7 @@ export default function FinalCTA() {
             size="lg"
             variant="outline"
             onClick={handleTryDemo}
-            className="gap-3 border-2 border-white text-white hover:bg-white hover:text-primary-700"
+            className="gap-3 border-2 border-white text-blck hover:bg-gold hover:text-gold-700"
           >
             <Zap className="h-5 w-5" />
             Try AI Demo Now
