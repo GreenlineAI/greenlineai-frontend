@@ -6,28 +6,28 @@ export default function HowItWorks() {
     {
       icon: Settings,
       number: "1",
-      title: "Setup",
-      description: "Tell us about your services, pricing, and availability",
-      subtitle: "We customize the AI to sound like your business",
-      time: "10 minutes",
+      title: "Define Your Target",
+      description: "Tell us your ideal customer profile and market",
+      subtitle: "We'll build a custom lead list matching your criteria",
+      time: "15 minutes",
       color: "bg-primary-100 text-primary-600",
     },
     {
       icon: Phone,
       number: "2",
-      title: "Test",
-      description: "Call your AI and test it with real questions",
-      subtitle: "Make adjustments until it's perfect",
-      time: "2 days",
+      title: "Launch Outreach",
+      description: "Our AI starts calling and emailing your prospects",
+      subtitle: "Review transcripts and adjust messaging as needed",
+      time: "24 hours",
       color: "bg-accent-100 text-accent-600",
     },
     {
       icon: Rocket,
       number: "3",
-      title: "Go Live",
-      description: "Forward your calls or use your existing number",
-      subtitle: "Start capturing leads immediately",
-      time: "Instant",
+      title: "Close Deals",
+      description: "Qualified meetings booked directly to your calendar",
+      subtitle: "You only talk to interested, ready-to-buy prospects",
+      time: "Ongoing",
       color: "bg-primary-100 text-primary-600",
     },
   ];
@@ -37,12 +37,12 @@ export default function HowItWorks() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Get Your AI Receptionist in{" "}
+            From Lead List to Closed Deal in{" "}
             <span className="text-primary-600">3 Simple Steps</span>
           </h2>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            From signup to answering calls in less than a week. No technical
-            knowledge required.
+            We handle the prospecting and outreach. You focus on closing deals
+            and serving clients.
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export default function HowItWorks() {
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-2 bg-primary-600 text-white px-6 py-3 rounded-full text-lg font-semibold shadow-lg">
             <Rocket className="h-5 w-5" />
-            <span>Most clients are live within 2-3 business days</span>
+            <span>First qualified meeting typically within 48 hours</span>
           </div>
         </div>
       </div>

@@ -13,18 +13,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Receptionist for Landscaping Companies | Never Miss A Lead",
-  description: "24/7 AI phone answering service for landscaping businesses. Book more estimates, capture more leads, and grow revenue. Setup in 48 hours. Try it free.",
-  keywords: "landscaping ai, lawn care receptionist, landscape business phone service, ai answering service",
+  title: "GreenLine AI | B2B Lead Generation for Home Services",
+  description: "Pre-qualified leads, AI-powered outreach, and white-label solutions for marketing agencies and SaaS companies selling to home services businesses.",
+  keywords: "b2b lead generation, home services leads, landscaping leads, ai sales, white label lead gen, marketing agency tools",
   openGraph: {
-    title: "AI Receptionist for Landscaping Companies",
-    description: "24/7 AI phone answering that books estimates and captures leads automatically",
+    title: "GreenLine AI | B2B Lead Generation Platform",
+    description: "Pre-qualified home services leads and AI-powered outreach for marketing agencies",
     images: ["/og-image.jpg"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Receptionist for Landscaping Companies",
-    description: "24/7 AI phone answering that books estimates and captures leads automatically",
+    title: "GreenLine AI | B2B Lead Generation Platform",
+    description: "Pre-qualified home services leads and AI-powered outreach for marketing agencies",
     images: ["/og-image.jpg"],
   },
 };

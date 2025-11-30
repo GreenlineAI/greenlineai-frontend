@@ -5,8 +5,8 @@ import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import Vapi from "@vapi-ai/web";
 import Button from "./ui/Button";
 
-const VAPI_PUBLIC_KEY = "5a74530e-4e86-4454-b6dc-c2faa23558fa";
-const VAPI_ASSISTANT_ID = "fdd6899b-1426-4f3c-83bd-5288fa581c72";
+const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || "";
+const VAPI_ASSISTANT_ID = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || "";
 
 export default function VapiDemo() {
   const [isSessionActive, setIsSessionActive] = useState(false);

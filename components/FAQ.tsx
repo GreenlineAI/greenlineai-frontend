@@ -9,44 +9,44 @@ export default function FAQ() {
 
   const faqs = [
     {
-      question: "Does it really sound human?",
+      question: "What industries do you have lead data for?",
       answer:
-        "Yes. 78% of callers can't tell it's AI. The voice is natural, responds in real-time, and handles conversations just like a receptionist would. Try calling our demo line to hear it yourself!",
+        "We specialize in home services: landscaping, lawn care, HVAC, plumbing, roofing, electrical, cleaning, pest control, and more. Our database includes 2M+ verified businesses across the US, updated weekly.",
     },
     {
-      question: "What if customers don't like talking to AI?",
+      question: "How fresh is the lead data?",
       answer:
-        "In our experience with 200+ landscaping companies, less than 5% of callers even ask. Those who do usually say 'that's cool' and continue. We've never had a customer hang up because of it. The AI is designed to be helpful and natural, focusing on solving their needs.",
+        "Every contact is verified within 7 days of delivery. We run phone verification, email validation, and cross-reference against multiple data sources. Stale data is automatically removed. Average contact rate is 85%+.",
     },
     {
-      question: "How does it know my pricing and services?",
+      question: "Can I target by specific criteria?",
       answer:
-        "During setup, we customize the AI with your exact services, pricing ranges, service area, and availability. It only shares information you provide. You have complete control over what the AI knows and can say.",
+        "Yes. Filter by geography (state, city, zip, radius), industry type, Google rating (great for targeting businesses needing help), business size, years in operation, and more. We'll help you build the perfect list for your offer.",
     },
     {
-      question: "Can it handle emergency calls?",
+      question: "How does the AI outreach work?",
       answer:
-        "Yes. The AI can identify urgent situations (flooding, broken irrigation, etc.) and either text you immediately or transfer the call to your emergency line. You define what counts as an emergency and how to handle it.",
+        "Our AI makes human-sounding phone calls to your prospects. It introduces your service, handles objections, answers questions, and books qualified meetings directly on your calendar. You only talk to interested prospects.",
     },
     {
-      question: "What happens if it doesn't know the answer?",
+      question: "Is this TCPA compliant?",
       answer:
-        "It will politely tell the caller 'That's a great question. Let me have [Owner Name] call you back within 2 hours to discuss that specifically' and captures their contact info. The AI is trained to be honest about its limitations.",
+        "Yes. All outreach is fully TCPA and GDPR compliant. We handle consent tracking, automatic opt-outs, and maintain do-not-call lists. Our legal team reviews all campaigns before launch.",
     },
     {
-      question: "Can I use my existing phone number?",
+      question: "What's included in the white-label option?",
       answer:
-        "Yes. We can either forward calls to the AI, or the AI can answer on a new number while you keep your existing one for direct calls. Most clients prefer call forwarding so they can use their existing business number.",
+        "Full custom branding: your domain, logo, colors, and company name throughout. Client management dashboard, separate sub-accounts, and the ability to resell at your own pricing. Your clients never see our brand.",
     },
     {
-      question: "How long does setup take?",
+      question: "How do I integrate with my CRM?",
       answer:
-        "Most landscaping companies are live within 2-3 business days. You fill out a 10-minute intake form, we build your AI, you test it, and go live. We handle all the technical setup for you.",
+        "Native integrations with HubSpot, Salesforce, GoHighLevel, Pipedrive, and more. Or use our REST API to build custom workflows. All leads and call transcripts sync automatically.",
     },
     {
-      question: "What if I'm not satisfied?",
+      question: "What's your refund policy?",
       answer:
-        "We offer a 30-day money-back guarantee. If you're not happy for any reason in the first month, we'll refund you 100%. No questions asked. We're confident you'll love it, but we want you to feel comfortable trying it risk-free.",
+        "30-day money-back guarantee on all plans. If the leads don't convert or the outreach doesn't perform, we'll refund your investment. We're confident in our data quality and AI performance.",
     },
   ];
 
@@ -58,7 +58,7 @@ export default function FAQ() {
             Frequently Asked Questions
           </h2>
           <p className="text-xl text-slate-600">
-            Everything you need to know about our AI receptionist
+            Everything agencies need to know about our lead generation platform
           </p>
         </div>
 
@@ -100,23 +100,19 @@ export default function FAQ() {
         {/* Bottom CTA */}
         <div className="mt-16 text-center bg-gradient-to-r from-primary-50 to-accent-50 rounded-2xl p-8 md:p-12">
           <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
-            Still have questions?
+            Ready to see it in action?
           </h3>
           <p className="text-lg text-slate-600 mb-6">
-            Book a free demo call and we'll answer all your questions personally
+            Book a strategy call and get a free sample of leads for your target market
           </p>
           <button
             onClick={() => {
               const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
-              if (calendlyUrl.startsWith("http")) {
-                window.open(calendlyUrl, "_blank");
-              } else {
-                document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
-              }
+              window.open(calendlyUrl, "_blank");
             }}
             className="inline-flex items-center justify-center px-8 py-4 bg-accent-500 text-white rounded-lg font-semibold hover:bg-accent-600 transition-colors shadow-sm hover:shadow-md"
           >
-            Book Free Demo Call
+            Book Strategy Call
           </button>
         </div>
       </div>

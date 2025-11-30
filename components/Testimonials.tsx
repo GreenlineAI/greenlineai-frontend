@@ -6,27 +6,27 @@ import Card from "./ui/Card";
 export default function Testimonials() {
   const testimonials = [
     {
-      name: "Mike Rodriguez",
-      company: "Rodriguez Landscaping",
+      name: "Marcus Chen",
+      company: "GrowthStack Marketing",
       location: "Austin, TX",
       rating: 5,
-      text: "We were losing 15-20 calls a week to voicemail. Now every single call gets answered. We've booked an extra $30k in jobs in just 2 months.",
-      image: null, // Placeholder for future avatar
-    },
-    {
-      name: "Sarah Chen",
-      company: "GreenScape Solutions",
-      location: "Denver, CO",
-      rating: 5,
-      text: "I was skeptical about AI, but this thing is incredible. Customers can't tell it's not human. Best investment I've made in my business.",
+      text: "We went from manually finding leads to having 500+ qualified prospects delivered monthly. The AI outreach books 15-20 meetings per week for our clients. Game changer.",
       image: null,
     },
     {
-      name: "James Miller",
-      company: "Miller Lawn Care",
-      location: "Charlotte, NC",
+      name: "Jessica Torres",
+      company: "HomeServ SaaS",
+      location: "Denver, CO",
       rating: 5,
-      text: "Setup took 2 days and now I sleep better knowing no lead slips through the cracks. Worth every penny.",
+      text: "The white-label option let us launch our own lead gen platform in 3 weeks. We're now reselling to 12 agencies at 3x what we pay. Best infrastructure decision we made.",
+      image: null,
+    },
+    {
+      name: "David Park",
+      company: "Apex Digital Agency",
+      location: "San Francisco, CA",
+      rating: 5,
+      text: "Lead quality is incredible - 85% contact rate vs 30% from our previous provider. The AI voice outreach closes deals while we sleep. ROI is through the roof.",
       image: null,
     },
   ];
@@ -36,10 +36,10 @@ export default function Testimonials() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Trusted by Landscaping Companies Nationwide
+            Trusted by Agencies & SaaS Companies
           </h2>
           <p className="text-xl text-slate-600">
-            See what our customers are saying about their results
+            See how marketing agencies are scaling with our lead generation platform
           </p>
         </div>
 
@@ -137,7 +137,7 @@ export default function Testimonials() {
                 </div>
               ))}
             </div>
-            <span>Join 200+ landscaping companies using AI to grow their business</span>
+            <span>Join 50+ agencies scaling their lead generation</span>
           </div>
         </div>
       </div>

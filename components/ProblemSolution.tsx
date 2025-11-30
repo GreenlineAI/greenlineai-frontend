@@ -2,19 +2,19 @@ import { X, Check } from "lucide-react";
 
 export default function ProblemSolution() {
   const problems = [
-    "Calls going to voicemail after 6pm",
-    "Missing leads while on job sites",
-    "Potential customers calling competitors who answer first",
-    "Seasonal rush overwhelming phone lines",
-    "Lost revenue from missed estimate requests",
+    "Buying stale lead lists with 30% contact rates",
+    "Manually researching and qualifying prospects",
+    "Cold outreach that gets ignored or marked spam",
+    "Hiring SDRs that churn in 6 months",
+    "Scaling client acquisition without scaling costs",
   ];
 
   const solutions = [
-    "AI answers every call, 24/7/365",
-    "Captures leads even when you're busy",
-    "Instant response = more booked appointments",
-    "Scales during peak season automatically",
-    "Never miss another revenue opportunity",
+    "Fresh, verified data with 85%+ contact rates",
+    "AI pre-qualifies prospects before you call",
+    "Human-sounding outreach that books meetings",
+    "AI that works 24/7 without turnover",
+    "Pay per lead or per meeting, not per seat",
   ];
 
   return (
@@ -22,7 +22,7 @@ export default function ProblemSolution() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Are You Losing Customers to Voicemail?
+            Tired of Lead Gen That Doesn't Deliver?
           </h2>
         </div>
 
@@ -51,9 +51,9 @@ export default function ProblemSolution() {
                 The Reality:
               </p>
               <p className="text-slate-600">
-                Studies show that 80% of callers won't leave a voicemail, and
-                67% will call a competitor if you don't answer. Every missed
-                call is potential revenue walking out the door.
+                Most agencies spend 60%+ of their time on prospecting instead
+                of closing. Bad data and manual outreach kill margins and
+                prevent scale.
               </p>
             </div>
           </div>
@@ -82,10 +82,9 @@ export default function ProblemSolution() {
                 The Result:
               </p>
               <p className="text-slate-600">
-                Our AI receptionist answers every single call with a natural,
-                human-sounding voice. It books appointments, answers questions,
-                and captures contact information—even at 2 AM. Your customers
-                get instant service, and you get more revenue.
+                Verified leads delivered on demand. AI outreach that sounds
+                human and books qualified meetings. Your team focuses on
+                closing deals, not chasing prospects.
               </p>
             </div>
           </div>
@@ -94,11 +93,11 @@ export default function ProblemSolution() {
         {/* Bottom CTA */}
         <div className="text-center mt-16">
           <p className="text-xl text-slate-600 mb-4">
-            Ready to stop losing leads to voicemail?
+            Ready to scale your client acquisition?
           </p>
           <p className="text-3xl font-bold text-slate-900">
-            Let's turn missed calls into{" "}
-            <span className="text-primary-600">booked jobs</span>
+            Let's turn cold lists into{" "}
+            <span className="text-primary-600">qualified meetings</span>
           </p>
         </div>
       </div>

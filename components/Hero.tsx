@@ -1,45 +1,39 @@
 "use client";
 
-import { Phone, PlayCircle, TrendingUp, Clock, DollarSign, Zap } from "lucide-react";
+import { Calendar, Database, TrendingUp, Users, Zap, Target } from "lucide-react";
 import Button from "./ui/Button";
 import Card from "./ui/Card";
 
 export default function Hero() {
-  const demoPhone = process.env.NEXT_PUBLIC_DEMO_PHONE || "(555) 123-4567";
-
-  const handleCallDemo = () => {
-    window.location.href = `tel:${demoPhone}`;
+  const handleBookDemo = () => {
+    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
+    window.open(calendlyUrl, "_blank");
   };
 
-  const handleSeeDemo = () => {
-    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
-    if (calendlyUrl.startsWith("http")) {
-      window.open(calendlyUrl, "_blank");
-    } else {
-      document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
-    }
+  const handleTryDemo = () => {
+    document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const stats = [
     {
+      icon: Database,
+      value: "2M+",
+      label: "Home services businesses in database",
+    },
+    {
+      icon: Target,
+      value: "85%",
+      label: "Average contact rate on our leads",
+    },
+    {
       icon: TrendingUp,
-      value: "23%",
-      label: "Average increase in booked estimates",
-    },
-    {
-      icon: Clock,
-      value: "24/7",
-      label: "Coverage even after hours",
-    },
-    {
-      icon: DollarSign,
-      value: "$18,000",
-      label: "Avg. monthly revenue captured",
+      value: "3x",
+      label: "Higher conversion vs cold lists",
     },
     {
       icon: Zap,
-      value: "< 3 days",
-      label: "Setup time",
+      value: "24hr",
+      label: "Lead delivery turnaround",
     },
   ];
 
@@ -52,14 +46,18 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Content */}
           <div>
+            <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+              <Users className="h-4 w-4" />
+              For Marketing Agencies & SaaS Companies
+            </div>
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 leading-tight">
-              Never Miss Another{" "}
-              <span className="text-primary-600">Landscaping Lead</span>
+              Sell More to{" "}
+              <span className="text-primary-600">Home Services</span> Businesses
             </h1>
             <p className="text-xl md:text-2xl text-slate-600 mb-8 leading-relaxed">
-              AI Receptionist that answers calls 24/7, books estimates, and
-              sounds completely human. Starting at{" "}
-              <span className="font-semibold text-slate-900">$297/month</span>.
+              Pre-qualified leads, done-for-you outreach, or white-label our
+              AI sales platform. Help your clients close more deals with
+              verified landscaping and home services prospects.
             </p>
 
             {/* CTAs */}
@@ -67,20 +65,20 @@ export default function Hero() {
               <Button
                 size="lg"
                 variant="accent"
-                onClick={handleSeeDemo}
+                onClick={handleBookDemo}
                 className="gap-2"
               >
-                <PlayCircle className="h-5 w-5" />
-                See Demo
+                <Calendar className="h-5 w-5" />
+                Book a Strategy Call
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                onClick={handleCallDemo}
+                onClick={handleTryDemo}
                 className="gap-2"
               >
-                <Phone className="h-5 w-5" />
-                Call the AI Now: {demoPhone}
+                <Zap className="h-5 w-5" />
+                Try AI Demo Live
               </Button>
             </div>
 
@@ -88,65 +86,71 @@ export default function Hero() {
             <div className="flex flex-wrap items-center gap-6 text-sm text-slate-600">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-primary-500 rounded-full" />
-                <span>Setup in 48 hours</span>
+                <span>Pay per lead or monthly</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-primary-500 rounded-full" />
-                <span>No long-term contract</span>
+                <span>White-label available</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-primary-500 rounded-full" />
-                <span>30-day guarantee</span>
+                <span>TCPA compliant</span>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Hero Image/Mockup */}
+          {/* Right Column - Dashboard Preview */}
           <div className="relative">
-            <div className="relative bg-white rounded-2xl shadow-2xl p-8 border border-slate-200">
+            <div className="relative bg-white rounded-2xl shadow-2xl p-6 border border-slate-200">
               <div className="absolute -top-4 -right-4 bg-primary-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                AI-Powered
+                Lead Dashboard
               </div>
 
-              {/* Phone mockup */}
-              <div className="bg-slate-50 rounded-xl p-6 border-2 border-slate-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center">
-                    <Phone className="h-6 w-6 text-white" />
+              {/* Dashboard mockup */}
+              <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="font-semibold text-slate-900">Today's Leads</div>
+                  <div className="text-sm text-primary-600 font-medium">+24 new</div>
+                </div>
+
+                {/* Lead list preview */}
+                <div className="space-y-2">
+                  <div className="bg-white rounded-lg p-3 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-slate-900 text-sm">Green Valley Landscaping</div>
+                      <div className="text-xs text-slate-500">Austin, TX • 3.2 rating • No website</div>
+                    </div>
+                    <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Hot</div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-slate-900">Incoming Call</div>
-                    <div className="text-sm text-slate-600">New Customer</div>
+                  <div className="bg-white rounded-lg p-3 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-slate-900 text-sm">Premier Lawn Care</div>
+                      <div className="text-xs text-slate-500">Dallas, TX • 2.8 rating • Outdated site</div>
+                    </div>
+                    <div className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">Warm</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-slate-900 text-sm">Sunrise Garden Services</div>
+                      <div className="text-xs text-slate-500">Houston, TX • 3.5 rating • No CRM</div>
+                    </div>
+                    <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Hot</div>
                   </div>
                 </div>
 
-                {/* Chat interface */}
-                <div className="space-y-3">
-                  <div className="bg-white rounded-lg p-3 shadow-sm">
-                    <div className="text-xs text-slate-500 mb-1">Customer</div>
-                    <div className="text-sm text-slate-900">
-                      Hi, I need a quote for landscaping my backyard.
-                    </div>
+                {/* Quick stats */}
+                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-200">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-slate-900">847</div>
+                    <div className="text-xs text-slate-500">Total Leads</div>
                   </div>
-                  <div className="bg-primary-100 rounded-lg p-3 ml-6">
-                    <div className="text-xs text-primary-700 mb-1">AI Assistant</div>
-                    <div className="text-sm text-slate-900">
-                      I'd be happy to help! Can you tell me the approximate size
-                      of your backyard and what type of work you're looking for?
-                    </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-primary-600">312</div>
+                    <div className="text-xs text-slate-500">Contacted</div>
                   </div>
-                  <div className="bg-white rounded-lg p-3 shadow-sm">
-                    <div className="text-xs text-slate-500 mb-1">Customer</div>
-                    <div className="text-sm text-slate-900">
-                      About 2,000 sq ft. Need new sod and some plants.
-                    </div>
-                  </div>
-                  <div className="bg-primary-100 rounded-lg p-3 ml-6">
-                    <div className="text-xs text-primary-700 mb-1">AI Assistant</div>
-                    <div className="text-sm text-slate-900">
-                      Perfect! I can schedule a free estimate. What day works best
-                      for you this week?
-                    </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-accent-600">47</div>
+                    <div className="text-xs text-slate-500">Meetings</div>
                   </div>
                 </div>
               </div>
@@ -154,7 +158,7 @@ export default function Hero() {
 
             {/* Floating badge */}
             <div className="absolute -bottom-6 -left-6 bg-accent-500 text-white px-6 py-3 rounded-xl shadow-lg font-semibold">
-              100% Human-Sounding
+              AI-Powered Outreach
             </div>
           </div>
         </div>
