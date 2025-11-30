@@ -14,14 +14,24 @@ export default function VapiDemo() {
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [isConnecting, setIsConnecting] = useState(false);
   const [statusText, setStatusText] = useState("Click to talk to our AI");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const vapiRef = useRef<Vapi | null>(null);
 
+  // Check for missing configuration
+  const isMissingConfig = !VAPI_PUBLIC_KEY || !VAPI_ASSISTANT_ID;
+
   useEffect(() => {
+    if (isMissingConfig) {
+      setErrorMessage("Voice AI is not configured. Please contact support.");
+      return;
+    }
+
     const vapiInstance = new Vapi(VAPI_PUBLIC_KEY);
 
     vapiInstance.on("call-start", () => {
       setIsConnecting(false);
       setIsSessionActive(true);
+      setErrorMessage(null);
       setStatusText("Connected - Start speaking!");
     });
 
@@ -43,11 +53,28 @@ export default function VapiDemo() {
       setVolumeLevel(volume);
     });
 
-    vapiInstance.on("error", (error: Error) => {
+    vapiInstance.on("error", (error: unknown) => {
       console.error("Vapi error:", error);
       setIsConnecting(false);
       setIsSessionActive(false);
-      setStatusText("Error occurred - Please try again");
+
+      // Extract meaningful error message
+      let message = "Connection failed - Please try again";
+      if (error && typeof error === "object") {
+        const err = error as { message?: string; error?: { message?: string }; statusCode?: number };
+        if (err.message) {
+          message = err.message;
+        } else if (err.error?.message) {
+          message = err.error.message;
+        }
+        if (err.statusCode === 401) {
+          message = "Authentication failed - Invalid API key";
+        } else if (err.statusCode === 404) {
+          message = "Assistant not found - Check configuration";
+        }
+      }
+      setErrorMessage(message);
+      setStatusText("Error occurred");
     });
 
     vapiRef.current = vapiInstance;
@@ -55,7 +82,7 @@ export default function VapiDemo() {
     return () => {
       vapiInstance.stop();
     };
-  }, []);
+  }, [isMissingConfig]);
 
   const startCall = useCallback(() => {
     if (vapiRef.current && !isSessionActive && !isConnecting) {
@@ -95,15 +122,17 @@ export default function VapiDemo() {
 
         <button
           onClick={isSessionActive ? endCall : startCall}
-          disabled={isConnecting}
+          disabled={isConnecting || isMissingConfig}
           className={`
             relative w-32 h-32 rounded-full flex items-center justify-center
             transition-all duration-300 shadow-2xl
-            ${isConnecting
-              ? "bg-yellow-500 cursor-wait"
-              : isSessionActive
-                ? "bg-red-500 hover:bg-red-600"
-                : "bg-accent-500 hover:bg-accent-600 hover:scale-105"
+            ${isMissingConfig
+              ? "bg-slate-500 cursor-not-allowed"
+              : isConnecting
+                ? "bg-yellow-500 cursor-wait"
+                : isSessionActive
+                  ? "bg-red-500 hover:bg-red-600"
+                  : "bg-accent-500 hover:bg-accent-600 hover:scale-105"
             }
           `}
         >
@@ -121,6 +150,13 @@ export default function VapiDemo() {
       <p className="text-lg font-medium text-white mb-4">
         {statusText}
       </p>
+
+      {/* Error message */}
+      {errorMessage && (
+        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg max-w-xs">
+          <p className="text-red-300 text-sm text-center">{errorMessage}</p>
+        </div>
+      )}
 
       {/* Volume indicator */}
       {isSessionActive && (

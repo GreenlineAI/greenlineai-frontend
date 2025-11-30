@@ -1,0 +1,11 @@
+name = "greenlineai-frontend"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+NEXT_PUBLIC_VAPI_PUBLIC_KEY = "5a74530e-4e86-4454-b6dc-c2faa23558fa"
+NEXT_PUBLIC_VAPI_ASSISTANT_ID = "fdd6899b-1426-4f3c-83bd-5288fa581c72"
+NEXT_PUBLIC_DEMO_PHONE = "+14083654503"
+NEXT_PUBLIC_CALENDLY_URL = "https://calendly.com/greenlineai"
+NEXT_PUBLIC_SUPABASE_URL = "https://nggelyppkswqxycblvcb.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZ2VseXBwa3N3cXh5Y2JsdmNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODc3NTEsImV4cCI6MjA4MDA2Mzc1MX0.g3L2cnvCf67IePlaSdAlTBLx2c07xGj2rBsQ2KSHIRw"
