@@ -1,6 +1,7 @@
 "use client";
 
-import { Sprout, Mail, Phone, MapPin, Linkedin, Twitter, Facebook } from "lucide-react";
+import { Sprout, Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Headphones } from "lucide-react";
+import Link from "next/link";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -85,12 +86,13 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a
-                  href="#case-studies"
-                  className="text-slate-400 hover:text-primary-400 transition-colors"
+                <Link
+                  href="/demo/voice"
+                  className="flex items-center gap-2 text-slate-400 hover:text-primary-400 transition-colors"
                 >
-                  Case Studies
-                </a>
+                  <Headphones className="h-4 w-4" />
+                  AI Assistant
+                </Link>
               </li>
               <li>
                 <a

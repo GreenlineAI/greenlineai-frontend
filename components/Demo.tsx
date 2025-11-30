@@ -1,9 +1,9 @@
 "use client";
 
-import { Calendar, MessageCircle, Headphones, ArrowRight } from "lucide-react";
+import { Calendar, CheckCircle, ArrowRight, Headphones, Database, Shield, Zap } from "lucide-react";
+import Link from "next/link";
 import Button from "./ui/Button";
 import Card from "./ui/Card";
-import VapiDemo from "./VapiDemo";
 
 export default function Demo() {
   const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
@@ -12,12 +12,33 @@ export default function Demo() {
     window.open(calendlyUrl, "_blank");
   };
 
-  const suggestedQuestions = [
-    "Hi, I'm interested in marketing services for my landscaping company",
-    "What kind of leads do you have for home services?",
-    "How does your AI outreach work?",
-    "Can you tell me about pricing for your services?",
-    "What makes your leads better than other providers?",
+  const leadFeatures = [
+    {
+      icon: Database,
+      title: "Fresh Data",
+      description: "Every lead verified within the last 7 days",
+    },
+    {
+      icon: Shield,
+      title: "100% Verified",
+      description: "Phone, email, and business info confirmed",
+    },
+    {
+      icon: Zap,
+      title: "Instant Delivery",
+      description: "Get leads in your inbox within 24 hours",
+    },
+  ];
+
+  const sampleLeadFields = [
+    "Business Name",
+    "Owner Name",
+    "Phone Number",
+    "Email Address",
+    "Business Address",
+    "Years in Business",
+    "Service Area",
+    "Current Marketing Spend",
   ];
 
   return (
@@ -25,58 +46,94 @@ export default function Demo() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-accent-500/20 text-accent-300 px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Headphones className="h-4 w-4" />
-            Live AI Demo
+            <Database className="h-4 w-4" />
+            Premium Lead Data
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Experience Our AI Sales Agent
+            See What You Get
           </h2>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-            This is the same AI your prospects will talk to. Try it yourself -
-            no signup required, just click and start talking.
+            Every lead comes with verified contact information and business details.
+            No more bounced emails or disconnected numbers.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left: Live AI Demo */}
+          {/* Left: Sample Lead Preview */}
           <div>
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8 md:p-12">
-              <VapiDemo />
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold">Sample Lead Data</h3>
+                <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm font-medium">
+                  Verified
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {sampleLeadFields.map((field, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-2 border-b border-white/10 last:border-0"
+                  >
+                    <span className="text-slate-300">{field}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 h-4 bg-white/20 rounded animate-pulse" />
+                      <CheckCircle className="h-4 w-4 text-green-400" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-white/20">
+                <p className="text-sm text-slate-400 text-center">
+                  Book a call to see real lead samples for your target market
+                </p>
+              </div>
             </Card>
           </div>
 
-          {/* Right: Suggested questions */}
+          {/* Right: Lead Features + CTA */}
           <div>
-            <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-              <MessageCircle className="h-6 w-6 text-accent-500" />
-              Sample Conversation Starters
-            </h3>
-
-            <div className="space-y-3">
-              {suggestedQuestions.map((question, index) => (
-                <Card
-                  key={index}
-                  className="bg-white/10 backdrop-blur-sm border-white/20 p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-7 h-7 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <p className="text-white font-medium pt-0.5">{question}</p>
+            <div className="space-y-6 mb-8">
+              {leadFeatures.map((feature, index) => (
+                <div key={index} className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-accent-500/20 rounded-xl flex items-center justify-center">
+                    <feature.icon className="h-6 w-6 text-accent-400" />
                   </div>
-                </Card>
+                  <div>
+                    <h4 className="text-lg font-bold mb-1">{feature.title}</h4>
+                    <p className="text-slate-300">{feature.description}</p>
+                  </div>
+                </div>
               ))}
             </div>
 
-            <div className="mt-8 p-6 bg-accent-500/20 border border-accent-500/30 rounded-xl">
+            <div className="p-6 bg-accent-500/20 border border-accent-500/30 rounded-xl mb-6">
               <p className="text-accent-200 text-sm font-semibold mb-2">
-                THIS IS WHAT YOUR PROSPECTS HEAR
+                WHY OUR LEADS CONVERT BETTER
               </p>
               <p className="text-white">
-                Our AI handles objections, answers questions, and books meetings
-                automatically. Your team only talks to qualified, interested leads.
+                We verify every contact within 7 days of delivery. If a lead bounces,
+                we replace it free. That&apos;s our data quality guarantee.
               </p>
             </div>
+
+            {/* Voice Demo Link */}
+            <Link
+              href="/demo/voice"
+              className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center">
+                  <Headphones className="h-5 w-5 text-primary-400" />
+                </div>
+                <div>
+                  <p className="font-medium">Have questions?</p>
+                  <p className="text-sm text-slate-400">Talk to our AI assistant</p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-slate-400 group-hover:text-white transition-colors" />
+            </Link>
           </div>
         </div>
 
@@ -89,9 +146,8 @@ export default function Demo() {
                   Ready to Scale Your Client Acquisition?
                 </h3>
                 <p className="text-slate-300 mb-6">
-                  Book a 20-minute strategy call. We'll show you exactly how many
-                  leads are available in your target market and build a custom
-                  outreach plan for your agency.
+                  Book a 15-minute strategy call. We&apos;ll show you exactly how many
+                  leads are available in your target market and send you a free sample.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button
@@ -145,9 +201,9 @@ export default function Demo() {
             </div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-accent-400 mb-2">{'<'}2s</div>
+            <div className="text-4xl font-bold text-accent-400 mb-2">7 days</div>
             <div className="text-slate-300">
-              AI response time
+              Maximum data age
             </div>
           </div>
           <div className="text-center">
