@@ -77,7 +77,7 @@ export default function FinalCTA() {
             size="lg"
             variant="outline"
             onClick={handleTryDemo}
-            className="gap-3 border-2 border-white text-blck hover:bg-gold hover:text-gold-700"
+            className="gap-3 border-2 border-white text-white hover:bg-white hover:text-primary-700"
           >
             <Zap className="h-5 w-5" />
             Try AI Demo Now
