@@ -1,6 +1,6 @@
 name = "greenlineai-frontend"
 compatibility_date = "2024-01-01"
-pages_build_output_dir = "out"
+pages_build_output_dir = ".vercel/output/static"
 
 [vars]
 NEXT_PUBLIC_VAPI_PUBLIC_KEY = "87b02be3-e6ba-4779-a3dd-2313ce61bd08"
