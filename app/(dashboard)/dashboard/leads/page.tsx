@@ -148,7 +148,8 @@ export default function LeadsPage() {
       let fileContent: string;
       try {
         fileContent = await file.text();
-      } catch {
+      } catch (error) {
+        console.error('Failed to read file:', error);
         alert('Failed to read the file. Please try again.');
         return;
       }
