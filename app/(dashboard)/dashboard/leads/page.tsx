@@ -160,11 +160,12 @@ export default function LeadsPage() {
         return;
       }
 
-      // Check for comma-separated content (at least one comma in the first line)
+      // Check for comma-separated content (at least one comma in the header line)
+      // This is a basic validation - the backend will handle more complex cases
       const firstLine = lines[0];
-      if (!firstLine.includes(',')) {
-        alert('Invalid CSV format: The file does not appear to contain comma-separated values. Expected format: column1,column2,column3');
-        return;
+      if (!firstLine.includes(',') && !firstLine.includes(';') && !firstLine.includes('\t')) {
+        alert('The file may not be in a valid CSV format. Expected comma-separated values (e.g., column1,column2,column3). Continuing with import attempt...');
+        // Don't return - let the backend validate and provide detailed error
       }
 
       setImporting(true);
