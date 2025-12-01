@@ -26,6 +26,10 @@ const defaultFilters: LeadFiltersType = {
   maxRating: null,
 };
 
+// CSV import constants
+const MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const VALID_IMPORT_EXTENSIONS = ['.csv', '.txt'];
+
 export default function LeadsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
@@ -123,9 +127,6 @@ export default function LeadsPage() {
   };
 
   const handleImport = () => {
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-    const VALID_EXTENSIONS = ['.csv', '.txt'];
-
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv,text/csv,text/comma-separated-values,application/csv,.txt';
@@ -140,16 +141,19 @@ export default function LeadsPage() {
       }
 
       // Lightweight validation: Check file size limit
-      if (file.size > MAX_FILE_SIZE) {
+      if (file.size > MAX_IMPORT_FILE_SIZE) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
         alert(`File is too large (${sizeMB}MB). Maximum size is 10MB.`);
         return;
       }
 
       // Optional: Check file extension (warning only, don't block)
-      const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-      if (!VALID_EXTENSIONS.includes(fileExtension)) {
-        console.warn('Unexpected file extension, but continuing with import...');
+      const lastDotIndex = file.name.lastIndexOf('.');
+      if (lastDotIndex > -1) {
+        const fileExtension = file.name.substring(lastDotIndex).toLowerCase();
+        if (!VALID_IMPORT_EXTENSIONS.includes(fileExtension)) {
+          console.warn('Unexpected file extension, but continuing with import...');
+        }
       }
 
       // Proceed to upload - let backend handle content validation
