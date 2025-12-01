@@ -162,7 +162,7 @@ export default function Demo() {
                     size="lg"
                     variant="outline"
                     onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
-                    className="gap-2 border-white/30 text-white hover:bg-white/10"
+                    className="gap-2 border-black bg-white text-black hover:bg-gray-100"
                   >
                     View Pricing
                     <ArrowRight className="h-5 w-5" />
