@@ -26,6 +26,10 @@ const defaultFilters: LeadFiltersType = {
   maxRating: null,
 };
 
+// CSV import constants
+const MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const VALID_IMPORT_EXTENSIONS = ['.csv', '.txt'];
+
 export default function LeadsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
@@ -123,8 +127,6 @@ export default function LeadsPage() {
   };
 
   const handleImport = () => {
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv,text/csv,text/comma-separated-values,application/csv,.txt';
@@ -132,43 +134,29 @@ export default function LeadsPage() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
-      // Validate file size
-      if (file.size > MAX_FILE_SIZE) {
-        alert(`File too large. Maximum file size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
-        return;
-      }
-
-      // Validate file has content
+      // Lightweight validation: Check for empty file
       if (file.size === 0) {
-        alert('The selected file is empty. Please select a file with data.');
+        alert('File is empty. Please select a valid CSV file.');
         return;
       }
 
-      // Read file content for validation
-      let fileContent: string;
-      try {
-        fileContent = await file.text();
-      } catch (error) {
-        console.error('Failed to read file:', error);
-        alert('Failed to read the file. Please try again.');
+      // Lightweight validation: Check file size limit
+      if (file.size > MAX_IMPORT_FILE_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        alert(`File is too large (${sizeMB}MB). Maximum size is 10MB.`);
         return;
       }
 
-      // Validate CSV-like content
-      const lines = fileContent.split('\n').filter(line => line.trim());
-      if (lines.length === 0) {
-        alert('The file appears to be empty or contains only whitespace.');
-        return;
+      // Optional: Check file extension (warning only, don't block)
+      const lastDotIndex = file.name.lastIndexOf('.');
+      if (lastDotIndex > -1) {
+        const fileExtension = file.name.substring(lastDotIndex).toLowerCase();
+        if (!VALID_IMPORT_EXTENSIONS.includes(fileExtension)) {
+          console.warn('Unexpected file extension, but continuing with import...');
+        }
       }
 
-      // Check for comma-separated content (at least one comma in the header line)
-      // This is a basic validation - the backend will handle more complex cases
-      const firstLine = lines[0];
-      if (!firstLine.includes(',') && !firstLine.includes(';') && !firstLine.includes('\t')) {
-        alert('The file may not be in a valid CSV format. Expected comma-separated values (e.g., column1,column2,column3). Continuing with import attempt...');
-        // Don't return - let the backend validate and provide detailed error
-      }
-
+      // Proceed to upload - let backend handle content validation
       setImporting(true);
       const formData = new FormData();
       formData.append('file', file);
