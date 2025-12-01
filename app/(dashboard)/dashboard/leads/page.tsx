@@ -123,12 +123,49 @@ export default function LeadsPage() {
   };
 
   const handleImport = () => {
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.csv';
+    input.accept = '.csv,text/csv,text/comma-separated-values,application/csv,.txt';
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
+
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File too large. Maximum file size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
+        return;
+      }
+
+      // Validate file has content
+      if (file.size === 0) {
+        alert('The selected file is empty. Please select a file with data.');
+        return;
+      }
+
+      // Read file content for validation
+      let fileContent: string;
+      try {
+        fileContent = await file.text();
+      } catch {
+        alert('Failed to read the file. Please try again.');
+        return;
+      }
+
+      // Validate CSV-like content
+      const lines = fileContent.split('\n').filter(line => line.trim());
+      if (lines.length === 0) {
+        alert('The file appears to be empty or contains only whitespace.');
+        return;
+      }
+
+      // Check for comma-separated content (at least one comma in the first line)
+      const firstLine = lines[0];
+      if (!firstLine.includes(',')) {
+        alert('Invalid CSV format: The file does not appear to contain comma-separated values. Expected format: column1,column2,column3');
+        return;
+      }
 
       setImporting(true);
       const formData = new FormData();
@@ -141,7 +178,9 @@ export default function LeadsPage() {
         });
 
         if (!response.ok) {
-          throw new Error('Import failed');
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.error || errorData.details || 'Import failed';
+          throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -149,7 +188,8 @@ export default function LeadsPage() {
         window.location.reload();
       } catch (error) {
         console.error('Import error:', error);
-        alert('Failed to import leads. Please check the file format.');
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        alert(`Failed to import leads: ${errorMessage}`);
       } finally {
         setImporting(false);
       }
