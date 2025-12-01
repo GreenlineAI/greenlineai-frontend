@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test-dialer": "node scripts/test-dialer.js",
+    "test-dialer:dry": "node scripts/test-dialer.js 5 --dry"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

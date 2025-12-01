@@ -19,3 +19,15 @@ STAMMER_AGENT_ID = "893b87dd-0f63-4866-8cae-d60b696cae1a"
 RETELL_API_KEY = "key_7128cb9dae3666f93d5df369fa0a"
 RETELL_AGENT_ID_1 = "agent_xxxxxxxxxxxxxxxxxx"
 RETELL_AGENT_ID_2 = "agent_yyyyyyyyyyyyyyyyyy"
+
+# Auto-Dialer Configuration
+AUTO_DIALER_USER_ID = "0b627f19-6ea2-469b-a596-84cab72190c9"
+NEXT_PUBLIC_SITE_URL = "https://greenlineai-frontend.pages.dev"
+
+# Cron Triggers
+# Run auto-dialer every hour during business hours (9 AM - 6 PM)
+# Format: minute hour day month day-of-week
+[triggers]
+crons = [
+  "0 9-18 * * 1-5"  # Every hour, 9 AM to 6 PM, Monday to Friday
+]
