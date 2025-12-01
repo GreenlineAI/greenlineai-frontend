@@ -1,254 +1,405 @@
-# Retell AI Flow Chart Setup for GreenLine AI
+# Retell AI Conversation Flow Agent for GreenLine AI
 
-## Overview
-This document outlines the conversational flow for the Retell AI agent used for cold calling home services businesses to generate leads.
-
-## Agent Configuration
-
-### Basic Settings
-- **Agent Type**: Phone Call Agent
-- **Voice**: Professional, friendly voice (e.g., Emily or Michael)
-- **Speaking Rate**: Normal
-- **Language**: English (US)
-- **Max Call Duration**: 5 minutes
-- **Interruption Sensitivity**: Medium
-- **Enable Transcript**: Yes
-- **Enable Recording**: Yes
-
-### End Call Phrases
-- "goodbye"
-- "not interested"
-- "remove me"
-- "don't call again"
-- "stop calling"
+## Agent Overview
+- **Agent ID**: `ag...f47` (shown in your dashboard)
+- **CF ID**: `co...a6c`
+- **Cost**: $0.095/min
+- **Latency**: 820-1000ms
+- **Tokens**: 49-249 per interaction
 
 ---
 
-## Call Flow Chart
+## Call Flow Structure
 
-### 1. START NODE - Greeting
-**AI Says:**
-> "Hi, this is [AI name] calling from GreenLine AI, a marketing agency that helps home services businesses get more qualified leads. Am I speaking with [business owner name]?"
+### START NODE: Static Sentence (Welcome Node)
+**Node Type**: Static Sentence  
+**What AI Says**:
+```
+Great to hear from AI, a marketing agency. I hope you're doing well today! Is now a good time to chat, or should I call back at a better time?
+```
 
-**Variables to inject:**
-- `business_name` - from lead data
-- `owner_name` - from lead data (if available)
+**Purpose**: Initial greeting to gauge availability and set friendly tone
 
----
-
-### 2. DECISION NODE - Is This The Owner?
-
-#### Path A: YES (Owner on the phone)
-→ Continue to Main Pitch (Node 3)
-
-#### Path B: NO (Not the owner)
-**AI Says:**
-> "Is the owner available right now?"
-
-##### Sub-Path B1: Owner is available
-**AI Says:**
-> "Great, would it be possible to speak with them briefly?"
-→ Transfer or wait → Return to Node 1
-
-##### Sub-Path B2: Owner not available
-**AI Says:**
-> "No problem. When would be a good time to call back?"
-- Record callback time
-- **AI Says:** "Perfect, I'll give you a call back then. Have a great day!"
-→ END CALL (Mark as: Callback Scheduled)
+**User Responses**:
+- User ready to chat → Extract Variables → Continue to qualification
+- User requests callback → Use "User ready to hear this portion" to reschedule
+- User not ready/too busy → Politely end call and mark for callback
 
 ---
 
-### 3. MAIN PITCH NODE - Qualification Question
-**AI Says:**
-> "I'll keep this super brief. I'm just calling to ask - are you currently happy with the number of qualified leads you're getting for your [business type]?"
+### EXTRACT VARIABLES NODE
+**Node Type**: Extract Variable  
+**Variables to Extract**:
+1. Business Name
+2. Owner Name  
+3. Current Marketing Situation
+4. Pain Points
+5. Call Availability
 
-**Listen for:** Current lead satisfaction level
-
----
-
-### 4. DECISION NODE - Interest Level Assessment
-
-#### Path A: "Yes, happy" / "All good" / "Don't need help"
-**AI Says:**
-> "That's wonderful to hear! Business must be going well. Would you be open to a quick conversation in the future if you ever need help scaling up or getting more leads?"
-
-##### Sub-Path A1: Open to future contact
-- Record as warm lead
-- **AI Says:** "Great, I'll make a note. Thanks for your time!"
-→ END CALL (Mark as: Not Interested Now - Follow Up Later)
-
-##### Sub-Path A2: Not interested at all
-**AI Says:**
-> "I completely understand. Thanks for your time and have a great day!"
-→ END CALL (Mark as: Not Interested)
+**Transition**: After extraction → Main Qualification
 
 ---
 
-#### Path B: "No" / "Could be better" / "Need more leads"
-→ Continue to Value Proposition (Node 5)
+### MAIN CONVERSATION NODE: Transition
+**Node Type**: Transition  
+**Purpose**: Silent routing node that passes control to the next node based on context
+
+**Use Cases**:
+- Route to appropriate conversation path based on extracted variables
+- Simple pass-through between nodes without AI speaking
+- Organize flow visually without adding extra dialogue
+
+**Transition Logic**:
+- If user is business owner → Continue to pitch conversation
+- If not owner → Route to "Ask for owner" conversation
+- If owner unavailable → Route to callback scheduling
+
+**Note**: Transition nodes don't have the AI say anything - they just route the call flow.
 
 ---
 
-#### Path C: "Not interested" / "Too busy" / "Don't call again"
-**AI Says:**
-> "I completely understand, I appreciate your time. Have a great day!"
-→ END CALL (Mark as: Do Not Contact)
+### QUALIFICATION NODE: End Call
+**Node Type**: End Call  
+**What AI Says**:
+```
+Politely end the call
+```
+
+**When to Use**:
+- User explicitly says not interested
+- User asks to be removed from list
+- Owner not available and doesn't want callback
+- Wrong number
+
+**Call Disposition Options**:
+- Not Interested
+- Callback Requested  
+- Wrong Number
+- Do Not Contact
 
 ---
 
-### 5. VALUE PROPOSITION NODE
-**AI Says:**
-> "I hear you. We specialize in helping businesses like yours get more leads through AI-powered outreach and targeted marketing. We've helped similar home services businesses increase their lead flow by 2 to 3 times. Would you be open to a quick 15-minute strategy call to see if we might be a good fit to help you?"
+## Node Components Available
 
-**Listen for:** Willingness to book a call
+Based on your dashboard, you have these node types:
 
----
-
-### 6. DECISION NODE - Book Strategy Call?
-
-#### Path A: YES / "Sure" / "Okay"
-**AI Says:**
-> "Perfect! I'll send you our calendar link where you can pick a time that works best for you. It's calendly.com/greenlineai. Would you prefer I text or email that link to you?"
-
-##### Sub-Path A1: Prefers text
-**AI Says:**
-> "Great, I'll send it to [phone number]. You should receive it in the next minute. Is there anything else I can help with today?"
-→ Send calendar link via SMS
-→ END CALL (Mark as: Meeting Scheduled - Pending Booking)
-
-##### Sub-Path A2: Prefers email
-**AI Says:**
-> "Perfect, I'll email it to you at [email from lead data]. You should see it shortly. Is there anything else I can answer for you?"
-→ Send calendar link via email
-→ END CALL (Mark as: Meeting Scheduled - Pending Booking)
+1. **Conversation** - Main dialogue nodes with AI speaking/listening
+2. **Transition** - Simple routing without AI speaking, just passes control
+3. **Function** - Execute custom functions
+4. **Call Transfer** - Transfer to human agent
+5. **Press Digit** - IVR-style inputs
+6. **Logic Split Node** - Conditional branching based on conditions
+7. **Agent Transfer** - Switch between agents
+8. **SMS** - Send text messages
+9. **Extract Variable** - Capture user information
+10. **MCP** - Model Context Protocol integration
+11. **Ending** - End call with disposition
 
 ---
 
-#### Path B: "Need to think about it" / "Maybe later"
-**AI Says:**
-> "Absolutely, no pressure at all. Would it be okay if I followed up with you in about a week or two to see if you'd like to chat then?"
+## Recommended Complete Flow
 
-##### Sub-Path B1: Okay with follow-up
-- Schedule follow-up date
-- **AI Says:** "Sounds good, I'll reach back out then. Thanks for your time!"
-→ END CALL (Mark as: Follow Up in 1-2 Weeks)
+### Node 1: Welcome (Static Sentence)
+```
+Great to hear from AI, a marketing agency. I hope you're doing well today! 
+Is now a good time to chat, or should I call back at a better time?
+```
+↓
 
-##### Sub-Path B2: No follow-up wanted
-**AI Says:**
-> "No problem at all. If you ever need help with lead generation, feel free to reach out. Have a great day!"
-→ END CALL (Mark as: Not Interested)
+### Node 2: Logic Split (Availability Check)
+**IF** user says "yes" / "now is good" / "go ahead"  
+→ Continue to Node 3
+
+**IF** user says "no" / "busy" / "not a good time"  
+→ Jump to Node 10 (Schedule Callback)
+
+↓
+
+### Node 3: Extract Variables
+**Extract**:
+- Are you the business owner?
+- What's your name?
+- What type of business?
+
+↓
+
+### Node 4: Transition (Silent Router)
+**Purpose**: Route based on extracted owner status  
+**No AI Speech** - just passes control
+
+**Routing**:
+- IF owner = true → Node 5 (Main Pitch)
+- IF owner = false → Node 12 (Ask for Owner)
+
+↓
+
+### Node 5: Main Qualification (Conversation)
+```
+I'll keep this super brief. We help home services businesses like [business_type] 
+get more qualified leads. Are you currently happy with the number of leads you're getting?
+```
+
+↓
+
+### Node 6: Logic Split (Lead Quality Response)
+**IF** "no" / "could be better" / "need more"  
+→ Continue to Node 7 (Value Prop)
+
+**IF** "yes" / "happy" / "all good"  
+→ Jump to Node 9 (Soft Close)
+
+**IF** "not interested"  
+→ Jump to Node 11 (End Call - Not Interested)
+
+↓
+
+### Node 7: Value Proposition (Conversation)
+```
+We specialize in AI-powered outreach and targeted marketing. We've helped similar 
+businesses increase their lead flow by 2-3x. Would you be open to a 15-minute 
+strategy call to see if we can help?
+```
+
+↓
+
+### Node 8: Logic Split (Meeting Interest)
+**IF** "yes" / "sure" / "okay"  
+→ Send SMS with Calendly link  
+→ End Call (Meeting Scheduled)
+
+**IF** "maybe" / "need to think"  
+→ Jump to Node 10 (Schedule Follow-up)
+
+**IF** "no"  
+→ Jump to Node 11 (End Call - Not Interested)
+
+↓
+
+### Node 9: Soft Close (Conversation)
+```
+That's great to hear business is going well! Would you be open to me following 
+up in a few months if you ever need help scaling?
+```
+→ End Call (Warm Lead)
+
+### Node 10: Schedule Callback/Follow-up (Conversation + Extract)
+```
+When would be a good time for me to call you back?
+```
+**Extract**: Callback date/time  
+**Action**: Mark lead for follow-up  
+→ End Call (Callback Scheduled)
+
+↓
+
+### Node 11: End Call - Not Interested
+**Disposition**: Not Interested  
+**Final Message**:
+```
+I completely understand. Thanks for your time and have a great day!
+```
+
+↓
+
+### Node 12: Ask for Owner (Conversation)
+```
+No problem! Is the owner available right now, or would it be better if I 
+called back at another time?
+```
+
+**Next Steps**:
+- IF owner available → Transfer to owner → Loop back to Node 5
+- IF owner not available → Extract callback time → End Call (Callback Scheduled)
 
 ---
 
-#### Path C: NO / "Not interested"
-**AI Says:**
-> "I completely understand. I appreciate you taking the time to chat with me. Have a great day!"
-→ END CALL (Mark as: Not Interested)
+## When to Use Each Node Type
+
+### **Conversation Node**
+- AI needs to speak and listen
+- Main dialogue interactions
+- Questions and responses
+
+### **Transition Node**
+- Silent routing between nodes
+- No AI speech needed
+- Organize flow logic cleanly
+- Pass control based on context
+
+### **Logic Split Node**
+- Conditional branching with explicit conditions
+- Multiple outcome paths
+- Decision points based on keywords/variables
+
+### **Extract Variable Node**
+- Capture specific information
+- Pull data from user responses
+- Store in variables for later use
 
 ---
 
-## Call Outcome Labels
+## Node Settings Configuration
 
-Use these labels to mark call outcomes in your system:
-
-| Label | Meaning | Follow-up Action |
-|-------|---------|------------------|
-| **Meeting Scheduled - Pending Booking** | Sent calendar link, awaiting booking | Follow up in 2 days if no booking |
-| **Follow Up in 1-2 Weeks** | Interested but not ready now | Call back in 7-14 days |
-| **Callback Scheduled** | Owner not available, specific callback time set | Call at scheduled time |
-| **Not Interested Now - Follow Up Later** | Happy with current leads but open to future | Follow up in 3-6 months |
-| **Not Interested** | Clearly not interested | No follow-up |
-| **Do Not Contact** | Explicitly asked not to be called | Remove from calling list |
-| **No Answer** | Call not picked up | Try again at different time |
-| **Voicemail** | Left voicemail | Try again in 3 days |
+### Global Node Settings (Available on Right Panel):
+1. **Skip Response** - Jump to next node without waiting for user
+2. **Global Node** - Allow other nodes to jump here without edges
+3. **Block Interruptions** - Users cannot interrupt while AI is speaking
+4. **LLM** - Choose different LLM for this specific node
+5. **Node Knowledge Base** - Add context for this node
+6. **Fine-tuning Examples** - Train agent with example conversations
 
 ---
 
-## Dynamic Variables to Pass from Lead Data
+## Implementation in Retell Dashboard
 
-When initiating a call, pass these variables:
+### Step 1: Create Nodes
+1. Click **Components** tab
+2. Drag and drop node types:
+   - Start with **Conversation** node for welcome
+   - Add **Logic Split Node** for branching
+   - Add **Extract Variable** for data capture
+   - Add **SMS** node for sending calendar links
+   - Add **Ending** node for call termination
+
+### Step 2: Connect Nodes
+1. Draw edges between nodes
+2. Set conditions on Logic Split nodes
+3. Configure jump targets
+
+### Step 3: Configure Each Node
+- Set node names
+- Write conversation text
+- Configure variables
+- Set transition conditions
+
+### Step 4: Test
+1. Click **Test Agent** button (top right)
+2. Use **Simulation** mode
+3. Speak or type responses
+4. Verify flow follows expected path
+
+---
+
+## Call Dispositions (for Analytics)
+
+| Disposition | When to Use | Next Action |
+|-------------|-------------|-------------|
+| **Meeting Scheduled** | Sent Calendly link, user interested | Follow up if no booking in 48h |
+| **Callback Scheduled** | Owner busy, specific time set | Call at scheduled time |
+| **Follow Up Later** | Interested but not now | Follow up in 1-2 weeks |
+| **Warm Lead** | Happy now, open to future | Follow up in 3-6 months |
+| **Not Interested** | Clear rejection | No follow-up |
+| **Do Not Contact** | Requested removal | Remove from list |
+| **Wrong Number** | Incorrect contact | Update lead data |
+
+---
+
+## Dynamic Variables from CRM
+
+Pass these from your GreenLine AI dashboard:
+
 ```json
 {
-  "business_name": "Joe's Plumbing",
-  "owner_name": "Joe Smith",
-  "business_type": "plumbing business",
-  "city": "Los Angeles",
-  "state": "CA"
+  "business_name": "Mowbray Tree Services",
+  "owner_name": "John Mowbray",
+  "business_type": "tree service",
+  "city": "San Bernardino",
+  "state": "CA",
+  "phone": "(909) 389-0077",
+  "rating": "3.5",
+  "review_count": "133"
 }
 ```
 
-The AI can reference these naturally in conversation.
+Reference in conversation:
+- `{{business_name}}` - "I'm calling about {{business_name}}"
+- `{{business_type}}` - "We help {{business_type}} businesses"
+- `{{owner_name}}` - "Is {{owner_name}} available?"
 
 ---
 
-## Tips for Natural Conversation
+## Integration with Your Code
 
-1. **Let them interrupt** - The AI should pause and listen when they speak
-2. **Mirror their energy** - If they're busy, be brief. If they're chatty, be conversational
-3. **Handle objections gracefully** - Don't argue, acknowledge and pivot
-4. **Use their business name** - Makes it more personal
-5. **Don't sound robotic** - Add natural filler words occasionally
+The `/functions/api/calls/initiate.ts` will send:
 
----
-
-## Example Full Call Script
-
-**AI:** Hi, is this Joe? This is Sarah calling from GreenLine AI. We help home services businesses like Joe's Plumbing get more qualified leads. Do you have a quick minute?
-
-**Owner:** Yeah, what's this about?
-
-**AI:** I'll keep it super brief. I'm just calling to ask - are you currently happy with the number of qualified leads you're getting for your plumbing business?
-
-**Owner:** Honestly, could always use more. It's been a bit slow lately.
-
-**AI:** I hear you. We specialize in helping businesses like yours get more leads through AI-powered outreach. We've helped similar plumbing businesses increase their lead flow by 2 to 3 times. Would you be open to a quick 15-minute strategy call to see if we might be a good fit to help you?
-
-**Owner:** Sure, I guess. When?
-
-**AI:** Perfect! I'll send you our calendar link where you can pick a time that works for you. It's calendly.com/greenlineai. Would you prefer I text or email that to you?
-
-**Owner:** Text is fine.
-
-**AI:** Great, I'll send it to your number right now. You should get it in the next minute. Is there anything else I can help with today?
-
-**Owner:** No, that's it.
-
-**AI:** Sounds good! Looking forward to speaking with you soon. Have a great day, Joe!
+```typescript
+POST https://api.retellai.com/v2/create-phone-call
+{
+  "from_number": null,
+  "to_number": "(909) 389-0077",
+  "agent_id": "ag...f47",  // Your agent ID
+  "metadata": {
+    "leadId": "lead-123",
+    "campaignId": "campaign-456"
+  },
+  "retell_llm_dynamic_variables": {
+    "business_name": "Mowbray Tree Services",
+    "business_type": "tree service",
+    "owner_name": "John"
+  }
+}
+```
 
 ---
 
-## Retell Dashboard Setup Steps
+## Best Practices from Your Flow
 
-1. Go to **Agents** → **Create New Agent**
-2. Select **Phone Call Agent**
-3. Choose your voice
-4. Build flow using the nodes above
-5. Test with **Test Call** feature
-6. Deploy and get your **Agent ID**
-7. Add Agent ID to Cloudflare environment variables
+1. **Start with Availability Check** ✅
+   - "Is now a good time?" shows respect
+   
+2. **Extract Variables Early** ✅
+   - Get key info before making pitch
+   
+3. **Use Logic Splits for Branching** ✅
+   - Clean conditional logic
+   
+4. **Block Interruptions on Key Messages** ✅
+   - Ensure important info is heard
+   
+5. **Multiple End Points** ✅
+   - Different dispositions for different outcomes
 
 ---
 
-## Integration with GreenLine AI Dashboard
+## Next Steps to Complete Your Agent
 
-Once the agent is set up:
-1. User clicks "Call Now" on a lead
-2. Frontend sends lead data to `/api/calls/initiate`
-3. Cloudflare Worker calls Retell API with agent ID + lead data
-4. Retell initiates call with dynamic variables
-5. Call follows this flow chart
-6. Webhook updates dashboard with call outcome
-7. Lead status is updated automatically
+1. **Add the Missing Nodes**:
+   - Value proposition conversation
+   - SMS node with Calendly link
+   - Follow-up scheduling logic
+
+2. **Configure Logic Split Conditions**:
+   - Define exact phrases/keywords for each path
+   - Set confidence thresholds
+
+3. **Add Knowledge Base** (if needed):
+   - Company information
+   - Common objection handling
+   - Pricing details
+
+4. **Fine-tune with Examples**:
+   - Add successful call transcripts
+   - Train on edge cases
+
+5. **Test Thoroughly**:
+   - Test all conversation paths
+   - Verify variable extraction works
+   - Check SMS integration
+
+6. **Deploy**:
+   - Copy Agent ID to wrangler.toml
+   - Add to Cloudflare environment variables
+   - Test from GreenLine dashboard
 
 ---
 
 ## Monitoring & Optimization
 
-Review these regularly in Retell dashboard:
-- **Call recordings** - Listen to real calls
-- **Transcripts** - Read what worked/didn't work
-- **Conversion rate** - % that book meetings
-- **Drop-off points** - Where people hang up
+Track these metrics in Retell dashboard:
+- **Call Duration** - Aim for 2-4 minutes
+- **Completion Rate** - % that reach end without hanging up
+- **Booking Rate** - % that result in meeting scheduled
+- **Callback Rate** - % that request follow-up
+- **Drop-off Points** - Where people hang up most
 
-Iterate on the flow based on what you learn!
+Iterate based on real call data!
