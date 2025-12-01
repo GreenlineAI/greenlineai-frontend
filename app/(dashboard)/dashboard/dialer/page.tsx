@@ -118,7 +118,7 @@ function DialerContent() {
           phoneNumber: currentLead.phone,
           leadId: currentLead.id,
           campaignId: selectedCampaignId,
-          prompt: `You are calling ${currentLead.business_name}. Introduce yourself as an AI assistant from a marketing agency specializing in lead generation for home services businesses.`,
+          prompt: `You are calling ${currentLead.businessName}. Introduce yourself as an AI assistant from a marketing agency specializing in lead generation for home services businesses.`,
         }),
       });
 
