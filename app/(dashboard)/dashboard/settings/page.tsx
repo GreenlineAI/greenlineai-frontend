@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { User, Mic, Bell, Key, Link, Users } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { User, Mic, Bell, Key, Link, Users, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useUser } from '@/lib/supabase/hooks';
 import { toast } from 'sonner';
+import Papa from 'papaparse';
 
 export default function SettingsPage() {
   const { user } = useUser();
