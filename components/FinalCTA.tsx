@@ -33,7 +33,7 @@ export default function FinalCTA() {
           <Button
             size="lg"
             onClick={handleBookDemo}
-            className="bg-white text-primary-700 hover:bg-primary-50 text-xl px-12 py-6 shadow-2xl hover:shadow-white/30 gap-3"
+            className="bg-white text-black hover:bg-primary-50 text-xl px-12 py-6 shadow-2xl hover:shadow-white/30 gap-3"
           >
             <Calendar className="h-6 w-6" />
             Book Strategy Call
@@ -77,7 +77,7 @@ export default function FinalCTA() {
             size="lg"
             variant="outline"
             onClick={handleTryDemo}
-            className="gap-3 border-2 border-white text-white hover:bg-white hover:text-primary-700"
+            className="gap-3 border-2 border-white text-white hover:bg-white hover:text-black"
           >
             <Zap className="h-5 w-5" />
             Try AI Demo Now
