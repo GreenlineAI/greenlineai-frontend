@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test-dialer": "node scripts/test-dialer.js",
-    "test-dialer:dry": "node scripts/test-dialer.js 5 --dry"
+    "test-dialer:dry": "node scripts/test-dialer.js 5 --dry",
+    "test-stammer": "node scripts/test-stammer.js"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

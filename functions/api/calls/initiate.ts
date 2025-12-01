@@ -58,16 +58,17 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Route to appropriate provider
     if (providerType === 'stammer') {
       // Initiate call with Stammer AI
-      const stammerResponse = await fetch('https://api.stammer.ai/v1/calls', {
+      // API Docs: https://app.stammer.ai/en/api-docs/me/
+      const stammerResponse = await fetch('https://app.stammer.ai/en/chatbot/api/v1/call/', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${env.STAMMER_API_KEY}`,
+          'Authorization': `Token ${env.STAMMER_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           phone_number: phoneNumber,
-          agent_id: env.STAMMER_AGENT_ID || undefined,
-          prompt: prompt || getAppointmentSettingPrompt(),
+          chatbot_uuid: env.STAMMER_AGENT_ID,
+          user_key: leadId || `lead_${Date.now()}`,
           metadata: {
             leadId: leadId || '',
             campaignId: campaignId || '',
@@ -79,8 +80,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
       if (!stammerResponse.ok) {
         const errorData = await stammerResponse.text();
-        console.error('Stammer API error:', errorData);
-        throw new Error(`Stammer API error: ${stammerResponse.statusText}`);
+        console.error('Stammer API error:', {
+          status: stammerResponse.status,
+          statusText: stammerResponse.statusText,
+          error: errorData,
+          url: 'https://app.stammer.ai/en/chatbot/api/v1/call/',
+          chatbot_uuid: env.STAMMER_AGENT_ID,
+        });
+        throw new Error(`Stammer API error (${stammerResponse.status}): ${errorData || stammerResponse.statusText}`);
       }
 
       const data = await stammerResponse.json();

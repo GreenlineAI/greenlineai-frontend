@@ -12,10 +12,10 @@
 const https = require('https');
 
 const CONFIG = {
-  SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://greenlineai-frontend.pages.dev',
   USER_ID: process.env.AUTO_DIALER_USER_ID || '0b627f19-6ea2-469b-a596-84cab72190c9',
-  SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  SUPABASE_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nggelyppkswqxycblvcb.supabase.co',
+  SUPABASE_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZ2VseXBwa3N3cXh5Y2JsdmNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODc3NTEsImV4cCI6MjA4MDA2Mzc1MX0.g3L2cnvCf67IePlaSdAlTBLx2c07xGj2rBsQ2KSHIRw',
 };
 
 // Parse args
