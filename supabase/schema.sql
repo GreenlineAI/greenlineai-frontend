@@ -114,6 +114,23 @@ CREATE TABLE call_analytics (
   UNIQUE(user_id, date)
 );
 
+-- Meetings table (scheduled appointments)
+CREATE TABLE meetings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+  call_id UUID REFERENCES outreach_calls(id) ON DELETE SET NULL,
+  scheduled_at TIMESTAMPTZ NOT NULL,
+  duration INTEGER DEFAULT 15, -- in minutes
+  status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'confirmed', 'completed', 'cancelled', 'no_show')),
+  meeting_type TEXT DEFAULT 'strategy_call',
+  location TEXT, -- zoom link, phone, address, etc
+  notes TEXT,
+  reminder_sent BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Campaign leads junction table
 CREATE TABLE campaign_leads (
   campaign_id UUID REFERENCES campaigns(id) ON DELETE CASCADE,
@@ -134,6 +151,10 @@ CREATE INDEX idx_outreach_calls_user_id ON outreach_calls(user_id);
 CREATE INDEX idx_outreach_calls_lead_id ON outreach_calls(lead_id);
 CREATE INDEX idx_call_analytics_user_id ON call_analytics(user_id);
 CREATE INDEX idx_call_analytics_date ON call_analytics(date);
+CREATE INDEX idx_meetings_user_id ON meetings(user_id);
+CREATE INDEX idx_meetings_lead_id ON meetings(lead_id);
+CREATE INDEX idx_meetings_scheduled_at ON meetings(scheduled_at);
+CREATE INDEX idx_meetings_status ON meetings(status);
 
 -- Row Level Security (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -142,6 +163,7 @@ ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE outreach_calls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaign_leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE call_analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 
@@ -245,6 +267,23 @@ CREATE POLICY "Users can update own analytics"
   ON call_analytics FOR UPDATE
   USING (auth.uid() = user_id);
 
+-- Meetings: Users can manage their own meetings
+CREATE POLICY "Users can view own meetings"
+  ON meetings FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own meetings"
+  ON meetings FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own meetings"
+  ON meetings FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own meetings"
+  ON meetings FOR DELETE
+  USING (auth.uid() = user_id);
+
 -- Function to handle new user creation
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -284,4 +323,8 @@ CREATE TRIGGER update_leads_updated_at
 
 CREATE TRIGGER update_campaigns_updated_at
   BEFORE UPDATE ON campaigns
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_meetings_updated_at
+  BEFORE UPDATE ON meetings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

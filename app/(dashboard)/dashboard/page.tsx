@@ -10,11 +10,14 @@ import {
   Upload,
   Flame,
   ArrowRight,
+  Clock,
+  Building,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { LeadScoreBadge, CampaignStatusBadge, CallStatusBadge } from '@/components/shared/StatusBadge';
 import { CallsLineChart } from '@/components/charts/CallsLineChart';
@@ -24,7 +27,113 @@ import { useLeads } from '@/hooks/use-leads';
 import { useCampaigns } from '@/hooks/use-campaigns';
 import { useRecentCalls } from '@/hooks/use-calls';
 import { useUser } from '@/lib/supabase/hooks';
-import { format } from 'date-fns';
+import { createClient } from '@/lib/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { format, parseISO, isFuture, isToday } from 'date-fns';
+
+interface Meeting {
+  id: string;
+  scheduled_at: string;
+  duration: number;
+  status: string;
+  lead: {
+    business_name: string;
+    contact_name: string | null;
+    phone: string;
+  };
+}
+
+function UpcomingMeetingsWidget() {
+  const { data: meetings, isLoading } = useQuery({
+    queryKey: ['upcoming-meetings'],
+    queryFn: async () => {
+      const supabase = createClient();
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('meetings')
+        .select(`
+          *,
+          lead:leads(
+            business_name,
+            contact_name,
+            phone
+          )
+        `)
+        .gte('scheduled_at', now)
+        .in('status', ['scheduled', 'confirmed'])
+        .order('scheduled_at', { ascending: true })
+        .limit(5);
+      
+      if (error) throw error;
+      return data as Meeting[];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!meetings || meetings.length === 0) {
+    return (
+      <p className="text-center text-sm text-muted-foreground py-4">
+        No upcoming meetings
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {meetings.map((meeting) => {
+        const scheduledDate = parseISO(meeting.scheduled_at);
+        const isToday_ = isToday(scheduledDate);
+        
+        return (
+          <div
+            key={meeting.id}
+            className="rounded-lg border p-3 space-y-2 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <p className="font-medium truncate">{meeting.lead.business_name}</p>
+                </div>
+                {meeting.lead.contact_name && (
+                  <p className="text-sm text-muted-foreground pl-6">
+                    {meeting.lead.contact_name}
+                  </p>
+                )}
+              </div>
+              {isToday_ && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700 flex-shrink-0">
+                  Today
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground pl-6">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>{format(scheduledDate, 'MMM d')}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{format(scheduledDate, 'h:mm a')}</span>
+              </div>
+              <span>•</span>
+              <span>{meeting.duration} min</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -255,6 +364,22 @@ export default function DashboardPage() {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Meetings */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Upcoming Meetings</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/meetings">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <UpcomingMeetingsWidget />
             </CardContent>
           </Card>
 
