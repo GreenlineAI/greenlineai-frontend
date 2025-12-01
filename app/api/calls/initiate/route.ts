@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVoiceProvider } from '@/lib/services/voice-calling';
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(request: NextRequest) {
   try {
     // Check if API key is configured
