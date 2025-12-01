@@ -64,34 +64,60 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
       throw new Error('CSV file is empty or invalid');
     }
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    // Parse CSV properly handling quoted fields
+    const parseCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
     const leads: ParsedLead[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
-      const lead: any = {};
+      const values = parseCSVLine(lines[i]);
+      const lead: any = {
+        status: 'new',
+        score: 'warm',
+        industry: 'Landscaping', // Default industry
+      };
 
       headers.forEach((header, index) => {
         const value = values[index] || '';
         
         // Map CSV headers to lead fields
         switch (header) {
-          case 'business_name':
-          case 'business name':
           case 'businessname':
+          case 'business':
+          case 'name':
             lead.businessName = value;
             break;
-          case 'contact_name':
-          case 'contact name':
           case 'contactname':
+          case 'ownername':
             lead.contactName = value || null;
             break;
           case 'email':
+          case 'contactemail':
+          case 'owneremail':
             lead.email = value || null;
             break;
           case 'phone':
-          case 'phone_number':
-          case 'phone number':
+          case 'phonenumber':
             lead.phone = value;
             break;
           case 'address':
@@ -105,17 +131,16 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
             break;
           case 'zip':
           case 'zipcode':
-          case 'zip_code':
             lead.zip = value || null;
             break;
           case 'industry':
-            lead.industry = value;
+            if (value) lead.industry = value;
             break;
-          case 'google_rating':
           case 'rating':
+          case 'googlerating':
             lead.googleRating = value ? parseFloat(value) : null;
             break;
-          case 'review_count':
+          case 'reviewcount':
           case 'reviews':
             lead.reviewCount = value ? parseInt(value) : null;
             break;
@@ -123,10 +148,26 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
             lead.website = value || null;
             break;
           case 'status':
-            lead.status = value || 'new';
+          case 'callstatus':
+            if (value && ['new', 'contacted', 'interested', 'meeting_scheduled', 'not_interested', 'no_answer', 'invalid'].includes(value.toLowerCase())) {
+              lead.status = value.toLowerCase();
+            }
             break;
           case 'score':
-            lead.score = value || 'warm';
+          case 'qualityscore':
+          case 'leadquality':
+            const scoreMap: any = { 
+              'high': 'hot', 
+              'urgent': 'hot',
+              'hot': 'hot',
+              'medium': 'warm',
+              'warm': 'warm',
+              'low': 'cold',
+              'cold': 'cold'
+            };
+            if (value && scoreMap[value.toLowerCase()]) {
+              lead.score = scoreMap[value.toLowerCase()];
+            }
             break;
           case 'notes':
             lead.notes = value || null;
@@ -135,7 +176,7 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
       });
 
       // Validate required fields
-      if (lead.businessName && lead.phone && lead.city && lead.state && lead.industry) {
+      if (lead.businessName && lead.phone && lead.city && lead.state) {
         leads.push({
           ...lead,
           status: lead.status || 'new',
@@ -197,7 +238,7 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
 
         const { error: insertError } = await supabase
           .from('leads')
-          .insert(batch);
+          .insert(batch as any);
 
         if (insertError) {
           console.error('Error importing batch:', insertError);
@@ -217,7 +258,13 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
       }
     } catch (err) {
       console.error('Import error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to import leads');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === 'object' && err !== null) {
+        setError(JSON.stringify(err));
+      } else {
+        setError('Failed to import leads. Please check the file format.');
+      }
     } finally {
       setIsUploading(false);
     }
