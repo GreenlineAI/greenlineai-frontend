@@ -178,7 +178,7 @@ function DialerContent() {
         }
       }, 3000);
 
-      toast.success('Calling ' + currentLead.business_name);
+      toast.success('Calling ' + currentLead.businessName);
     } catch (error) {
       console.error('Call error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to start call');
