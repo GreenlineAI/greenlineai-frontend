@@ -57,6 +57,7 @@ function DialerContent() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
+  const [showSetupWarning, setShowSetupWarning] = useState(false);
 
   // Hooks
   const { data: leadsData } = useLeads({ page: 1, pageSize: 100, filters: { status: 'new', score: 'all', industry: 'all', state: 'all', search: '', minRating: null, maxRating: null } });
@@ -96,10 +97,10 @@ function DialerContent() {
   };
 
   const startCall = useCallback(async () => {
-    if (!currentLead) return;
+    if (!currentLead || !currentLead.phone) return;
 
     try {
-      // Create call record
+      // Create call record in database
       const call = await createCall.mutateAsync({
         leadId: currentLead.id,
         campaignId: selectedCampaignId || undefined,
@@ -109,21 +110,81 @@ function DialerContent() {
       setCallDuration(0);
       setTranscript([]);
 
-      // Simulate connection after 2 seconds (in real app, Vapi webhook would update this)
-      setTimeout(() => {
-        setCallStatus('connected');
-        // Add mock transcript entries for demo
-        setTranscript([
-          { speaker: 'ai', text: 'Hi, this is Sarah from Revues AI. Is this the owner?', timestamp: 0 },
-        ]);
-      }, 2000);
+      // Initiate real phone call via Stammer AI/Bland AI
+      const response = await fetch('/api/calls/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: currentLead.phone,
+          leadId: currentLead.id,
+          campaignId: selectedCampaignId,
+          prompt: `You are calling ${currentLead.business_name}. Introduce yourself as an AI assistant from a marketing agency specializing in lead generation for home services businesses.`,
+        }),
+      });
 
-      toast.success('Call initiated');
-    } catch {
-      toast.error('Failed to start call');
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        // Check if it's a setup issue
+        if (response.status === 503) {
+          setShowSetupWarning(true);
+          toast.error('Voice AI not configured. Please add your API key.');
+        }
+        throw new Error(data.error || 'Failed to initiate call');
+      }
+
+      // Update call record with external call ID
+      await updateCall.mutateAsync({
+        id: call.id,
+        updates: {
+          vapiCallId: data.callId,
+          status: 'in_progress',
+        },
+      });
+
+      // Start polling for call status (webhook will also update)
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`/api/calls/${call.id}/status`);
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            if (statusData.status === 'completed' || statusData.status === 'failed') {
+              clearInterval(pollInterval);
+              setCallStatus('ended');
+              if (statusData.transcript) {
+                // Parse transcript if available
+                const transcriptLines = statusData.transcript.split('\n');
+                setTranscript(transcriptLines.map((line: string, idx: number) => ({
+                  speaker: line.toLowerCase().includes('user') ? 'human' : 'ai',
+                  text: line,
+                  timestamp: idx * 10,
+                })));
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error polling call status:', error);
+        }
+      }, 5000); // Poll every 5 seconds
+
+      // Clean up polling after 10 minutes max
+      setTimeout(() => clearInterval(pollInterval), 600000);
+
+      // Simulate connection UI update (actual status comes from webhook)
+      setTimeout(() => {
+        if (callStatus === 'ringing') {
+          setCallStatus('connected');
+          toast.success('Call connected');
+        }
+      }, 3000);
+
+      toast.success('Calling ' + currentLead.business_name);
+    } catch (error) {
+      console.error('Call error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to start call');
       setCallStatus('idle');
     }
-  }, [currentLead, selectedCampaignId, createCall]);
+  }, [currentLead, selectedCampaignId, createCall, updateCall, callStatus]);
 
   const endCall = useCallback(async () => {
     setCallStatus('ended');
@@ -208,8 +269,45 @@ function DialerContent() {
   };
 
   return (
-    <div className="h-screen flex bg-background">
-      {/* Left Panel - Call Queue */}
+    <div className="h-screen flex flex-col bg-background">
+      {/* Setup Warning Banner */}
+      {showSetupWarning && (
+        <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Settings className="h-5 w-5 text-yellow-600" />
+              <div>
+                <p className="text-sm font-medium text-yellow-900">
+                  Voice AI Calling Not Configured
+                </p>
+                <p className="text-xs text-yellow-700">
+                  To make real phone calls, add your Bland AI or Stammer AI API key to .env.local
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href="https://www.bland.ai/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-yellow-700 hover:text-yellow-900 underline"
+              >
+                Get Bland AI Key →
+              </a>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSetupWarning(false)}
+                className="h-6 text-yellow-700 hover:text-yellow-900"
+              >
+                ✕
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 flex overflow-hidden">{/* Left Panel - Call Queue */}
       <div className="w-80 border-r flex flex-col">
         <div className="p-4 border-b">
           <h2 className="font-semibold">Call Queue</h2>
@@ -575,6 +673,7 @@ function DialerContent() {
             <p className="text-sm text-muted-foreground">Select a lead to view details</p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

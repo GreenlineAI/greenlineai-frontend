@@ -75,7 +75,7 @@ export default function Hero() {
                 size="lg"
                 variant="outline"
                 onClick={handleTryDemo}
-                className="gap-2 text-slate-900 border-slate-300 hover:bg-slate-100"
+                className="gap-2 text-black border-slate-300 hover:bg-slate-100 hover:text-black"
               >
                 <Zap className="h-5 w-5" />
                 Try AI Demo Live

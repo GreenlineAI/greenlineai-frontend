@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Menu, X, Sprout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/lib/supabase/hooks";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useUser();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,7 +88,16 @@ export default function Header() {
           </nav>
 
           {/* CTA Button */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <Link href="/dashboard">
+                <Button variant="outline">Dashboard</Button>
+              </Link>
+            ) : (
+              <Link href="/login">
+                <Button variant="outline">Login</Button>
+              </Link>
+            )}
             <Button variant="default" onClick={handleBookDemo}>
               Book Free Demo
             </Button>
@@ -133,6 +145,15 @@ export default function Header() {
               >
                 Contact
               </a>
+              {user ? (
+                <Link href="/dashboard">
+                  <Button variant="outline" className="w-full">Dashboard</Button>
+                </Link>
+              ) : (
+                <Link href="/login">
+                  <Button variant="outline" className="w-full">Login</Button>
+                </Link>
+              )}
               <Button variant="default" onClick={handleBookDemo} className="w-full">
                 Book Free Demo
               </Button>
