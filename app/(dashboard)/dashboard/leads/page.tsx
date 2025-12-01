@@ -12,6 +12,7 @@ import { LeadStatusBadge, LeadScoreBadge } from '@/components/shared/StatusBadge
 import { LeadFilters } from '@/components/leads/LeadFilters';
 import { LeadDetailSheet } from '@/components/leads/LeadDetailSheet';
 import { BulkActions } from '@/components/leads/BulkActions';
+import { ImportLeadsDialog } from '@/components/leads/ImportLeadsDialog';
 import { useLeads } from '@/hooks/use-leads';
 import type { Lead, LeadFilters as LeadFiltersType } from '@/lib/types';
 import { format } from 'date-fns';
@@ -34,9 +35,9 @@ export default function LeadsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
-  const { data, isLoading } = useLeads({
+  const { data, isLoading, refetch } = useLeads({
     page,
     pageSize,
     filters,
@@ -122,41 +123,6 @@ export default function LeadsPage() {
     router.push(`/dashboard/dialer?leadId=${lead.id}`);
   };
 
-  const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      setImporting(true);
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const response = await fetch('/api/leads/import', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('Import failed');
-        }
-
-        const result = await response.json();
-        alert(`Successfully imported ${result.count} leads`);
-        window.location.reload();
-      } catch (error) {
-        console.error('Import error:', error);
-        alert('Failed to import leads. Please check the file format.');
-      } finally {
-        setImporting(false);
-      }
-    };
-    input.click();
-  };
-
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
     setPage(1);
@@ -178,9 +144,9 @@ export default function LeadsPage() {
           description={`${data?.total || 0} total leads`}
           actions={
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleImport} disabled={importing}>
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
                 <Upload className="mr-2 h-4 w-4" />
-                {importing ? 'Importing...' : 'Import'}
+                Import
               </Button>
               <Button variant="outline">
                 <Download className="mr-2 h-4 w-4" />
@@ -263,6 +229,13 @@ export default function LeadsPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onCallNow={handleCallNow}
+      />
+
+      {/* Import Dialog */}
+      <ImportLeadsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onSuccess={() => refetch()}
       />
     </div>
   );
