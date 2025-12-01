@@ -82,7 +82,7 @@ for (let i = 1; i < lines.length; i++) {
   const score = mapLeadQuality(leadQuality);
 
   console.log(`INSERT INTO leads (user_id, business_name, contact_name, email, phone, address, city, state, zip, industry, google_rating, review_count, website, status, score, notes)`);
-  console.log(`VALUES (admin_id, ${escapeSQL(businessName)}, ${escapeSQL(ownerName) === 'NULL' ? 'NULL' : escapeSQL(ownerName)}, ${escapeSQL(email) === "''" ? 'NULL' : escapeSQL(email)}, ${escapeSQL(phone)}, ${escapeSQL(address)}, ${escapeSQL(city)}, ${escapeSQL(state)}, ${escapeSQL(zip)}, 'Landscaping', ${rating || 'NULL'}, ${reviewCount || 'NULL'}, ${escapeSQL(website) === "''" ? 'NULL' : escapeSQL(website)}, 'new', '${score}', ${escapeSQL(notes) === "''" ? 'NULL' : escapeSQL(notes)});`);
+  console.log(`VALUES (admin_id, ${escapeSQL(businessName)}, ${escapeSQL(ownerName) === 'NULL' ? 'NULL' : escapeSQL(ownerName)}, ${escapeSQL(email) === "''" ? 'NULL' : escapeSQL(email)}, ${escapeSQL(phone)}, ${escapeSQL(address)}, ${escapeSQL(city)}, ${escapeSQL(state)}, ${escapeSQL(zip)}, 'Landscaping', ${rating || 'NULL'}, ${reviewCount || 'NULL'}, ${escapeSQL(website) === "''" ? 'NULL' : escapeSQL(website)}, 'new'::lead_status, '${score}'::lead_score, ${escapeSQL(notes) === "''" ? 'NULL' : escapeSQL(notes)});`);
   console.log('');
 }
 
