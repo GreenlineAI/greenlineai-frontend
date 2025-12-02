@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendMeetingBookedEmail } from '@/lib/services/email';
+import type { Database } from '@/lib/database.types';
 
 /**
  * Calendly Webhook Handler
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
         userId = (users[0] as { id: string }).id;
 
         // Create new lead
-        const leadData = {
+        const leadData: Database['public']['Tables']['leads']['Insert'] = {
           user_id: userId,
           business_name: businessName,
           contact_name: inviteeName,
@@ -138,8 +139,8 @@ export async function POST(request: NextRequest) {
           city: 'N/A',
           state: 'N/A',
           industry: 'Unknown',
-          status: 'meeting_scheduled' as const,
-          score: 'hot' as const,
+          status: 'meeting_scheduled',
+          score: 'hot',
           notes: `Calendly booking: ${notes}`
         };
 
