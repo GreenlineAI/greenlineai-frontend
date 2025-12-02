@@ -1,5 +1,5 @@
 name = "auto-dialer-cron"
-main = "workers/auto-dialer-cron.ts"
+main = "auto-dialer-cron.ts"
 compatibility_date = "2024-01-01"
 
 [vars]
