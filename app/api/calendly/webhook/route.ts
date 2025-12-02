@@ -144,7 +144,8 @@ export async function POST(request: NextRequest) {
           notes: `Calendly booking: ${notes}`
         };
 
-        const { data: newLead, error: leadError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newLead, error: leadError } = await (supabase as any)
           .from('leads')
           .insert(leadData)
           .select()
@@ -164,7 +165,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create meeting record
-    const { data: meeting, error: meetingError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: meeting, error: meetingError } = await (supabase as any)
       .from('meetings')
       .insert({
         user_id: userId,
@@ -188,7 +190,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update lead status
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('leads')
       .update({ status: 'meeting_scheduled' })
       .eq('id', lead.id);
