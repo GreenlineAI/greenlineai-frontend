@@ -129,21 +129,23 @@ export async function POST(request: NextRequest) {
         userId = (users[0] as { id: string }).id;
 
         // Create new lead
+        const leadData = {
+          user_id: userId,
+          business_name: businessName,
+          contact_name: inviteeName,
+          email: inviteeEmail,
+          phone: inviteePhone || 'N/A',
+          city: 'N/A',
+          state: 'N/A',
+          industry: 'Unknown',
+          status: 'meeting_scheduled' as const,
+          score: 'hot' as const,
+          notes: `Calendly booking: ${notes}`
+        };
+
         const { data: newLead, error: leadError } = await supabase
           .from('leads')
-          .insert({
-            user_id: userId,
-            business_name: businessName,
-            contact_name: inviteeName,
-            email: inviteeEmail,
-            phone: inviteePhone || 'N/A',
-            city: 'N/A',
-            state: 'N/A',
-            industry: 'Unknown',
-            status: 'meeting_scheduled',
-            score: 'hot',
-            notes: `Calendly booking: ${notes}`
-          })
+          .insert(leadData)
           .select()
           .single();
 
