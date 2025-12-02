@@ -24,11 +24,6 @@ RETELL_AGENT_ID_2 = "agent_yyyyyyyyyyyyyyyyyy"
 AUTO_DIALER_USER_ID = "0b627f19-6ea2-469b-a596-84cab72190c9"
 NEXT_PUBLIC_SITE_URL = "https://greenlineai-frontend.pages.dev"
 
-# Cron Triggers
-# Run auto-dialer every hour during business hours (9 AM - 6 PM PST)
-# PST is UTC-8, so 9 AM PST = 5 PM UTC (17:00)
-# Format: minute hour day month day-of-week
-[triggers]
-crons = [
-  "0 17-23,0-2 * * 1-5"  # Every hour, 9 AM to 6 PM PST, Monday to Friday
-]
+# Note: Cron triggers for Pages must be configured in Cloudflare Dashboard
+# Cannot be defined in wrangler.toml for Pages projects
+# Schedule: 0 17-23,0-2 * * 1-5 (9 AM - 6 PM PST, Monday to Friday)
