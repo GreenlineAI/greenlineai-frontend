@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         // Create new lead
         const { data: newLead, error: leadError } = await supabase
           .from('leads')
-          .insert({
+          .insert([{
             user_id: userId,
             business_name: businessName,
             contact_name: inviteeName,
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
             status: 'meeting_scheduled',
             score: 'hot',
             notes: `Calendly booking: ${notes}`
-          })
+          }])
           .select()
           .single();
 
