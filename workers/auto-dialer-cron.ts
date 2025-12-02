@@ -8,6 +8,16 @@
  * Schedule: 0 17-23,0-2 * * 1-5 (9 AM - 6 PM PST, Mon-Fri)
  */
 
+type ScheduledEvent = {
+  scheduledTime: number;
+  cron: string;
+};
+
+type ExecutionContext = {
+  waitUntil(promise: Promise<any>): void;
+  passThroughOnException(): void;
+};
+
 interface Env {
   PAGES_FUNCTION_URL: string; // https://greenlineai-frontend.pages.dev
   AUTO_DIALER_USER_ID: string;
