@@ -6,7 +6,7 @@
  * to initiate the auto-dialer process.
  */
 
-import { scheduledHandler } from '../../functions/scheduled/auto-dialer';
+import { scheduledHandler } from '../../../functions/scheduled/auto-dialer';
 
 interface TriggerRequest {
   userId: string;
