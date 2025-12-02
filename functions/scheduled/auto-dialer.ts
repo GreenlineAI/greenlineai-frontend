@@ -11,6 +11,24 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// Cloudflare Workers types
+type ScheduledEvent = {
+  scheduledTime: number;
+  cron: string;
+};
+
+type ExecutionContext = {
+  waitUntil(promise: Promise<any>): void;
+  passThroughOnException(): void;
+};
+
+interface Env {
+  AUTO_DIALER_USER_ID: string;
+  NEXT_PUBLIC_SUPABASE_URL: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
+  NEXT_PUBLIC_SITE_URL: string;
+}
+
 // Configuration
 const CONFIG = {
   DAILY_CALL_LIMIT: 100,           // Max calls per day
@@ -22,12 +40,6 @@ const CONFIG = {
   RETRY_NO_ANSWER: true,           // Retry "no_answer" leads
   MAX_ATTEMPTS_PER_LEAD: 3,        // Max times to call same lead
 };
-
-// Initialize Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Use service role for server-side
-);
 
 interface Lead {
   id: string;
@@ -74,7 +86,7 @@ function isWithinWorkingHours(): boolean {
 /**
  * Get leads that need to be called
  */
-async function getLeadsToCall(userId: string, limit: number): Promise<Lead[]> {
+async function getLeadsToCall(supabase: any, userId: string, limit: number): Promise<Lead[]> {
   // Get leads that:
   // 1. Haven't been called yet OR
   // 2. Had "no_answer" status and haven't hit max attempts OR
@@ -98,14 +110,14 @@ async function getLeadsToCall(userId: string, limit: number): Promise<Lead[]> {
     .from('outreach_calls')
     .select('lead_id, count')
     .eq('user_id', userId)
-    .in('lead_id', leads?.map(l => l.id) || []);
+    .in('lead_id', leads?.map((l: Lead) => l.id) || []);
   
   const callCountMap = new Map(
     callCounts?.map((c: any) => [c.lead_id, c.count]) || []
   );
   
-  const filteredLeads = leads?.filter(lead => {
-    const attempts = callCountMap.get(lead.id) || 0;
+  const filteredLeads = leads?.filter((lead: Lead) => {
+    const attempts = (callCountMap.get(lead.id) as number) || 0;
     return attempts < CONFIG.MAX_ATTEMPTS_PER_LEAD;
   }) || [];
   
@@ -116,7 +128,7 @@ async function getLeadsToCall(userId: string, limit: number): Promise<Lead[]> {
 /**
  * Get how many calls we've already made today
  */
-async function getTodayCallCount(userId: string): Promise<number> {
+async function getTodayCallCount(supabase: any, userId: string): Promise<number> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -138,9 +150,9 @@ async function getTodayCallCount(userId: string): Promise<number> {
 /**
  * Initiate a call via Stammer AI
  */
-async function initiateCall(lead: Lead): Promise<CallResult> {
+async function initiateCall(supabase: any, lead: Lead, siteUrl: string): Promise<CallResult> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/calls/initiate`, {
+    const response = await fetch(`${siteUrl}/api/calls/initiate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -201,10 +213,16 @@ function sleep(ms: number): Promise<void> {
 /**
  * Main auto-dialer function
  */
-async function runAutoDialer(userId: string) {
+async function runAutoDialer(userId: string, env: Env) {
   console.log('🚀 Starting Auto-Dialer...');
   console.log(`User ID: ${userId}`);
   console.log(`Config:`, CONFIG);
+  
+  // Initialize Supabase with environment variables
+  const supabase = createClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY
+  );
   
   // Check if we're within working hours
   if (!isWithinWorkingHours()) {
@@ -216,7 +234,7 @@ async function runAutoDialer(userId: string) {
   }
   
   // Check daily limit
-  const todayCallCount = await getTodayCallCount(userId);
+  const todayCallCount = await getTodayCallCount(supabase, userId);
   const remainingCalls = CONFIG.DAILY_CALL_LIMIT - todayCallCount;
   
   if (remainingCalls <= 0) {
@@ -232,7 +250,7 @@ async function runAutoDialer(userId: string) {
   
   // Get leads to call
   const batchSize = Math.min(CONFIG.CALLS_PER_BATCH, remainingCalls);
-  const leads = await getLeadsToCall(userId, batchSize);
+  const leads = await getLeadsToCall(supabase, userId, batchSize);
   
   if (leads.length === 0) {
     console.log('✅ No more leads to call');
@@ -249,7 +267,7 @@ async function runAutoDialer(userId: string) {
     const lead = leads[i];
     console.log(`\n📞 [${i + 1}/${leads.length}] Calling ${lead.business_name}...`);
     
-    const result = await initiateCall(lead);
+    const result = await initiateCall(supabase, lead, env.NEXT_PUBLIC_SITE_URL);
     results.push(result);
     
     // Wait between calls (except for last one)
@@ -280,12 +298,11 @@ async function runAutoDialer(userId: string) {
 /**
  * Cloudflare Workers Cron Handler
  */
-export async function scheduledHandler(event: ScheduledEvent, env: any) {
-  // Get the user ID from environment (or default to a specific user)
+export async function scheduledHandler(event: ScheduledEvent, env: Env) {
   const userId = env.AUTO_DIALER_USER_ID || '0b627f19-6ea2-469b-a596-84cab72190c9';
   
   try {
-    const result = await runAutoDialer(userId);
+    const result = await runAutoDialer(userId, env);
     console.log('Cron job result:', result);
     return result;
   } catch (error) {
@@ -295,9 +312,15 @@ export async function scheduledHandler(event: ScheduledEvent, env: any) {
 }
 
 // For manual execution (Node.js)
-if (require.main === module) {
+if (typeof require !== 'undefined' && require.main === module) {
   const userId = process.argv[2] || '0b627f19-6ea2-469b-a596-84cab72190c9';
-  runAutoDialer(userId)
+  const mockEnv: Env = {
+    AUTO_DIALER_USER_ID: userId,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL!,
+  };
+  runAutoDialer(userId, mockEnv)
     .then(result => {
       console.log('\nFinal Result:', JSON.stringify(result, null, 2));
       process.exit(0);
@@ -309,7 +332,7 @@ if (require.main === module) {
 }
 
 export default {
-  async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext) {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(scheduledHandler(event, env));
   },
 };

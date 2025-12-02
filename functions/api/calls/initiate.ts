@@ -73,35 +73,65 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     if (providerType === 'stammer') {
       // Initiate call with Stammer AI
       // API Docs: https://app.stammer.ai/en/api-docs/me/
+      const stammerPayload = {
+        phone_number: phoneNumber,
+        chatbot_uuid: env.STAMMER_AGENT_ID,
+        user_key: leadId || `lead_${Date.now()}`,
+        metadata: {
+          leadId: leadId || '',
+          campaignId: campaignId || '',
+          source: 'greenline-dialer',
+          calendlyUrl: 'https://calendly.com/greenlineai',
+        },
+      };
+
+      console.log('Calling Stammer API with payload:', {
+        ...stammerPayload,
+        phone_number: phoneNumber.substring(0, 5) + '***', // Mask phone for privacy
+      });
+
       const stammerResponse = await fetch('https://app.stammer.ai/en/chatbot/api/v1/call/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${env.STAMMER_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          phone_number: phoneNumber,
-          chatbot_uuid: env.STAMMER_AGENT_ID,
-          user_key: leadId || `lead_${Date.now()}`,
-          metadata: {
-            leadId: leadId || '',
-            campaignId: campaignId || '',
-            source: 'greenline-dialer',
-            calendlyUrl: 'https://calendly.com/greenlineai',
-          },
-        }),
+        body: JSON.stringify(stammerPayload),
       });
 
       if (!stammerResponse.ok) {
-        const errorData = await stammerResponse.text();
+        let errorData;
+        try {
+          errorData = await stammerResponse.json();
+        } catch {
+          errorData = await stammerResponse.text();
+        }
+        
         console.error('Stammer API error:', {
           status: stammerResponse.status,
           statusText: stammerResponse.statusText,
           error: errorData,
           url: 'https://app.stammer.ai/en/chatbot/api/v1/call/',
           chatbot_uuid: env.STAMMER_AGENT_ID,
+          hasApiKey: !!env.STAMMER_API_KEY,
+          apiKeyPrefix: env.STAMMER_API_KEY?.substring(0, 8) + '...',
+          requestPayload: stammerPayload,
         });
-        throw new Error(`Stammer API error (${stammerResponse.status}): ${errorData || stammerResponse.statusText}`);
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Stammer API error (${stammerResponse.status})`,
+            details: typeof errorData === 'string' ? errorData : JSON.stringify(errorData),
+            debug: {
+              status: stammerResponse.status,
+              hasApiKey: !!env.STAMMER_API_KEY,
+              hasAgentId: !!env.STAMMER_AGENT_ID,
+              errorResponse: errorData,
+            }
+          }),
+          { status: stammerResponse.status, headers: { 'Content-Type': 'application/json' } }
+        );
       }
 
       const data = await stammerResponse.json();

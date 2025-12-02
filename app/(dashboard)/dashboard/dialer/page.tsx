@@ -128,8 +128,25 @@ function DialerContent() {
         // Check if it's a setup issue
         if (response.status === 503) {
           setShowSetupWarning(true);
-          toast.error('Voice AI not configured. Please add your API key.');
+          toast.error('Voice AI not configured. Please add your API key in Cloudflare Pages settings.');
+        } else {
+          // Show specific error from API
+          const errorMsg = data.details || data.error || 'Failed to initiate call';
+          toast.error(`Call failed: ${errorMsg}`);
+          console.error('Call initiation error:', data);
         }
+        
+        // Update call record as failed
+        if (call?.id) {
+          await updateCall.mutateAsync({
+            id: call.id,
+            updates: {
+              status: 'failed',
+            },
+          });
+        }
+        
+        setCallStatus('idle');
         throw new Error(data.error || 'Failed to initiate call');
       }
 
