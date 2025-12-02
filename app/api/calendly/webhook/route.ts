@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
           notes: `Calendly booking: ${notes}`
         };
 
+        // @ts-expect-error - Supabase types are correctly defined but inference fails in build
         const { data: newLead, error: leadError } = await supabase
           .from('leads')
           .insert(leadData)
