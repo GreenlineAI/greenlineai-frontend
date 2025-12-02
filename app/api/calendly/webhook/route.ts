@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         .limit(1);
       
       if (users && users.length > 0) {
-        userId = users[0].id;
+        userId = (users[0] as { id: string }).id;
 
         // Create new lead
         const { data: newLead, error: leadError } = await supabase
