@@ -35,11 +35,25 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       apiKey = env.RETELL_API_KEY;
     }
     
+    // Debug logging (remove in production)
+    console.log('Initiate call debug:', {
+      providerType,
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      hasAgentId: !!env.STAMMER_AGENT_ID,
+      agentId: env.STAMMER_AGENT_ID,
+    });
+    
     if (!apiKey || apiKey === 'your_api_key_here') {
       return new Response(
         JSON.stringify({
           error: 'Voice AI not configured',
           details: `Please add ${providerType.toUpperCase()}_API_KEY to your Cloudflare Pages environment variables.`,
+          debug: {
+            providerType,
+            hasApiKey: !!apiKey,
+            hasAgentId: !!env.STAMMER_AGENT_ID,
+          }
         }),
         { status: 503, headers: { 'Content-Type': 'application/json' } }
       );
