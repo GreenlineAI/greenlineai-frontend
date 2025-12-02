@@ -1,0 +1,10 @@
+name = "auto-dialer-cron"
+main = "workers/auto-dialer-cron.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+PAGES_FUNCTION_URL = "https://greenlineai-frontend.pages.dev"
+AUTO_DIALER_USER_ID = "0b627f19-6ea2-469b-a596-84cab72190c9"
+
+[triggers]
+crons = ["0 17-23,0-2 * * 1-5"]
