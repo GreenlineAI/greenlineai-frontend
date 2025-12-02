@@ -198,7 +198,8 @@ export async function POST(request: NextRequest) {
 
     // Send email notification
     try {
-      const { data: profile } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('email, name')
         .eq('id', userId)

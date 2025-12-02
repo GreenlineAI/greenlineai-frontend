@@ -17,7 +17,8 @@ export async function GET(
     const { id: callId } = await params;
 
     // Get call from database
-    const { data: call, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: call, error } = await (supabase as any)
       .from('calls')
       .select('*')
       .eq('id', callId)

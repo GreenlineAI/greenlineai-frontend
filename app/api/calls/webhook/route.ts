@@ -11,7 +11,8 @@ export async function POST(request: NextRequest) {
     // Get call by vapi_call_id
     const supabase = await createClient();
     
-    const { data: call } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: call } = await (supabase as any)
       .from('calls')
       .select('*')
       .eq('vapi_call_id', body.call_id)
@@ -40,7 +41,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update call record
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('calls')
       .update({
         status,
