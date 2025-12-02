@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Try to find existing lead by email or phone
-    let lead = null;
-    let userId = null;
+    let lead: { id: string; user_id: string; business_name: string } | null = null;
+    let userId: string | null = null;
 
     if (inviteeEmail) {
       const { data: leads } = await supabase
@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
         .limit(1);
       
       if (leads && leads.length > 0) {
-        lead = leads[0];
-        userId = lead.user_id;
+        lead = leads[0] as { id: string; user_id: string; business_name: string };
+        userId = lead?.user_id ?? null;
       }
     }
 
@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
         .limit(1);
       
       if (leads && leads.length > 0) {
-        lead = leads[0];
-        userId = lead.user_id;
+        lead = leads[0] as { id: string; user_id: string; business_name: string };
+        userId = lead?.user_id ?? null;
       }
     }
 
