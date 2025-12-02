@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
       if (profile?.email) {
         await sendMeetingBookedEmail({
-          userName: profile.name || 'there',
+          userName: profile?.name || 'there',
           businessName: lead.business_name,
           contactName: lead.contact_name || undefined,
           scheduledAt: scheduled_at,
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
           phone: lead.phone,
           email: lead.email || undefined
         });
-        console.log('✅ Email notification sent to:', profile.email);
+        console.log('✅ Email notification sent to:', profile?.email);
       }
     } catch (emailError) {
       console.error('Failed to send email notification:', emailError);
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      meeting_id: meeting.id,
+      meeting_id: meeting?.id,
       message: 'Meeting booked successfully'
     });
 

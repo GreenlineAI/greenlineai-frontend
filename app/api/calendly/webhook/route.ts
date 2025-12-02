@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         // Create new lead
         const { data: newLead, error: leadError } = await supabase
           .from('leads')
-          .insert([{
+          .insert({
             user_id: userId,
             business_name: businessName,
             contact_name: inviteeName,
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
             status: 'meeting_scheduled',
             score: 'hot',
             notes: `Calendly booking: ${notes}`
-          }])
+          })
           .select()
           .single();
 
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
 
       if (profile?.email) {
         await sendMeetingBookedEmail({
-          userName: profile.name || 'there',
+          userName: profile?.name || 'there',
           businessName: businessName,
           contactName: inviteeName,
           scheduledAt,
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      meeting_id: meeting.id,
+      meeting_id: meeting?.id,
       lead_id: lead.id,
       message: 'Calendly booking processed successfully'
     });
