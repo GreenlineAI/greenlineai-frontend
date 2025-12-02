@@ -24,32 +24,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-type CallStatus = 'pending' | 'in_progress' | 'completed' | 'no_answer' | 'voicemail' | 'failed';
-type Sentiment = 'positive' | 'neutral' | 'negative';
+import { OutreachCall, CallStatus } from '@/lib/types';
 
-interface Call {
-  id: string;
-  lead_id: string;
-  status: CallStatus;
-  duration: number;
-  transcript: string;
-  summary: string;
-  sentiment: Sentiment;
-  meeting_booked: boolean;
-  recording_url: string;
-  created_at: string;
-  lead?: {
-    businessName: string;
-    contactName: string;
-    phone: string;
-  };
-}
+type Sentiment = 'positive' | 'neutral' | 'negative';
 
 export default function CallLogsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<CallStatus | 'all'>('all');
   const [sentimentFilter, setSentimentFilter] = useState<Sentiment | 'all'>('all');
-  const [selectedCall, setSelectedCall] = useState<Call | null>(null);
+  const [selectedCall, setSelectedCall] = useState<OutreachCall | null>(null);
 
   const { data: callsResponse, isLoading } = useCalls({
     filters: {
@@ -60,23 +43,23 @@ export default function CallLogsPage() {
   const calls = callsResponse?.calls || [];
 
   // Filter calls
-  const filteredCalls = calls.filter((call: any) => {
-    const matchesSearch = 
+  const filteredCalls = calls.filter((call: OutreachCall) => {
+    const matchesSearch =
       call.lead?.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       call.lead?.contactName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       call.transcript?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesSentiment = sentimentFilter === 'all' || call.sentiment === sentimentFilter;
-    
+
     return matchesSearch && matchesSentiment;
   });
 
   // Calculate stats
   const stats = {
     total: calls.length,
-    completed: calls.filter((c: any) => c.status === 'completed').length,
-    meetingsBooked: calls.filter((c: any) => c.meetingBooked).length,
-    avgDuration: calls.reduce((acc: number, c: any) => acc + (c.duration || 0), 0) / calls.length || 0,
+    completed: calls.filter((c: OutreachCall) => c.status === 'completed').length,
+    meetingsBooked: calls.filter((c: OutreachCall) => c.meetingBooked).length,
+    avgDuration: calls.reduce((acc: number, c: OutreachCall) => acc + (c.duration || 0), 0) / calls.length || 0,
   };
 
   const getStatusBadge = (status: CallStatus) => {
@@ -217,7 +200,7 @@ export default function CallLogsPage() {
               No calls found. Start calling leads to see logs here.
             </div>
           ) : (
-            filteredCalls.map((call: any) => (
+            filteredCalls.map((call: OutreachCall) => (
               <div
                 key={call.id}
                 className="p-6 hover:bg-muted/50 cursor-pointer transition-colors"
@@ -247,7 +230,7 @@ export default function CallLogsPage() {
                           {Math.floor(call.duration / 60)}m {call.duration % 60}s
                         </span>
                       )}
-                      <span>{formatDistanceToNow(new Date(call.created_at), { addSuffix: true })}</span>
+                      <span>{formatDistanceToNow(new Date(call.createdAt), { addSuffix: true })}</span>
                     </div>
 
                     {call.summary && (
@@ -258,7 +241,7 @@ export default function CallLogsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {call.recording_url && (
+                    {call.recordingUrl && (
                       <Button variant="ghost" size="sm">
                         <Play className="h-4 w-4" />
                       </Button>
@@ -304,7 +287,7 @@ export default function CallLogsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Meeting Booked</p>
-                  <p className="font-medium">{selectedCall.meeting_booked ? '✅ Yes' : '❌ No'}</p>
+                  <p className="font-medium">{selectedCall.meetingBooked ? '✅ Yes' : '❌ No'}</p>
                 </div>
               </div>
 
@@ -329,15 +312,15 @@ export default function CallLogsPage() {
               )}
 
               {/* Recording */}
-              {selectedCall.recording_url && (
+              {selectedCall.recordingUrl && (
                 <div>
                   <h4 className="font-semibold mb-2">Recording</h4>
                   <audio controls className="w-full">
-                    <source src={selectedCall.recording_url} type="audio/mpeg" />
+                    <source src={selectedCall.recordingUrl} type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
                   <Button variant="outline" size="sm" className="mt-2" asChild>
-                    <a href={selectedCall.recording_url} download>
+                    <a href={selectedCall.recordingUrl} download>
                       <Download className="h-4 w-4 mr-2" />
                       Download Recording
                     </a>
@@ -349,7 +332,7 @@ export default function CallLogsPage() {
               <div className="flex gap-2">
                 <Button onClick={() => {
                   // Navigate to lead detail
-                  window.location.href = `/dashboard/leads?id=${selectedCall.lead_id}`;
+                  window.location.href = `/dashboard/leads?id=${selectedCall.leadId}`;
                 }}>
                   View Lead
                 </Button>

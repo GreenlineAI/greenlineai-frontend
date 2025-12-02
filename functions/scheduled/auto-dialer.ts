@@ -9,7 +9,8 @@
  * 2. Or run manually: node scripts/auto-dialer.ts
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../lib/database.types';
 
 // Cloudflare Workers types
 type ScheduledEvent = {
@@ -18,7 +19,7 @@ type ScheduledEvent = {
 };
 
 type ExecutionContext = {
-  waitUntil(promise: Promise<any>): void;
+  waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
 };
 
@@ -86,7 +87,7 @@ function isWithinWorkingHours(): boolean {
 /**
  * Get leads that need to be called
  */
-async function getLeadsToCall(supabase: any, userId: string, limit: number): Promise<Lead[]> {
+async function getLeadsToCall(supabase: SupabaseClient<Database>, userId: string, limit: number): Promise<Lead[]> {
   // Get leads that:
   // 1. Haven't been called yet OR
   // 2. Had "no_answer" status and haven't hit max attempts OR
@@ -112,8 +113,8 @@ async function getLeadsToCall(supabase: any, userId: string, limit: number): Pro
     .eq('user_id', userId)
     .in('lead_id', leads?.map((l: Lead) => l.id) || []);
   
-  const callCountMap = new Map(
-    callCounts?.map((c: any) => [c.lead_id, c.count]) || []
+  const callCountMap = new Map<string, number>(
+    callCounts?.map((c: { lead_id: string; count: number }) => [c.lead_id, c.count]) || []
   );
   
   const filteredLeads = leads?.filter((lead: Lead) => {
@@ -150,7 +151,7 @@ async function getTodayCallCount(supabase: any, userId: string): Promise<number>
 /**
  * Initiate a call via Stammer AI
  */
-async function initiateCall(supabase: any, lead: Lead, siteUrl: string): Promise<CallResult> {
+async function initiateCall(supabase: SupabaseClient<Database>, lead: Lead, siteUrl: string): Promise<CallResult> {
   try {
     const response = await fetch(`${siteUrl}/api/calls/initiate`, {
       method: 'POST',
@@ -219,7 +220,7 @@ async function runAutoDialer(userId: string, env: Env) {
   console.log(`Config:`, CONFIG);
   
   // Initialize Supabase with environment variables
-  const supabase = createClient(
+  const supabase = createClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.SUPABASE_SERVICE_ROLE_KEY
   );
@@ -331,8 +332,10 @@ if (typeof require !== 'undefined' && require.main === module) {
     });
 }
 
-export default {
+const handler = {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(scheduledHandler(event, env));
   },
 };
+
+export default handler;

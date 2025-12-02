@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+interface Lead {
+  id: string;
+  user_id: string;
+  status: string;
+  [key: string]: unknown;
+}
+
+interface CampaignLeadResult {
+  lead_id: string;
+  lead: Lead | null;
+}
+
 /**
  * Cron job endpoint to automatically process campaigns
  * 
@@ -90,15 +102,15 @@ export async function GET(request: NextRequest) {
         }
 
         // Filter leads that haven't been contacted yet or need follow-up
-        const unleadedLeads = campaignLeads
-          .filter(cl => {
-            const lead = cl.lead as any;
+        const unleadedLeads = (campaignLeads as CampaignLeadResult[])
+          .filter((cl: CampaignLeadResult) => {
+            const lead = cl.lead;
             return lead && (
-              lead.status === 'new' || 
+              lead.status === 'new' ||
               lead.status === 'no_answer'
             );
           })
-          .map(cl => cl.lead);
+          .map((cl: CampaignLeadResult) => cl.lead);
 
         // Limit to 5 calls per campaign per run (to avoid overwhelming)
         const leadsToCall = unleadedLeads.slice(0, 5);
@@ -114,7 +126,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Create outreach call records for each lead
-        for (const lead of leadsToCall as any[]) {
+        for (const lead of leadsToCall as Lead[]) {
           try {
             const { error: callError } = await supabase
               .from('outreach_calls')

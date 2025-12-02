@@ -14,7 +14,7 @@ type ScheduledEvent = {
 };
 
 type ExecutionContext = {
-  waitUntil(promise: Promise<any>): void;
+  waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
 };
 
@@ -23,8 +23,8 @@ interface Env {
   AUTO_DIALER_USER_ID: string;
 }
 
-export default {
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+const handler = {
+  async scheduled(event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
     console.log('🕐 Cron triggered at:', new Date(event.scheduledTime).toISOString());
     
     try {
@@ -55,3 +55,5 @@ export default {
     }
   },
 };
+
+export default handler;

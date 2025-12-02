@@ -91,7 +91,7 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
 
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i]);
-      const lead: any = {
+      const lead: Partial<ParsedLead> = {
         status: 'new',
         score: 'warm',
         industry: 'Landscaping', // Default industry
@@ -109,19 +109,19 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
             break;
           case 'contactname':
           case 'ownername':
-            lead.contactName = value || null;
+            lead.contactName = value || undefined;
             break;
           case 'email':
           case 'contactemail':
           case 'owneremail':
-            lead.email = value || null;
+            lead.email = value || undefined;
             break;
           case 'phone':
           case 'phonenumber':
             lead.phone = value;
             break;
           case 'address':
-            lead.address = value || null;
+            lead.address = value || undefined;
             break;
           case 'city':
             lead.city = value;
@@ -131,32 +131,32 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
             break;
           case 'zip':
           case 'zipcode':
-            lead.zip = value || null;
+            lead.zip = value || undefined;
             break;
           case 'industry':
             if (value) lead.industry = value;
             break;
           case 'rating':
           case 'googlerating':
-            lead.googleRating = value ? parseFloat(value) : null;
+            lead.googleRating = value ? parseFloat(value) : undefined;
             break;
           case 'reviewcount':
           case 'reviews':
-            lead.reviewCount = value ? parseInt(value) : null;
+            lead.reviewCount = value ? parseInt(value) : undefined;
             break;
           case 'website':
-            lead.website = value || null;
+            lead.website = value || undefined;
             break;
           case 'status':
           case 'callstatus':
             if (value && ['new', 'contacted', 'interested', 'meeting_scheduled', 'not_interested', 'no_answer', 'invalid'].includes(value.toLowerCase())) {
-              lead.status = value.toLowerCase();
+              lead.status = value.toLowerCase() as ParsedLead['status'];
             }
             break;
           case 'score':
           case 'qualityscore':
           case 'leadquality':
-            const scoreMap: any = { 
+            const scoreMap: Record<string, 'hot' | 'warm' | 'cold'> = { 
               'high': 'hot', 
               'urgent': 'hot',
               'hot': 'hot',
@@ -170,7 +170,7 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
             }
             break;
           case 'notes':
-            lead.notes = value || null;
+            lead.notes = value || undefined;
             break;
         }
       });
@@ -220,25 +220,26 @@ export function ImportLeadsDialog({ open, onOpenChange, onSuccess }: ImportLeads
         const batch = parsedLeads.slice(i, i + batchSize).map(lead => ({
           user_id: user.id,
           business_name: lead.businessName,
-          contact_name: lead.contactName,
-          email: lead.email,
+          contact_name: lead.contactName ?? null,
+          email: lead.email ?? null,
           phone: lead.phone,
-          address: lead.address,
+          address: lead.address ?? null,
           city: lead.city,
           state: lead.state,
-          zip: lead.zip,
+          zip: lead.zip ?? null,
           industry: lead.industry,
-          google_rating: lead.googleRating,
-          review_count: lead.reviewCount,
-          website: lead.website,
+          google_rating: lead.googleRating ?? null,
+          review_count: lead.reviewCount ?? null,
+          website: lead.website ?? null,
           status: lead.status,
           score: lead.score,
-          notes: lead.notes,
+          notes: lead.notes ?? null,
         }));
 
-        const { error: insertError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: insertError } = await (supabase as any)
           .from('leads')
-          .insert(batch as any);
+          .insert(batch);
 
         if (insertError) {
           console.error('Error importing batch:', insertError);
