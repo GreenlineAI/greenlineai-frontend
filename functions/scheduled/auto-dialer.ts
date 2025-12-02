@@ -10,7 +10,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '../lib/database.types';
+import { Database } from '../../lib/database.types';
 
 // Cloudflare Workers types
 type ScheduledEvent = {
@@ -182,7 +182,8 @@ async function initiateCall(supabase: SupabaseClient<Database>, lead: Lead, site
     console.log(`✅ Called ${lead.business_name} - Call ID: ${data.callId}`);
     
     // Create call record in database
-    await supabase.from('outreach_calls').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('outreach_calls').insert({
       user_id: lead.user_id,
       lead_id: lead.id,
       status: 'pending',
