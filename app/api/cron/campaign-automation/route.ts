@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all active campaigns
-    const { data: campaigns, error: campaignsError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: campaigns, error: campaignsError } = await (supabase as any)
       .from('campaigns')
       .select('*')
       .eq('status', 'active');
@@ -78,7 +79,8 @@ export async function GET(request: NextRequest) {
         results.campaigns_processed++;
 
         // Get leads for this campaign that haven't been contacted yet
-        const { data: campaignLeads, error: leadsError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: campaignLeads, error: leadsError } = await (supabase as any)
           .from('campaign_leads')
           .select(`
             lead_id,
@@ -93,7 +95,8 @@ export async function GET(request: NextRequest) {
 
         if (!campaignLeads || campaignLeads.length === 0) {
           // Campaign has no more leads, mark as completed
-          await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
             .from('campaigns')
             .update({ status: 'completed' })
             .eq('id', campaign.id);
@@ -117,7 +120,8 @@ export async function GET(request: NextRequest) {
 
         if (leadsToCall.length === 0) {
           // No more leads to call, pause campaign
-          await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supabase as any)
             .from('campaigns')
             .update({ status: 'paused' })
             .eq('id', campaign.id);
@@ -128,7 +132,8 @@ export async function GET(request: NextRequest) {
         // Create outreach call records for each lead
         for (const lead of leadsToCall as Lead[]) {
           try {
-            const { error: callError } = await supabase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: callError } = await (supabase as any)
               .from('outreach_calls')
               .insert({
                 user_id: campaign.user_id,
@@ -143,9 +148,10 @@ export async function GET(request: NextRequest) {
               results.calls_initiated++;
               
               // Update lead status to contacted
-              await supabase
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (supabase as any)
                 .from('leads')
-                .update({ 
+                .update({
                   status: 'contacted',
                   last_contacted: new Date().toISOString()
                 })
@@ -157,7 +163,8 @@ export async function GET(request: NextRequest) {
         }
 
         // Update campaign stats
-        await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any)
           .from('campaigns')
           .update({
             contacted_count: campaign.contacted_count + results.calls_initiated

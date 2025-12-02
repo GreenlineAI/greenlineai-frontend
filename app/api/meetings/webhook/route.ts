@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Find the lead by phone or email
-    let query = supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query = (supabase as any)
       .from('leads')
       .select('id, user_id, business_name, contact_name, email, phone');
     
@@ -72,7 +73,8 @@ export async function POST(request: NextRequest) {
     // Find the associated outreach call if external_call_id is provided
     let call_id = null;
     if (external_call_id) {
-      const { data: calls } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: calls } = await (supabase as any)
         .from('outreach_calls')
         .select('id')
         .eq('vapi_call_id', external_call_id)
@@ -84,7 +86,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the meeting
-    const { data: meeting, error: meetingError } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: meeting, error: meetingError } = await (supabase as any)
       .from('meetings')
       .insert({
         user_id: lead.user_id,
@@ -108,14 +111,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Update lead status
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('leads')
       .update({ status: 'meeting_scheduled' })
       .eq('id', lead.id);
 
     // Mark call as having booked meeting
     if (call_id) {
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('outreach_calls')
         .update({ meeting_booked: true })
         .eq('id', call_id);
@@ -124,7 +129,8 @@ export async function POST(request: NextRequest) {
     // Send email notification to user
     try {
       // Get user email
-      const { data: profile } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: profile } = await (supabase as any)
         .from('profiles')
         .select('email, name')
         .eq('id', lead.user_id)

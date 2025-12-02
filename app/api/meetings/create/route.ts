@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create meeting
-    const { data: meeting, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: meeting, error } = await (supabase as any)
       .from('meetings')
       .insert({
         user_id: user.id,
@@ -64,14 +65,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Update lead status to meeting_scheduled
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from('leads')
       .update({ status: 'meeting_scheduled' })
       .eq('id', lead_id);
 
     // If there's a call_id, mark that call as having a meeting booked
     if (call_id) {
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('outreach_calls')
         .update({ meeting_booked: true })
         .eq('id', call_id);
