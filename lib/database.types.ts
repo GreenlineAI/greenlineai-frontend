@@ -352,6 +352,122 @@ export type Database = {
           updated_at?: string
         }
       }
+      business_onboarding: {
+        Row: {
+          id: string
+          user_id: string | null
+          business_name: string
+          business_type: 'landscaping' | 'lawn_care' | 'tree_service' | 'hardscaping' | 'irrigation' | 'snow_removal' | 'general_contractor' | 'hvac' | 'plumbing' | 'electrical' | 'roofing' | 'painting' | 'cleaning' | 'pest_control' | 'pool_service' | 'other'
+          business_type_other: string | null
+          owner_name: string
+          email: string
+          phone: string
+          website: string | null
+          city: string
+          state: string
+          zip: string | null
+          service_radius_miles: number
+          services: string[]
+          hours_monday: string | null
+          hours_tuesday: string | null
+          hours_wednesday: string | null
+          hours_thursday: string | null
+          hours_friday: string | null
+          hours_saturday: string | null
+          hours_sunday: string | null
+          greeting_name: string | null
+          preferred_voice: string
+          appointment_duration: number
+          calendar_link: string | null
+          pricing_info: string | null
+          special_instructions: string | null
+          phone_preference: 'new' | 'forward' | 'port'
+          existing_phone_number: string | null
+          current_phone_provider: string | null
+          retell_agent_id: string | null
+          retell_phone_number: string | null
+          status: 'pending' | 'in_review' | 'agent_created' | 'active' | 'paused'
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          business_name: string
+          business_type: 'landscaping' | 'lawn_care' | 'tree_service' | 'hardscaping' | 'irrigation' | 'snow_removal' | 'general_contractor' | 'hvac' | 'plumbing' | 'electrical' | 'roofing' | 'painting' | 'cleaning' | 'pest_control' | 'pool_service' | 'other'
+          business_type_other?: string | null
+          owner_name: string
+          email: string
+          phone: string
+          website?: string | null
+          city: string
+          state: string
+          zip?: string | null
+          service_radius_miles?: number
+          services: string[]
+          hours_monday?: string | null
+          hours_tuesday?: string | null
+          hours_wednesday?: string | null
+          hours_thursday?: string | null
+          hours_friday?: string | null
+          hours_saturday?: string | null
+          hours_sunday?: string | null
+          greeting_name?: string | null
+          preferred_voice?: string
+          appointment_duration?: number
+          calendar_link?: string | null
+          pricing_info?: string | null
+          special_instructions?: string | null
+          phone_preference?: 'new' | 'forward' | 'port'
+          existing_phone_number?: string | null
+          current_phone_provider?: string | null
+          retell_agent_id?: string | null
+          retell_phone_number?: string | null
+          status?: 'pending' | 'in_review' | 'agent_created' | 'active' | 'paused'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          business_name?: string
+          business_type?: 'landscaping' | 'lawn_care' | 'tree_service' | 'hardscaping' | 'irrigation' | 'snow_removal' | 'general_contractor' | 'hvac' | 'plumbing' | 'electrical' | 'roofing' | 'painting' | 'cleaning' | 'pest_control' | 'pool_service' | 'other'
+          business_type_other?: string | null
+          owner_name?: string
+          email?: string
+          phone?: string
+          website?: string | null
+          city?: string
+          state?: string
+          zip?: string | null
+          service_radius_miles?: number
+          services?: string[]
+          hours_monday?: string | null
+          hours_tuesday?: string | null
+          hours_wednesday?: string | null
+          hours_thursday?: string | null
+          hours_friday?: string | null
+          hours_saturday?: string | null
+          hours_sunday?: string | null
+          greeting_name?: string | null
+          preferred_voice?: string
+          appointment_duration?: number
+          calendar_link?: string | null
+          pricing_info?: string | null
+          special_instructions?: string | null
+          phone_preference?: 'new' | 'forward' | 'port'
+          existing_phone_number?: string | null
+          current_phone_provider?: string | null
+          retell_agent_id?: string | null
+          retell_phone_number?: string | null
+          status?: 'pending' | 'in_review' | 'agent_created' | 'active' | 'paused'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -366,6 +482,9 @@ export type Database = {
       campaign_type: 'phone' | 'email' | 'multi_channel'
       call_status: 'pending' | 'in_progress' | 'completed' | 'no_answer' | 'voicemail' | 'failed'
       user_plan: 'leads' | 'outreach' | 'whitelabel'
+      onboarding_status: 'pending' | 'in_review' | 'agent_created' | 'active' | 'paused'
+      business_type: 'landscaping' | 'lawn_care' | 'tree_service' | 'hardscaping' | 'irrigation' | 'snow_removal' | 'general_contractor' | 'hvac' | 'plumbing' | 'electrical' | 'roofing' | 'painting' | 'cleaning' | 'pest_control' | 'pool_service' | 'other'
+      phone_setup_preference: 'new' | 'forward' | 'port'
     }
   }
 }
