@@ -11,14 +11,17 @@ NEXT_PUBLIC_SUPABASE_URL = "https://nggelyppkswqxycblvcb.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZ2VseXBwa3N3cXh5Y2JsdmNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0ODc3NTEsImV4cCI6MjA4MDA2Mzc1MX0.g3L2cnvCf67IePlaSdAlTBLx2c07xGj2rBsQ2KSHIRw"
 
 # Voice AI Configuration
-VOICE_AI_PROVIDER = "stammer"
+VOICE_AI_PROVIDER = "retell"
+
+# Retell AI - Get your keys from https://www.retellai.com/
+# Replace these placeholder values with your actual Retell credentials
+RETELL_API_KEY = "your_retell_api_key_here"
+RETELL_AGENT_ID_1 = "your_retell_agent_id_here"
+RETELL_AGENT_ID_2 = "your_retell_agent_id_here"
+
+# Stammer AI (Alternative provider - not currently used)
 STAMMER_API_KEY = "9b0255369a055b13bbb215af48f8d9dcf1a2bda4"
 STAMMER_AGENT_ID = "893b87dd-0f63-4866-8cae-d60b696cae1a"
-
-# Retell AI (Alternative provider - not currently used)
-RETELL_API_KEY = "key_7128cb9dae3666f93d5df369fa0a"
-RETELL_AGENT_ID_1 = "agent_xxxxxxxxxxxxxxxxxx"
-RETELL_AGENT_ID_2 = "agent_yyyyyyyyyyyyyyyyyy"
 
 # Auto-Dialer Configuration
 AUTO_DIALER_USER_ID = "0b627f19-6ea2-469b-a596-84cab72190c9"
