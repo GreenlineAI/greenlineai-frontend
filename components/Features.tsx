@@ -1,71 +1,71 @@
 import {
-  Database,
-  Target,
   Phone,
-  Mail,
+  Calendar,
+  MessageSquare,
+  Clock,
   BarChart3,
   Shield,
   Zap,
-  Users,
-  Building,
+  Bell,
+  Mic,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function Features() {
   const features = [
     {
-      icon: Database,
-      title: "Verified Lead Data",
-      description:
-        "Every contact verified within 7 days. Business name, phone, email, address, and Google rating included with every lead.",
-    },
-    {
-      icon: Target,
-      title: "Industry Targeting",
-      description:
-        "Landscaping, HVAC, plumbing, roofing, cleaning, and more. Filter by service type, rating, location, and business size.",
-    },
-    {
       icon: Phone,
-      title: "AI Voice Outreach",
+      title: "24/7 Call Answering",
       description:
-        "Human-sounding AI calls your prospects, qualifies them, and books meetings directly on your calendar.",
+        "AI answers every call instantly, day or night. Weekends, holidays, while you're on a job - never miss a customer again.",
     },
     {
-      icon: Mail,
-      title: "Multi-Channel Campaigns",
+      icon: Calendar,
+      title: "Instant Appointment Booking",
       description:
-        "Combine phone, email, and SMS in automated sequences. AI personalizes each touchpoint based on prospect data.",
+        "AI checks your availability and books jobs directly on your calendar. Customers get confirmed appointments in real-time.",
+    },
+    {
+      icon: MessageSquare,
+      title: "Natural Conversations",
+      description:
+        "Human-like AI that understands context, answers questions about your services, and handles objections naturally.",
+    },
+    {
+      icon: Mic,
+      title: "Custom Voice & Script",
+      description:
+        "Train the AI on your services, pricing, and service area. It sounds like your business, not a generic robot.",
+    },
+    {
+      icon: Bell,
+      title: "Instant Notifications",
+      description:
+        "Get text and email alerts for every call. See caller info, what they need, and whether a job was booked.",
+    },
+    {
+      icon: Clock,
+      title: "Call Recording & Transcripts",
+      description:
+        "Review every conversation. Full recordings and written transcripts so you never miss important details.",
     },
     {
       icon: BarChart3,
-      title: "Real-Time Analytics",
+      title: "Call Analytics Dashboard",
       description:
-        "Track contact rates, response rates, and conversions. See exactly which campaigns and messages perform best.",
-    },
-    {
-      icon: Shield,
-      title: "TCPA & GDPR Compliant",
-      description:
-        "Built-in compliance tools, automatic opt-out handling, and consent tracking. Never worry about regulations.",
+        "Track call volume, booking rates, and peak hours. See what services customers ask about most.",
     },
     {
       icon: Zap,
-      title: "CRM Integration",
+      title: "Easy Setup",
       description:
-        "Native integrations with HubSpot, Salesforce, GoHighLevel, and more. Or use our API for custom workflows.",
+        "Forward your existing business number or get a new one. No hardware, no apps to install - works with any phone.",
     },
     {
-      icon: Users,
-      title: "White-Label Ready",
+      icon: Shield,
+      title: "Professional & Reliable",
       description:
-        "Resell to your clients with your branding. Custom domains, logos, and colors. Your clients never see our name.",
-    },
-    {
-      icon: Building,
-      title: "Agency Dashboard",
-      description:
-        "Manage multiple clients from one account. Separate reporting, dedicated sub-accounts, and team permissions.",
+        "99.9% uptime guarantee. Your AI receptionist never calls in sick, takes breaks, or has a bad day.",
     },
   ];
 
@@ -74,11 +74,11 @@ export default function Features() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Everything You Need to Scale Lead Gen
+            Everything You Need to Capture More Jobs
           </h2>
           <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-            From raw lead data to closed deals. Built for marketing agencies
-            and SaaS companies who sell to home services businesses.
+            A complete AI phone system built for landscapers, contractors,
+            and home services businesses who can't afford to miss calls.
           </p>
         </div>
 
@@ -104,11 +104,11 @@ export default function Features() {
         {/* Bottom CTA */}
         <div className="mt-16 text-center bg-gradient-to-r from-primary-50 to-accent-50 rounded-2xl p-8 md:p-12">
           <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
-            Start with leads, scale to full-service outreach
+            Your AI receptionist, ready in 15 minutes
           </h3>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Buy lead lists a la carte, upgrade to done-for-you outreach, or
-            white-label the entire platform. Grow at your own pace.
+            No technical skills needed. Just tell us about your business and
+            start forwarding calls. It's that simple.
           </p>
         </div>
       </div>

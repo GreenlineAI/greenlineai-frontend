@@ -21,10 +21,10 @@ export default function FinalCTA() {
       <div className="container mx-auto px-4 max-w-5xl relative z-10">
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            Ready to Scale Your Lead Generation?
+            Ready to Stop Missing Calls?
           </h2>
           <p className="text-xl md:text-2xl text-primary-100 max-w-3xl mx-auto">
-            Join 50+ agencies and SaaS companies using AI-powered outreach to close more deals
+            Join 200+ home services businesses booking more jobs with AI phone answering
           </p>
         </div>
 
@@ -43,15 +43,15 @@ export default function FinalCTA() {
           <div className="flex flex-wrap justify-center items-center gap-6 text-primary-100">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5" />
-              <span>Free lead sample included</span>
+              <span>Setup in 15 minutes</span>
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              <span>30-day free trial</span>
+              <span>14-day free trial</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
-              <span>No long-term contracts</span>
+              <span>Cancel anytime</span>
             </div>
           </div>
         </div>
@@ -88,26 +88,26 @@ export default function FinalCTA() {
         <div className="mt-16 grid sm:grid-cols-3 gap-8 text-center">
           <div>
             <div className="text-4xl md:text-5xl font-bold text-accent-400 mb-2">
-              2M+
+              100%
             </div>
             <div className="text-primary-100">
-              Verified business contacts
+              Of calls answered
             </div>
           </div>
           <div>
             <div className="text-4xl md:text-5xl font-bold text-accent-400 mb-2">
-              85%
+              30%
             </div>
             <div className="text-primary-100">
-              Average contact rate
+              More jobs booked
             </div>
           </div>
           <div>
             <div className="text-4xl md:text-5xl font-bold text-accent-400 mb-2">
-              10x
+              24/7
             </div>
             <div className="text-primary-100">
-              Average client ROI
+              Always available
             </div>
           </div>
         </div>

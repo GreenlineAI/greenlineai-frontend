@@ -6,27 +6,27 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function Testimonials() {
   const testimonials = [
     {
-      name: "Marcus Chen",
-      company: "GrowthStack Marketing",
+      name: "Mike Rodriguez",
+      company: "Rodriguez Landscaping",
       location: "Austin, TX",
       rating: 5,
-      text: "We went from manually finding leads to having 500+ qualified prospects delivered monthly. The AI outreach books 15-20 meetings per week for our clients. Game changer.",
+      text: "I used to miss 5-10 calls a day while on job sites. Now every call gets answered and I've booked 30% more jobs. The AI sounds so natural, customers don't even know.",
       image: null,
     },
     {
-      name: "Jessica Torres",
-      company: "HomeServ SaaS",
+      name: "Sarah Mitchell",
+      company: "Mitchell's Lawn Care",
       location: "Denver, CO",
       rating: 5,
-      text: "The white-label option let us launch our own lead gen platform in 3 weeks. We're now reselling to 12 agencies at 3x what we pay. Best infrastructure decision we made.",
+      text: "Best money I've ever spent on my business. I was paying my wife to answer phones part-time. Now the AI handles everything and actually books more appointments than she did!",
       image: null,
     },
     {
-      name: "David Park",
-      company: "Apex Digital Agency",
-      location: "San Francisco, CA",
+      name: "James Chen",
+      company: "Premier Tree Service",
+      location: "Phoenix, AZ",
       rating: 5,
-      text: "Lead quality is incredible - 85% contact rate vs 30% from our previous provider. The AI voice outreach closes deals while we sleep. ROI is through the roof.",
+      text: "Within the first week, the AI booked 8 tree removal jobs I would have missed. At $400 average per job, it paid for itself in 2 days. Should have done this years ago.",
       image: null,
     },
   ];
@@ -36,10 +36,10 @@ export default function Testimonials() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Trusted by Agencies & SaaS Companies
+            Trusted by Home Services Pros
           </h2>
           <p className="text-xl text-slate-600">
-            See how marketing agencies are scaling with our lead generation platform
+            See how landscapers and contractors are booking more jobs with AI
           </p>
         </div>
 
@@ -137,7 +137,7 @@ export default function Testimonials() {
                 </div>
               ))}
             </div>
-            <span>Join 50+ agencies scaling their lead generation</span>
+            <span>Join 200+ home services businesses never missing calls</span>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Database, TrendingUp, Users, Zap, Target } from "lucide-react";
+import { Calendar, Phone, TrendingUp, Zap, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -16,24 +16,24 @@ export default function Hero() {
 
   const stats = [
     {
-      icon: Database,
-      value: "2M+",
-      label: "Home services businesses in database",
+      icon: Phone,
+      value: "24/7",
+      label: "AI answers your calls around the clock",
     },
     {
       icon: Target,
-      value: "85%",
-      label: "Average contact rate on our leads",
+      value: "100%",
+      label: "Of calls answered, zero missed",
     },
     {
       icon: TrendingUp,
       value: "3x",
-      label: "Higher conversion vs cold lists",
+      label: "More jobs booked vs voicemail",
     },
     {
       icon: Zap,
-      value: "24hr",
-      label: "Lead delivery turnaround",
+      value: "<2s",
+      label: "Average answer time",
     },
   ];
 
@@ -47,17 +47,17 @@ export default function Hero() {
           {/* Left Column - Content */}
           <div>
             <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <Users className="h-4 w-4" />
-              For Marketing Agencies & SaaS Companies
+              <Phone className="h-4 w-4" />
+              For Home Services Businesses
             </div>
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 leading-tight">
-              Sell More to{" "}
-              <span className="text-primary-600">Home Services</span> Businesses
+              Never Miss a{" "}
+              <span className="text-primary-600">Customer Call</span> Again
             </h1>
             <p className="text-xl md:text-2xl text-slate-600 mb-8 leading-relaxed">
-              Pre-qualified leads, done-for-you outreach, or white-label our
-              AI sales platform. Help your clients close more deals with
-              verified landscaping and home services prospects.
+              AI-powered phone answering for landscapers, contractors, and
+              home services pros. Answer every call, book more jobs, and never
+              lose a customer to voicemail again.
             </p>
 
             {/* CTAs */}
@@ -86,15 +86,15 @@ export default function Hero() {
             <div className="flex flex-wrap items-center gap-6 text-sm text-slate-600">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-primary-500 rounded-full" />
-                <span>Pay per lead or monthly</span>
+                <span>Setup in 15 minutes</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-primary-500 rounded-full" />
-                <span>White-label available</span>
+                <span>No contracts</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-primary-500 rounded-full" />
-                <span>TCPA compliant</span>
+                <span>14-day free trial</span>
               </div>
             </div>
           </div>
@@ -103,54 +103,54 @@ export default function Hero() {
           <div className="relative">
             <div className="relative bg-white rounded-2xl shadow-2xl p-6 border border-slate-200">
               <div className="absolute -top-4 -right-4 bg-primary-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                Lead Dashboard
+                Call Dashboard
               </div>
 
               {/* Dashboard mockup */}
               <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="font-semibold text-slate-900">Today's Leads</div>
-                  <div className="text-sm text-primary-600 font-medium">+24 new</div>
+                  <div className="font-semibold text-slate-900">Today's Calls</div>
+                  <div className="text-sm text-primary-600 font-medium">+12 answered</div>
                 </div>
 
-                {/* Lead list preview */}
+                {/* Call list preview */}
                 <div className="space-y-2">
                   <div className="bg-white rounded-lg p-3 shadow-sm flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-slate-900 text-sm">Green Valley Landscaping</div>
-                      <div className="text-xs text-slate-500">Austin, TX • 3.2 rating • No website</div>
+                      <div className="font-medium text-slate-900 text-sm">Sarah Johnson</div>
+                      <div className="text-xs text-slate-500">Lawn mowing quote • 2 min ago</div>
                     </div>
-                    <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Hot</div>
+                    <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Booked</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 shadow-sm flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-slate-900 text-sm">Premier Lawn Care</div>
-                      <div className="text-xs text-slate-500">Dallas, TX • 2.8 rating • Outdated site</div>
+                      <div className="font-medium text-slate-900 text-sm">Mike Thompson</div>
+                      <div className="text-xs text-slate-500">Tree trimming • 15 min ago</div>
                     </div>
-                    <div className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">Warm</div>
+                    <div className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">Callback</div>
                   </div>
                   <div className="bg-white rounded-lg p-3 shadow-sm flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-slate-900 text-sm">Sunrise Garden Services</div>
-                      <div className="text-xs text-slate-500">Houston, TX • 3.5 rating • No CRM</div>
+                      <div className="font-medium text-slate-900 text-sm">Emily Chen</div>
+                      <div className="text-xs text-slate-500">Landscape design • 1 hr ago</div>
                     </div>
-                    <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Hot</div>
+                    <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">Booked</div>
                   </div>
                 </div>
 
                 {/* Quick stats */}
                 <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-200">
                   <div className="text-center">
-                    <div className="text-lg font-bold text-slate-900">847</div>
-                    <div className="text-xs text-slate-500">Total Leads</div>
+                    <div className="text-lg font-bold text-slate-900">47</div>
+                    <div className="text-xs text-slate-500">Calls Today</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-primary-600">312</div>
-                    <div className="text-xs text-slate-500">Contacted</div>
+                    <div className="text-lg font-bold text-primary-600">12</div>
+                    <div className="text-xs text-slate-500">Jobs Booked</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-accent-600">47</div>
-                    <div className="text-xs text-slate-500">Meetings</div>
+                    <div className="text-lg font-bold text-accent-600">0</div>
+                    <div className="text-xs text-slate-500">Missed</div>
                   </div>
                 </div>
               </div>
@@ -158,7 +158,7 @@ export default function Hero() {
 
             {/* Floating badge */}
             <div className="absolute -bottom-6 -left-6 bg-accent-500 text-white px-6 py-3 rounded-xl shadow-lg font-semibold">
-              AI-Powered Outreach
+              AI-Powered Receptionist
             </div>
           </div>
         </div>

@@ -9,44 +9,44 @@ export default function FAQ() {
 
   const faqs = [
     {
-      question: "What industries do you have lead data for?",
+      question: "How does the AI answer my calls?",
       answer:
-        "We specialize in home services: landscaping, lawn care, HVAC, plumbing, roofing, electrical, cleaning, pest control, and more. Our database includes 2M+ verified businesses across the US, updated weekly.",
+        "Simply forward your business line to your GreenLine AI number. When customers call, our AI answers instantly, greets them professionally, asks about their needs, and either books an appointment or takes a message. You get notified immediately.",
     },
     {
-      question: "How fresh is the lead data?",
+      question: "Will customers know they're talking to AI?",
       answer:
-        "Every contact is verified within 7 days of delivery. We run phone verification, email validation, and cross-reference against multiple data sources. Stale data is automatically removed. Average contact rate is 85%+.",
+        "Our AI uses natural, human-like conversation that most callers can't distinguish from a real person. It understands context, handles interruptions, and responds naturally. Many customers assume they're speaking with your receptionist.",
     },
     {
-      question: "Can I target by specific criteria?",
+      question: "Can the AI book appointments on my calendar?",
       answer:
-        "Yes. Filter by geography (state, city, zip, radius), industry type, Google rating (great for targeting businesses needing help), business size, years in operation, and more. We'll help you build the perfect list for your offer.",
+        "Yes! Connect your Google Calendar or other scheduling tool, and the AI will check your availability in real-time. It books appointments directly on your calendar and sends confirmation texts to customers.",
     },
     {
-      question: "How does the AI outreach work?",
+      question: "What if the customer has a question the AI can't answer?",
       answer:
-        "Our AI makes human-sounding phone calls to your prospects. It introduces your service, handles objections, answers questions, and books qualified meetings directly on your calendar. You only talk to interested prospects.",
+        "The AI will take a detailed message and promise a callback. You get an instant notification with the caller's info and their question. For urgent matters, we can set up live call transfers to your cell phone.",
     },
     {
-      question: "Is this TCPA compliant?",
+      question: "How long does setup take?",
       answer:
-        "Yes. All outreach is fully TCPA and GDPR compliant. We handle consent tracking, automatic opt-outs, and maintain do-not-call lists. Our legal team reviews all campaigns before launch.",
+        "Most businesses are up and running in 15-20 minutes. Tell us about your services, set your availability, and customize your greeting. We handle the rest. No technical skills or special equipment needed.",
     },
     {
-      question: "What's included in the white-label option?",
+      question: "What if I want to change my AI's script or voice?",
       answer:
-        "Full custom branding: your domain, logo, colors, and company name throughout. Client management dashboard, separate sub-accounts, and the ability to resell at your own pricing. Your clients never see our brand.",
+        "You have full control through your dashboard. Update your services, pricing, hours, or script anytime. Changes take effect immediately. You can also choose from multiple AI voice options.",
     },
     {
-      question: "How do I integrate with my CRM?",
+      question: "Does it work with my existing phone number?",
       answer:
-        "Native integrations with HubSpot, Salesforce, GoHighLevel, Pipedrive, and more. Or use our REST API to build custom workflows. All leads and call transcripts sync automatically.",
+        "Yes! Keep your existing business number. Just set up call forwarding to your GreenLine AI number. We can also provide a new local number if you prefer. Works with any phone system.",
     },
     {
       question: "What's your refund policy?",
       answer:
-        "30-day money-back guarantee on all plans. If the leads don't convert or the outreach doesn't perform, we'll refund your investment. We're confident in our data quality and AI performance.",
+        "14-day free trial with no credit card required. After that, cancel anytime with no long-term contracts. If you're not booking more jobs within 30 days, we'll refund your first month.",
     },
   ];
 
@@ -58,7 +58,7 @@ export default function FAQ() {
             Frequently Asked Questions
           </h2>
           <p className="text-xl text-slate-600">
-            Everything agencies need to know about our lead generation platform
+            Everything you need to know about AI phone answering
           </p>
         </div>
 
@@ -100,19 +100,18 @@ export default function FAQ() {
         {/* Bottom CTA */}
         <div className="mt-16 text-center bg-gradient-to-r from-primary-50 to-accent-50 rounded-2xl p-8 md:p-12">
           <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
-            Ready to see it in action?
+            Ready to hear it in action?
           </h3>
           <p className="text-lg text-slate-600 mb-6">
-            Book a strategy call and get a free sample of leads for your target market
+            Try our live AI demo and hear how natural the conversation sounds
           </p>
           <button
             onClick={() => {
-              const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
-              window.open(calendlyUrl, "_blank");
+              document.getElementById("demo")?.scrollIntoView({ behavior: "smooth" });
             }}
             className="inline-flex items-center justify-center px-8 py-4 bg-accent-500 text-white rounded-lg font-semibold hover:bg-accent-600 transition-colors shadow-sm hover:shadow-md"
           >
-            Book Strategy Call
+            Try Live Demo
           </button>
         </div>
       </div>

@@ -8,16 +8,16 @@ export default function Pricing() {
   const plans = [
     {
       name: "Starter",
-      subtitle: "For small teams",
-      price: "$297",
+      subtitle: "Solo operators",
+      price: "$149",
       priceUnit: "/month",
       icon: Phone,
       popular: false,
-      description: "Perfect for businesses testing AI voice outreach",
+      description: "Perfect for one-person operations",
       features: [
-        "500 AI call minutes/month",
-        "1 AI voice agent",
-        "Basic call scripts",
+        "200 call minutes/month",
+        "1 phone number",
+        "Basic AI script",
         "Call recording & transcripts",
         "Email notifications",
         "Standard support",
@@ -28,44 +28,44 @@ export default function Pricing() {
     {
       name: "Professional",
       subtitle: "Most popular",
-      price: "$697",
+      price: "$297",
       priceUnit: "/month",
       icon: Headphones,
       popular: true,
-      description: "Full-featured AI calling for growing businesses",
+      description: "For growing home services businesses",
       features: [
-        "2,000 AI call minutes/month",
-        "3 AI voice agents",
-        "Custom voice & scripts",
-        "Smart call scheduling",
-        "Meeting booking integration",
-        "CRM integration (HubSpot, Salesforce)",
-        "Real-time analytics dashboard",
+        "500 call minutes/month",
+        "2 phone numbers",
+        "Custom AI voice & script",
+        "Appointment booking",
+        "Google Calendar sync",
+        "SMS & email notifications",
+        "Call analytics dashboard",
         "Priority support",
       ],
-      cta: "Book Strategy Call",
+      cta: "Start Free Trial",
       note: "Most chosen by landscaping businesses",
     },
     {
-      name: "Enterprise",
-      subtitle: "Unlimited scale",
-      price: "$1,497",
+      name: "Business",
+      subtitle: "High volume",
+      price: "$497",
       priceUnit: "/month",
       icon: Building,
       popular: false,
-      description: "White-label AI calling platform for agencies",
+      description: "For established businesses with high call volume",
       features: [
-        "Unlimited AI call minutes",
-        "Unlimited AI voice agents",
-        "White-label branding",
+        "Unlimited call minutes",
+        "5 phone numbers",
+        "Multiple AI personas",
         "Multi-location support",
-        "Custom integrations & API",
+        "CRM integrations",
+        "Priority call routing",
         "Dedicated account manager",
-        "Team training & onboarding",
-        "SLA guarantee",
+        "99.9% uptime SLA",
       ],
-      cta: "Contact Sales",
-      note: "Custom enterprise pricing available",
+      cta: "Book Strategy Call",
+      note: "Best for businesses with 100+ calls/month",
     },
   ];
 
@@ -80,14 +80,14 @@ export default function Pricing() {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Zap className="h-4 w-4" />
-            AI-Powered Voice Calling
+            Simple, Transparent Pricing
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Scale Your Outreach with AI Voice Agents
+            Less Than the Cost of Missed Jobs
           </h2>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Our AI makes hundreds of personalized calls daily, books meetings, and
-            follows up automatically. Start with a free trial.
+            One missed call could cost you $500+. Our AI answers every call
+            for a fraction of what you'd pay a receptionist.
           </p>
         </div>
 
@@ -165,29 +165,29 @@ export default function Pricing() {
             <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <Clock className="h-6 w-6 text-primary-600" />
             </div>
-            <div className="font-semibold text-slate-900">24/7 Calling</div>
-            <div className="text-sm text-slate-600">Never miss a lead</div>
+            <div className="font-semibold text-slate-900">24/7 Answering</div>
+            <div className="text-sm text-slate-600">Never miss a call</div>
           </div>
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <MessageSquare className="h-6 w-6 text-primary-600" />
             </div>
             <div className="font-semibold text-slate-900">Natural Voice</div>
-            <div className="text-sm text-slate-600">Human-like conversations</div>
+            <div className="text-sm text-slate-600">Sounds like a real person</div>
           </div>
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <Headphones className="h-6 w-6 text-primary-600" />
             </div>
-            <div className="font-semibold text-slate-900">Smart Follow-up</div>
-            <div className="text-sm text-slate-600">Automated persistence</div>
+            <div className="font-semibold text-slate-900">Books Jobs</div>
+            <div className="text-sm text-slate-600">Straight to your calendar</div>
           </div>
           <div className="text-center p-4">
             <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <Phone className="h-6 w-6 text-primary-600" />
             </div>
-            <div className="font-semibold text-slate-900">Live Transfer</div>
-            <div className="text-sm text-slate-600">Hot leads to your team</div>
+            <div className="font-semibold text-slate-900">Easy Setup</div>
+            <div className="text-sm text-slate-600">Ready in 15 minutes</div>
           </div>
         </div>
 
@@ -217,33 +217,33 @@ export default function Pricing() {
         <div className="mt-16 bg-gradient-to-r from-primary-50 to-blue-50 rounded-2xl p-8 md:p-12">
           <div className="max-w-3xl mx-auto text-center">
             <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4">
-              Book 5+ Meetings Per Week on Autopilot
+              The Math is Simple
             </h3>
             <p className="text-lg text-slate-600 mb-6">
-              Our AI agents make 200+ calls daily. With a 15% contact rate and
-              intelligent objection handling, you'll fill your calendar fast.
+              If your average job is worth $300, you only need to book 1 extra job
+              per month to pay for the entire service.
             </p>
             <div className="grid sm:grid-cols-3 gap-6 text-left">
               <div className="bg-white rounded-lg p-4 shadow-sm">
-                <div className="text-3xl font-bold text-primary-600 mb-1">
-                  200+
+                <div className="text-3xl font-bold text-red-500 mb-1">
+                  $500+
                 </div>
-                <div className="text-sm text-slate-600">Calls per day per agent</div>
+                <div className="text-sm text-slate-600">Average cost of a missed call</div>
               </div>
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="text-3xl font-bold text-slate-900 mb-1">
-                  15-25%
+                  85%
                 </div>
                 <div className="text-sm text-slate-600">
-                  Average connection rate
+                  Of callers won't leave voicemail
                 </div>
               </div>
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="text-3xl font-bold text-green-600 mb-1">
-                  5-10x
+                  3-5x
                 </div>
                 <div className="text-sm text-slate-600">
-                  Typical ROI in 90 days
+                  More jobs booked vs voicemail
                 </div>
               </div>
             </div>

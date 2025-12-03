@@ -1,33 +1,33 @@
-import { Settings, Phone, Rocket } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Settings, Phone, Calendar } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 export default function HowItWorks() {
   const steps = [
     {
       icon: Settings,
       number: "1",
-      title: "Define Your Target",
-      description: "Tell us your ideal customer profile and market",
-      subtitle: "We'll build a custom lead list matching your criteria",
+      title: "Set Up Your AI Agent",
+      description: "Tell us about your business, services, and availability",
+      subtitle: "We customize your AI's voice, greeting, and responses",
       time: "15 minutes",
       color: "bg-primary-100 text-primary-600",
     },
     {
       icon: Phone,
       number: "2",
-      title: "Launch Outreach",
-      description: "Our AI starts calling and emailing your prospects",
-      subtitle: "Review transcripts and adjust messaging as needed",
-      time: "24 hours",
+      title: "Forward Your Calls",
+      description: "Set up call forwarding from your business line",
+      subtitle: "Works with any phone system - no hardware needed",
+      time: "5 minutes",
       color: "bg-accent-100 text-accent-600",
     },
     {
-      icon: Rocket,
+      icon: Calendar,
       number: "3",
-      title: "Close Deals",
-      description: "Qualified meetings booked directly to your calendar",
-      subtitle: "You only talk to interested, ready-to-buy prospects",
-      time: "Ongoing",
+      title: "Start Booking Jobs",
+      description: "AI answers calls, qualifies leads, books appointments",
+      subtitle: "Get notified instantly when new jobs are booked",
+      time: "Automatic",
       color: "bg-primary-100 text-primary-600",
     },
   ];
@@ -37,12 +37,11 @@ export default function HowItWorks() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            From Lead List to Closed Deal in{" "}
-            <span className="text-primary-600">3 Simple Steps</span>
+            Get Started in Minutes,{" "}
+            <span className="text-primary-600">Not Days</span>
           </h2>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            We handle the prospecting and outreach. You focus on closing deals
-            and serving clients.
+            Simple setup. No technical skills required. Start capturing more leads today.
           </p>
         </div>
 
@@ -82,7 +81,7 @@ export default function HowItWorks() {
                       <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full">
                         <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
                         <span className="text-sm font-semibold text-slate-700">
-                          Time: {step.time}
+                          {step.time}
                         </span>
                       </div>
                     </Card>
@@ -130,7 +129,7 @@ export default function HowItWorks() {
                     <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full">
                       <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
                       <span className="text-sm font-semibold text-slate-700">
-                        Time: {step.time}
+                        {step.time}
                       </span>
                     </div>
                   </div>
@@ -143,8 +142,8 @@ export default function HowItWorks() {
         {/* Bottom highlight */}
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-2 bg-primary-600 text-white px-6 py-3 rounded-full text-lg font-semibold shadow-lg">
-            <Rocket className="h-5 w-5" />
-            <span>First qualified meeting typically within 48 hours</span>
+            <Calendar className="h-5 w-5" />
+            <span>Your first appointment typically booked within 24 hours</span>
           </div>
         </div>
       </div>

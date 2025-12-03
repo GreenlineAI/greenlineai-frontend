@@ -2,19 +2,19 @@ import { X, Check } from "lucide-react";
 
 export default function ProblemSolution() {
   const problems = [
-    "Buying stale lead lists with 30% contact rates",
-    "Manually researching and qualifying prospects",
-    "Cold outreach that gets ignored or marked spam",
-    "Hiring SDRs that churn in 6 months",
-    "Scaling client acquisition without scaling costs",
+    "Missing calls while working on job sites",
+    "Customers calling competitors when you don't answer",
+    "Paying for a receptionist you can't afford",
+    "Voicemails that never get returned in time",
+    "Working evenings and weekends just to answer phones",
   ];
 
   const solutions = [
-    "Fresh, verified data with 85%+ contact rates",
-    "AI pre-qualifies prospects before you call",
-    "Human-sounding outreach that books meetings",
-    "AI that works 24/7 without turnover",
-    "Pay per lead or per meeting, not per seat",
+    "AI answers every call instantly, 24/7",
+    "Captures leads before they call the next contractor",
+    "Costs less than a part-time employee",
+    "Qualifies callers and books appointments in real-time",
+    "You focus on jobs, AI handles the phone",
   ];
 
   return (
@@ -22,7 +22,7 @@ export default function ProblemSolution() {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Tired of Lead Gen That Doesn't Deliver?
+            Stop Losing Jobs to Missed Calls
           </h2>
         </div>
 
@@ -51,9 +51,8 @@ export default function ProblemSolution() {
                 The Reality:
               </p>
               <p className="text-slate-600">
-                Most agencies spend 60%+ of their time on prospecting instead
-                of closing. Bad data and manual outreach kill margins and
-                prevent scale.
+                Studies show 85% of callers won't leave a voicemail - they'll
+                just call your competitor.
               </p>
             </div>
           </div>
@@ -78,13 +77,10 @@ export default function ProblemSolution() {
             </div>
 
             <div className="mt-8 p-6 bg-gradient-to-br from-primary-50 to-accent-50 border-l-4 border-primary-600 rounded-lg">
-              <p className="text-slate-800 font-semibold mb-2">
-                The Result:
-              </p>
+              <p className="text-slate-800 font-semibold mb-2">The Result:</p>
               <p className="text-slate-600">
-                Verified leads delivered on demand. AI outreach that sounds
-                human and books qualified meetings. Your team focuses on
-                closing deals, not chasing prospects.
+                Every call answered. Every lead captured. Appointments booked
+                while you're on the job site.
               </p>
             </div>
           </div>
@@ -93,11 +89,11 @@ export default function ProblemSolution() {
         {/* Bottom CTA */}
         <div className="text-center mt-16">
           <p className="text-xl text-slate-600 mb-4">
-            Ready to scale your client acquisition?
+            Ready to never miss another call?
           </p>
           <p className="text-3xl font-bold text-slate-900">
-            Let's turn cold lists into{" "}
-            <span className="text-primary-600">qualified meetings</span>
+            Let AI answer your phones while you{" "}
+            <span className="text-primary-600">grow your business</span>
           </p>
         </div>
       </div>
