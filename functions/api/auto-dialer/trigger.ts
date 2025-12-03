@@ -1,41 +1,51 @@
 /**
  * Cloudflare Pages Function - Auto-Dialer Trigger Endpoint
  * Path: /api/auto-dialer/trigger
- * 
- * This endpoint is called by the Cloudflare Worker cron job
- * to initiate the auto-dialer process.
+ *
+ * This endpoint can be called to manually trigger the auto-dialer process.
  */
 
-import { scheduledHandler } from '../../../functions/scheduled/auto-dialer';
+import { scheduledHandler } from '../../scheduled/auto-dialer';
 
 interface TriggerRequest {
-  userId: string;
-  triggeredBy: string;
-  scheduledTime: number;
+  userId?: string;
+  triggeredBy?: string;
+  scheduledTime?: number;
 }
 
-export async function onRequestPost(context: { request: Request; env: any }) {
+interface Env {
+  AUTO_DIALER_USER_ID: string;
+  NEXT_PUBLIC_SUPABASE_URL: string;
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+  NEXT_PUBLIC_SITE_URL: string;
+  CRON_SECRET?: string;
+}
+
+export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
   try {
     // Optional: Add authentication
     const cronSecret = request.headers.get('X-Cron-Secret');
-    if (cronSecret !== 'your-secret-key-here') {
-      // Comment this out if you don't want auth
-      // return new Response('Unauthorized', { status: 401 });
+    if (env.CRON_SECRET && cronSecret !== env.CRON_SECRET) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     const body: TriggerRequest = await request.json();
-    
+
     console.log('Auto-dialer triggered:', {
       userId: body.userId,
       triggeredBy: body.triggeredBy,
-      time: new Date(body.scheduledTime).toISOString(),
+      time: body.scheduledTime ? new Date(body.scheduledTime).toISOString() : new Date().toISOString(),
     });
 
     // Call the scheduled handler
     const mockEvent = {
-      scheduledTime: body.scheduledTime,
+      scheduledTime: body.scheduledTime || Date.now(),
       cron: '0 17-23,0-2 * * 1-5',
     };
 

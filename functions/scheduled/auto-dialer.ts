@@ -1,16 +1,11 @@
 /**
  * Automated Calling Script - Cron Job
- * 
+ *
  * This script systematically calls through all leads in the database
  * Respects daily limits, working hours, and call pacing
- * 
- * Usage:
- * 1. Deploy to Cloudflare Workers Cron Trigger
- * 2. Or run manually: node scripts/auto-dialer.ts
+ *
+ * Usage: Deploy to Cloudflare Workers Cron Trigger
  */
-
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '../../lib/database.types';
 
 // Cloudflare Workers types
 type ScheduledEvent = {
@@ -26,20 +21,21 @@ type ExecutionContext = {
 interface Env {
   AUTO_DIALER_USER_ID: string;
   NEXT_PUBLIC_SUPABASE_URL: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
   NEXT_PUBLIC_SITE_URL: string;
 }
 
 // Configuration
 const CONFIG = {
-  DAILY_CALL_LIMIT: 100,           // Max calls per day
-  CALLS_PER_BATCH: 10,             // How many to call at once
-  DELAY_BETWEEN_CALLS: 30000,      // 30 seconds between calls (ms)
-  WORKING_HOURS_START: 9,          // 9 AM
-  WORKING_HOURS_END: 18,           // 6 PM
-  EXCLUDED_DAYS: [0, 6],           // Sunday=0, Saturday=6
-  RETRY_NO_ANSWER: true,           // Retry "no_answer" leads
-  MAX_ATTEMPTS_PER_LEAD: 3,        // Max times to call same lead
+  DAILY_CALL_LIMIT: 100,
+  CALLS_PER_BATCH: 10,
+  DELAY_BETWEEN_CALLS: 30000,
+  WORKING_HOURS_START: 9,
+  WORKING_HOURS_END: 18,
+  EXCLUDED_DAYS: [0, 6],
+  RETRY_NO_ANSWER: true,
+  MAX_ATTEMPTS_PER_LEAD: 3,
 };
 
 interface Lead {
@@ -61,99 +57,83 @@ interface CallResult {
   error?: string;
 }
 
-/**
- * Check if we're within calling hours
- */
 function isWithinWorkingHours(): boolean {
   const now = new Date();
   const hour = now.getHours();
   const day = now.getDay();
-  
-  // Check if it's a weekend
+
   if (CONFIG.EXCLUDED_DAYS.includes(day)) {
-    console.log('❌ Weekend - not calling');
+    console.log('Weekend - not calling');
     return false;
   }
-  
-  // Check if within working hours
+
   if (hour < CONFIG.WORKING_HOURS_START || hour >= CONFIG.WORKING_HOURS_END) {
-    console.log(`❌ Outside working hours (${hour}:00)`);
+    console.log(`Outside working hours (${hour}:00)`);
     return false;
   }
-  
+
   return true;
 }
 
-/**
- * Get leads that need to be called
- */
-async function getLeadsToCall(supabase: SupabaseClient<Database>, userId: string, limit: number): Promise<Lead[]> {
-  // Get leads that:
-  // 1. Haven't been called yet OR
-  // 2. Had "no_answer" status and haven't hit max attempts OR
-  // 3. Status is "new" or "no_answer"
-  
-  const { data: leads, error } = await supabase
-    .from('leads')
-    .select('*')
-    .eq('user_id', userId)
-    .in('status', ['new', 'no_answer'])
-    .order('created_at', { ascending: true })
-    .limit(limit);
-  
-  if (error) {
-    console.error('Error fetching leads:', error);
+async function getLeadsToCall(env: Env, userId: string, limit: number): Promise<Lead[]> {
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/leads?user_id=eq.${userId}&status=in.(new,no_answer)&order=created_at.asc&limit=${limit}`,
+    {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    console.error('Error fetching leads:', await response.text());
     return [];
   }
-  
-  // Filter out leads that have been called too many times
-  const { data: callCounts } = await supabase
-    .from('outreach_calls')
-    .select('lead_id, count')
-    .eq('user_id', userId)
-    .in('lead_id', leads?.map((l: Lead) => l.id) || []);
-  
-  const callCountMap = new Map<string, number>(
-    callCounts?.map((c: { lead_id: string; count: number }) => [c.lead_id, c.count]) || []
-  );
-  
-  const filteredLeads = leads?.filter((lead: Lead) => {
-    const attempts = (callCountMap.get(lead.id) as number) || 0;
-    return attempts < CONFIG.MAX_ATTEMPTS_PER_LEAD;
-  }) || [];
-  
-  console.log(`📋 Found ${filteredLeads.length} leads to call`);
-  return filteredLeads;
+
+  const leads: Lead[] = await response.json();
+  console.log(`Found ${leads.length} leads to call`);
+  return leads;
 }
 
-/**
- * Get how many calls we've already made today
- */
-async function getTodayCallCount(supabase: any, userId: string): Promise<number> {
+async function getTodayCallCount(env: Env, userId: string): Promise<number> {
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  const { count, error } = await supabase
-    .from('outreach_calls')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('created_at', today.toISOString());
-  
-  if (error) {
-    console.error('Error getting call count:', error);
+
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/outreach_calls?user_id=eq.${userId}&created_at=gte.${today.toISOString()}&select=id`,
+    {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Prefer': 'count=exact',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    console.error('Error getting call count:', await response.text());
     return 0;
   }
-  
-  console.log(`📞 Already made ${count || 0} calls today`);
-  return count || 0;
+
+  const contentRange = response.headers.get('content-range');
+  const count = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
+  console.log(`Already made ${count} calls today`);
+  return count;
 }
 
-/**
- * Initiate a call via Stammer AI
- */
-async function initiateCall(supabase: SupabaseClient<Database>, lead: Lead, siteUrl: string): Promise<CallResult> {
+async function initiateCall(env: Env, lead: Lead): Promise<CallResult> {
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
   try {
-    const response = await fetch(`${siteUrl}/api/calls/initiate`, {
+    const response = await fetch(`${env.NEXT_PUBLIC_SITE_URL}/api/calls/initiate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -171,32 +151,39 @@ async function initiateCall(supabase: SupabaseClient<Database>, lead: Lead, site
         },
       }),
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`API error: ${error}`);
     }
-    
+
     const data = await response.json();
-    
-    console.log(`✅ Called ${lead.business_name} - Call ID: ${data.callId}`);
-    
-    // Create call record in database
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('outreach_calls').insert({
-      user_id: lead.user_id,
-      lead_id: lead.id,
-      status: 'pending',
-      vapi_call_id: data.callId,
+    console.log(`Called ${lead.business_name} - Call ID: ${data.callId}`);
+
+    // Create call record
+    await fetch(`${supabaseUrl}/rest/v1/outreach_calls`, {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        user_id: lead.user_id,
+        lead_id: lead.id,
+        status: 'pending',
+        vapi_call_id: data.callId,
+      }),
     });
-    
+
     return {
       leadId: lead.id,
       success: true,
       callId: data.callId,
     };
   } catch (error) {
-    console.error(`❌ Failed to call ${lead.business_name}:`, error);
+    console.error(`Failed to call ${lead.business_name}:`, error);
     return {
       leadId: lead.id,
       success: false,
@@ -205,89 +192,68 @@ async function initiateCall(supabase: SupabaseClient<Database>, lead: Lead, site
   }
 }
 
-/**
- * Sleep for specified milliseconds
- */
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * Main auto-dialer function
- */
 async function runAutoDialer(userId: string, env: Env) {
-  console.log('🚀 Starting Auto-Dialer...');
+  console.log('Starting Auto-Dialer...');
   console.log(`User ID: ${userId}`);
-  console.log(`Config:`, CONFIG);
-  
-  // Initialize Supabase with environment variables
-  const supabase = createClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.SUPABASE_SERVICE_ROLE_KEY
-  );
-  
-  // Check if we're within working hours
+
   if (!isWithinWorkingHours()) {
-    console.log('⏸️  Not calling - outside working hours');
+    console.log('Not calling - outside working hours');
     return {
       status: 'skipped',
       reason: 'outside_working_hours',
     };
   }
-  
-  // Check daily limit
-  const todayCallCount = await getTodayCallCount(supabase, userId);
+
+  const todayCallCount = await getTodayCallCount(env, userId);
   const remainingCalls = CONFIG.DAILY_CALL_LIMIT - todayCallCount;
-  
+
   if (remainingCalls <= 0) {
-    console.log('⏸️  Daily call limit reached');
+    console.log('Daily call limit reached');
     return {
       status: 'skipped',
       reason: 'daily_limit_reached',
       callsToday: todayCallCount,
     };
   }
-  
-  console.log(`📊 Can make ${remainingCalls} more calls today`);
-  
-  // Get leads to call
+
+  console.log(`Can make ${remainingCalls} more calls today`);
+
   const batchSize = Math.min(CONFIG.CALLS_PER_BATCH, remainingCalls);
-  const leads = await getLeadsToCall(supabase, userId, batchSize);
-  
+  const leads = await getLeadsToCall(env, userId, batchSize);
+
   if (leads.length === 0) {
-    console.log('✅ No more leads to call');
+    console.log('No more leads to call');
     return {
       status: 'completed',
       reason: 'no_leads_remaining',
     };
   }
-  
-  // Call each lead
+
   const results: CallResult[] = [];
-  
+
   for (let i = 0; i < leads.length; i++) {
     const lead = leads[i];
-    console.log(`\n📞 [${i + 1}/${leads.length}] Calling ${lead.business_name}...`);
-    
-    const result = await initiateCall(supabase, lead, env.NEXT_PUBLIC_SITE_URL);
+    console.log(`[${i + 1}/${leads.length}] Calling ${lead.business_name}...`);
+
+    const result = await initiateCall(env, lead);
     results.push(result);
-    
-    // Wait between calls (except for last one)
+
     if (i < leads.length - 1) {
-      console.log(`⏳ Waiting ${CONFIG.DELAY_BETWEEN_CALLS / 1000}s before next call...`);
+      console.log(`Waiting ${CONFIG.DELAY_BETWEEN_CALLS / 1000}s before next call...`);
       await sleep(CONFIG.DELAY_BETWEEN_CALLS);
     }
   }
-  
-  // Summary
+
   const successful = results.filter(r => r.success).length;
   const failed = results.filter(r => !r.success).length;
-  
-  console.log('\n✅ Auto-Dialer Complete!');
-  console.log(`   Successful: ${successful}`);
-  console.log(`   Failed: ${failed}`);
-  console.log(`   Total today: ${todayCallCount + successful}`);
-  
+
+  console.log('Auto-Dialer Complete!');
+  console.log(`Successful: ${successful}, Failed: ${failed}, Total today: ${todayCallCount + successful}`);
+
   return {
     status: 'completed',
     callsMade: successful,
@@ -297,12 +263,9 @@ async function runAutoDialer(userId: string, env: Env) {
   };
 }
 
-/**
- * Cloudflare Workers Cron Handler
- */
 export async function scheduledHandler(event: ScheduledEvent, env: Env) {
   const userId = env.AUTO_DIALER_USER_ID || '0b627f19-6ea2-469b-a596-84cab72190c9';
-  
+
   try {
     const result = await runAutoDialer(userId, env);
     console.log('Cron job result:', result);
@@ -313,30 +276,8 @@ export async function scheduledHandler(event: ScheduledEvent, env: Env) {
   }
 }
 
-// For manual execution (Node.js)
-if (typeof require !== 'undefined' && require.main === module) {
-  const userId = process.argv[2] || '0b627f19-6ea2-469b-a596-84cab72190c9';
-  const mockEnv: Env = {
-    AUTO_DIALER_USER_ID: userId,
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL!,
-  };
-  runAutoDialer(userId, mockEnv)
-    .then(result => {
-      console.log('\nFinal Result:', JSON.stringify(result, null, 2));
-      process.exit(0);
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      process.exit(1);
-    });
-}
-
-const handler = {
+export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(scheduledHandler(event, env));
   },
 };
-
-export default handler;
