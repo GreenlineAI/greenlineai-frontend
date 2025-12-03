@@ -14,10 +14,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOi
 VOICE_AI_PROVIDER = "retell"
 
 # Retell AI - Get your keys from https://www.retellai.com/
-# Replace these placeholder values with your actual Retell credentials
 RETELL_API_KEY = "key_7128cb9dae3666f93d5df369fa0a"
 RETELL_AGENT_ID_1 = "agent_0b4f642e103baf6ac974fbef47"
 RETELL_AGENT_ID_2 = "agent_0b4f642e103baf6ac974fbef47"
+# Get a phone number from Retell Dashboard -> Phone Numbers
+RETELL_FROM_NUMBER = "+1XXXXXXXXXX"
 
 # Stammer AI (Alternative provider - not currently used)
 STAMMER_API_KEY = "9b0255369a055b13bbb215af48f8d9dcf1a2bda4"

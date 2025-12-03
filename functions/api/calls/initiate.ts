@@ -10,6 +10,7 @@ interface Env {
   RETELL_API_KEY: string;
   RETELL_AGENT_ID_1: string;
   RETELL_AGENT_ID_2: string;
+  RETELL_FROM_NUMBER?: string;
 }
 
 interface CallRequest {
@@ -147,33 +148,69 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     } else if (providerType === 'retell') {
       // Select which agent to use
       const selectedAgentId = agentId === 'agent2' ? env.RETELL_AGENT_ID_2 : env.RETELL_AGENT_ID_1;
-      
+
+      // Check if from_number is configured
+      if (!env.RETELL_FROM_NUMBER) {
+        return new Response(
+          JSON.stringify({
+            error: 'Retell phone number not configured',
+            details: 'Please add RETELL_FROM_NUMBER to your environment variables. You can get a phone number from your Retell dashboard.',
+          }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
       // Initiate call with Retell AI
+      const retellPayload = {
+        from_number: env.RETELL_FROM_NUMBER,
+        to_number: phoneNumber,
+        override_agent_id: selectedAgentId,
+        metadata: {
+          leadId: leadId || '',
+          campaignId: campaignId || '',
+          source: 'greenline-dialer',
+        },
+        retell_llm_dynamic_variables: {
+          business_context: prompt || getDefaultPrompt(),
+        },
+      };
+
+      console.log('Calling Retell API:', {
+        to_number: phoneNumber.substring(0, 5) + '***',
+        from_number: env.RETELL_FROM_NUMBER,
+        agent_id: selectedAgentId,
+      });
+
       const retellResponse = await fetch('https://api.retellai.com/v2/create-phone-call', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${env.RETELL_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          from_number: null, // Retell will use their number
-          to_number: phoneNumber,
-          agent_id: selectedAgentId,
-          metadata: {
-            leadId: leadId || '',
-            campaignId: campaignId || '',
-            source: 'greenline-dialer',
-          },
-          retell_llm_dynamic_variables: {
-            business_context: prompt || getDefaultPrompt(),
-          },
-        }),
+        body: JSON.stringify(retellPayload),
       });
 
       if (!retellResponse.ok) {
-        const errorData = await retellResponse.text();
-        console.error('Retell API error:', errorData);
-        throw new Error(`Retell API error: ${retellResponse.statusText}`);
+        let errorData;
+        try {
+          errorData = await retellResponse.json();
+        } catch {
+          errorData = await retellResponse.text();
+        }
+
+        console.error('Retell API error:', {
+          status: retellResponse.status,
+          error: errorData,
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Retell API error (${retellResponse.status})`,
+            details: typeof errorData === 'string' ? errorData : JSON.stringify(errorData),
+          }),
+          { status: retellResponse.status, headers: { 'Content-Type': 'application/json' } }
+        );
       }
 
       const data = await retellResponse.json();
