@@ -30,8 +30,12 @@
 ## MCP Integration: Calendly
 
 ### MCP Server Configuration
-Use one of these Calendly MCP servers:
-- **Composio**: `https://mcp.composio.dev/calendly` (42+ tools, recommended)
+**Your Calendly MCP URL**:
+```
+https://mcp.composio.dev/partner/composio/calendly/mcp?customerId=5b0a9a5c-4048-4a0f-a804-8ab38276513b
+```
+
+Alternative options:
 - **Zapier**: `https://zapier.com/mcp/calendly` (easy setup)
 - **Universal MCP**: `https://github.com/universal-mcp/calendly` (self-hosted)
 
