@@ -243,18 +243,30 @@ scheduling 15 minutes to discuss?
 ### Node 6: Create Calendly Invite (MCP)
 **Node Type**: MCP (Calendly)
 
+**MCP URL**: `https://mcp.composio.dev/partner/composio/calendly/mcp?customerId=5b0a9a5c-4048-4a0f-a804-8ab38276513b`
+
 **MCP Tool**: `create_single_use_scheduling_link`
 
-**MCP Parameters**:
-```json
-{
-  "max_event_count": 1,
-  "owner_type": "User",
-  "owner": "https://api.calendly.com/users/YOUR_USER_UUID"
-}
-```
+**MCP Request Parameters** (key-value):
+| Key | Value |
+|-----|-------|
+| `max_event_count` | `1` |
+| `owner_type` | `User` |
+| `owner` | `https://api.calendly.com/users/YOUR_USER_UUID` |
 
-**Output Variable**: `calendly_booking_url` (the generated scheduling link)
+**MCP Response Variables** (key-value):
+| Key | Description | Example Value |
+|-----|-------------|---------------|
+| `booking_url` | The single-use scheduling link to share | `https://calendly.com/d/abc-123-xyz/greenlineai` |
+| `owner` | The Calendly user URI | `https://api.calendly.com/users/YOUR_USER_UUID` |
+| `owner_type` | Type of owner | `User` |
+| `max_event_count` | Max bookings allowed | `1` |
+| `resource.uri` | Full resource URI | `https://api.calendly.com/scheduling_links/...` |
+
+**Output Variable Mapping**:
+| Response Key | Store As Variable |
+|--------------|-------------------|
+| `booking_url` | `calendly_booking_url` |
 
 #### Transition
 | Condition | Next Node |
