@@ -1,176 +1,438 @@
-import { Phone, Clock, CheckCircle, XCircle } from "lucide-react";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
+'use client';
 
-// Mock outreach calls
-const mockCalls = [
-  {
-    id: "1",
-    businessName: "Green Valley Landscaping",
-    phone: "(512) 555-0101",
-    status: "completed",
-    duration: 145,
-    outcome: "Meeting Scheduled",
-    time: "2024-01-15T14:30:00Z",
-  },
-  {
-    id: "2",
-    businessName: "Premier Lawn Care",
-    phone: "(214) 555-0102",
-    status: "completed",
-    duration: 32,
-    outcome: "Not Interested",
-    time: "2024-01-15T14:15:00Z",
-  },
-  {
-    id: "3",
-    businessName: "Sunrise Garden Services",
-    phone: "(713) 555-0103",
-    status: "no_answer",
-    duration: 0,
-    outcome: "No Answer",
-    time: "2024-01-15T14:00:00Z",
-  },
-  {
-    id: "4",
-    businessName: "Desert Oasis Landscaping",
-    phone: "(602) 555-0104",
-    status: "completed",
-    duration: 210,
-    outcome: "Interested - Follow Up",
-    time: "2024-01-15T13:45:00Z",
-  },
-  {
-    id: "5",
-    businessName: "Rocky Mountain Mowing",
-    phone: "(303) 555-0105",
-    status: "voicemail",
-    duration: 45,
-    outcome: "Left Voicemail",
-    time: "2024-01-15T13:30:00Z",
-  },
-];
+import Link from 'next/link';
+import {
+  Users,
+  Phone,
+  Calendar,
+  TrendingUp,
+  PhoneCall,
+  Upload,
+  Flame,
+  ArrowRight,
+  Clock,
+  Building,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { StatsCard } from '@/components/shared/StatsCard';
+import { LeadScoreBadge, CampaignStatusBadge, CallStatusBadge } from '@/components/shared/StatusBadge';
+import { CallsLineChart } from '@/components/charts/CallsLineChart';
+import { CallOutcomesChart } from '@/components/charts/CallOutcomesChart';
+import { useDashboardStats, useDailyCallStats, useCallOutcomes } from '@/hooks/use-analytics';
+import { useLeads } from '@/hooks/use-leads';
+import { useCampaigns } from '@/hooks/use-campaigns';
+import { useRecentCalls } from '@/hooks/use-calls';
+import { useUser } from '@/lib/supabase/hooks';
+import { createClient } from '@/lib/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { format, parseISO, isToday } from 'date-fns';
 
-export default function OutreachPage() {
-  const formatDuration = (seconds: number) => {
-    if (seconds === 0) return "-";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+interface Meeting {
+  id: string;
+  scheduled_at: string;
+  duration: number;
+  status: string;
+  lead: {
+    business_name: string;
+    contact_name: string | null;
+    phone: string;
   };
+}
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
+function UpcomingMeetingsWidget() {
+  const { data: meetings, isLoading } = useQuery({
+    queryKey: ['upcoming-meetings'],
+    queryFn: async () => {
+      const supabase = createClient();
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('meetings')
+        .select(`
+          *,
+          lead:leads(
+            business_name,
+            contact_name,
+            phone
+          )
+        `)
+        .gte('scheduled_at', now)
+        .in('status', ['scheduled', 'confirmed'])
+        .order('scheduled_at', { ascending: true })
+        .limit(5);
+
+      if (error) throw error;
+      return data as Meeting[];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!meetings || meetings.length === 0) {
+    return (
+      <p className="text-center text-sm text-muted-foreground py-4">
+        No upcoming meetings
+      </p>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
-      <DashboardHeader
-        title="Outreach"
-        subtitle="Recent AI calls and conversations"
-      />
+    <div className="space-y-3">
+      {meetings.map((meeting) => {
+        const scheduledDate = parseISO(meeting.scheduled_at);
+        const isToday_ = isToday(scheduledDate);
 
-      <main className="p-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-6">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary-100 p-2">
-                <Phone className="h-5 w-5 text-primary-600" />
+        return (
+          <div
+            key={meeting.id}
+            className="rounded-lg border p-3 space-y-2 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <p className="font-medium truncate">{meeting.lead.business_name}</p>
+                </div>
+                {meeting.lead.contact_name && (
+                  <p className="text-sm text-muted-foreground pl-6">
+                    {meeting.lead.contact_name}
+                  </p>
+                )}
               </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">47</p>
-                <p className="text-sm text-slate-500">Calls Today</p>
+              {isToday_ && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700 flex-shrink-0">
+                  Today
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground pl-6">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>{format(scheduledDate, 'MMM d')}</span>
               </div>
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{format(scheduledDate, 'h:mm a')}</span>
+              </div>
+              <span>•</span>
+              <span>{meeting.duration} min</span>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-green-100 p-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">32</p>
-                <p className="text-sm text-slate-500">Connected</p>
-              </div>
-            </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function OutreachDashboardPage() {
+  const { user } = useUser();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: dailyStats, isLoading: dailyStatsLoading } = useDailyCallStats(30);
+  const { data: callOutcomes, isLoading: outcomesLoading } = useCallOutcomes();
+  const { data: leadsData, isLoading: leadsLoading } = useLeads({ page: 1, pageSize: 5 });
+  const { data: campaigns, isLoading: campaignsLoading } = useCampaigns();
+  const { data: recentCalls, isLoading: callsLoading } = useRecentCalls(10);
+
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  const activeCampaigns = campaigns?.filter((c) => c.status === 'active') || [];
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b bg-card px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Outreach Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              Welcome back, {userName}
+            </p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-accent-100 p-2">
-                <Clock className="h-5 w-5 text-accent-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">2:34</p>
-                <p className="text-sm text-slate-500">Avg Duration</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-purple-100 p-2">
-                <XCircle className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">8</p>
-                <p className="text-sm text-slate-500">Meetings Booked</p>
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/leads">
+                <Upload className="mr-2 h-4 w-4" />
+                Import Leads
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dashboard/dialer">
+                <PhoneCall className="mr-2 h-4 w-4" />
+                Start Calling
+              </Link>
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Recent Calls */}
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h2 className="font-semibold text-slate-900">Recent Calls</h2>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {mockCalls.map((call) => (
-              <div
-                key={call.id}
-                className="flex items-center justify-between px-6 py-4 hover:bg-slate-50"
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`rounded-full p-2 ${
-                      call.status === "completed"
-                        ? "bg-green-100"
-                        : call.status === "no_answer"
-                        ? "bg-slate-100"
-                        : "bg-yellow-100"
-                    }`}
-                  >
-                    <Phone
-                      className={`h-4 w-4 ${
-                        call.status === "completed"
-                          ? "text-green-600"
-                          : call.status === "no_answer"
-                          ? "text-slate-600"
-                          : "text-yellow-600"
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900">{call.businessName}</p>
-                    <p className="text-sm text-slate-500">{call.phone}</p>
-                  </div>
+      <main className="p-6 space-y-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {statsLoading ? (
+            <>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-16 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
+            <>
+              <StatsCard
+                title="Total Leads"
+                value={stats?.totalLeads?.toLocaleString() || '0'}
+                icon={Users}
+                trend={{ value: 12, isPositive: true }}
+                description="vs last month"
+              />
+              <StatsCard
+                title="Calls Today"
+                value={stats?.callsToday?.toLocaleString() || '0'}
+                icon={Phone}
+                description={`${stats?.callsThisWeek || 0} this week`}
+              />
+              <StatsCard
+                title="Meetings Booked"
+                value={stats?.meetingsBooked?.toLocaleString() || '0'}
+                icon={Calendar}
+                trend={{ value: 8, isPositive: true }}
+                description="this month"
+              />
+              <StatsCard
+                title="Conversion Rate"
+                value={`${stats?.conversionRate || 0}%`}
+                icon={TrendingUp}
+                trend={{ value: 2.3, isPositive: true }}
+                description="vs last month"
+              />
+            </>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
+                <Link href="/dashboard/dialer">
+                  <PhoneCall className="h-5 w-5 text-primary" />
+                  <span>Start Dialing</span>
+                </Link>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
+                <Link href="/dashboard/leads">
+                  <Upload className="h-5 w-5 text-primary" />
+                  <span>Import Leads</span>
+                </Link>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
+                <Link href="/dashboard/leads?score=hot">
+                  <Flame className="h-5 w-5 text-red-500" />
+                  <span>Hot Leads</span>
+                </Link>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
+                <Link href="/dashboard/campaigns/new">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  <span>New Campaign</span>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <CallsLineChart
+            data={dailyStats || []}
+            isLoading={dailyStatsLoading}
+            title="Calls (Last 30 Days)"
+          />
+          <CallOutcomesChart
+            data={callOutcomes || []}
+            isLoading={outcomesLoading}
+            title="Call Outcomes"
+          />
+        </div>
+
+        {/* Bottom Section */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Recent Leads */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Recent Leads</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/leads">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {leadsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-14 w-full" />
+                  ))}
                 </div>
-                <div className="flex items-center gap-8">
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-slate-900">{call.outcome}</p>
-                    <p className="text-sm text-slate-500">
-                      {formatDuration(call.duration)} &bull; {formatTime(call.time)}
+              ) : (
+                <div className="space-y-3">
+                  {leadsData?.leads.map((lead) => (
+                    <div
+                      key={lead.id}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{lead.businessName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {lead.city}, {lead.state}
+                        </p>
+                      </div>
+                      <LeadScoreBadge score={lead.score} />
+                    </div>
+                  ))}
+                  {(!leadsData?.leads || leadsData.leads.length === 0) && (
+                    <p className="text-center text-sm text-muted-foreground py-4">
+                      No leads yet
                     </p>
-                  </div>
-                  <button className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                    View Transcript
-                  </button>
+                  )}
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Active Campaigns */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Active Campaigns</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/campaigns">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {campaignsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activeCampaigns.slice(0, 3).map((campaign) => {
+                    const progress = campaign.leadsCount > 0
+                      ? (campaign.contactedCount / campaign.leadsCount) * 100
+                      : 0;
+                    return (
+                      <div
+                        key={campaign.id}
+                        className="rounded-lg border p-3 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium">{campaign.name}</p>
+                          <CampaignStatusBadge status={campaign.status} />
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{campaign.leadsCount} leads</span>
+                          <span>{campaign.meetingsBooked} meetings</span>
+                        </div>
+                        <Progress value={progress} className="h-2" />
+                      </div>
+                    );
+                  })}
+                  {activeCampaigns.length === 0 && (
+                    <p className="text-center text-sm text-muted-foreground py-4">
+                      No active campaigns
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Meetings */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Upcoming Meetings</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/meetings">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <UpcomingMeetingsWidget />
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Recent Calls</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/calls">
+                  View all
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {callsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentCalls?.slice(0, 5).map((call) => (
+                    <div
+                      key={call.id}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">
+                          {call.lead?.businessName || 'Unknown'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(call.createdAt), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CallStatusBadge status={call.status} />
+                        {call.meetingBooked && (
+                          <span className="text-xs text-green-600 font-medium">Booked</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {(!recentCalls || recentCalls.length === 0) && (
+                    <p className="text-center text-sm text-muted-foreground py-4">
+                      No calls yet
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
