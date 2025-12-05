@@ -283,32 +283,33 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b bg-card px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="border-b bg-card px-4 sm:px-6 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
             <p className="text-sm text-muted-foreground">
-              Welcome back, {userName}! Here's how your AI receptionist is performing.
+              Welcome back, {userName}!
+              <span className="hidden sm:inline"> Here's how your AI receptionist is performing.</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" asChild>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" asChild>
               <Link href="/dashboard/calls">
                 <Headphones className="mr-2 h-4 w-4" />
-                Call Recordings
+                <span className="hidden xs:inline">Call </span>Recordings
               </Link>
             </Button>
-            <Button asChild>
+            <Button size="sm" className="flex-1 sm:flex-none" asChild>
               <Link href="/dashboard/settings">
                 <Settings className="mr-2 h-4 w-4" />
-                AI Settings
+                <span className="hidden xs:inline">AI </span>Settings
               </Link>
             </Button>
           </div>
         </div>
       </div>
 
-      <main className="p-6 space-y-6">
+      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {statsLoading ? (
@@ -355,32 +356,32 @@ export default function DashboardPage() {
 
         {/* AI Agent Status Card */}
         <Card className="bg-gradient-to-r from-primary-50 to-primary-100 border-primary-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-primary-600 flex items-center justify-center">
-                  <Bot className="h-6 w-6 text-white" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
+                  <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-lg">AI Receptionist</h3>
-                    <Badge className="bg-green-500 text-white">Active</Badge>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-base sm:text-lg">AI Receptionist</h3>
+                    <Badge className="bg-green-500 text-white text-xs">Active</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Answering calls 24/7 and booking appointments automatically
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Answering calls 24/7<span className="hidden sm:inline"> and booking appointments automatically</span>
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" asChild>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" asChild>
                   <Link href="/dashboard/settings">
-                    <Settings className="mr-2 h-4 w-4" />
+                    <Settings className="mr-1.5 sm:mr-2 h-4 w-4" />
                     Configure
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" asChild>
                   <Link href="/#demo">
-                    <PlayCircle className="mr-2 h-4 w-4" />
+                    <PlayCircle className="mr-1.5 sm:mr-2 h-4 w-4" />
                     Test Call
                   </Link>
                 </Button>
@@ -424,35 +425,35 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : recentCalls && recentCalls.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {recentCalls.slice(0, 5).map((call) => (
                     <div
                       key={call.id}
-                      className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                      className="flex items-start sm:items-center justify-between rounded-lg border p-2.5 sm:p-3 hover:bg-muted/50 transition-colors gap-2"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`rounded-full p-2 ${
+                      <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                        <div className={`rounded-full p-1.5 sm:p-2 flex-shrink-0 ${
                           call.status === 'completed' ? 'bg-green-100' :
                           call.status === 'voicemail' ? 'bg-yellow-100' : 'bg-red-100'
                         }`}>
-                          <Phone className={`h-4 w-4 ${
+                          <Phone className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
                             call.status === 'completed' ? 'text-green-600' :
                             call.status === 'voicemail' ? 'text-yellow-600' : 'text-red-600'
                           }`} />
                         </div>
-                        <div>
-                          <p className="font-medium">{call.phone_number || 'Unknown Caller'}</p>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm sm:text-base truncate">{call.phone_number || 'Unknown Caller'}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
                             {format(new Date(call.created_at), 'MMM d, h:mm a')}
                             {call.duration && ` • ${formatDuration(call.duration)}`}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                         <CallStatusBadge status={call.status} />
                         {call.recording_url && (
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <PlayCircle className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                            <PlayCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </Button>
                         )}
                       </div>
@@ -490,7 +491,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               ) : appointments && appointments.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {appointments.map((apt) => {
                     const scheduledDate = parseISO(apt.scheduled_at);
                     const isToday_ = isToday(scheduledDate);
@@ -498,24 +499,24 @@ export default function DashboardPage() {
                     return (
                       <div
                         key={apt.id}
-                        className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                        className="flex items-start sm:items-center justify-between rounded-lg border p-2.5 sm:p-3 hover:bg-muted/50 transition-colors gap-2"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full p-2 bg-primary-100">
-                            <Calendar className="h-4 w-4 text-primary-600" />
+                        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                          <div className="rounded-full p-1.5 sm:p-2 bg-primary-100 flex-shrink-0">
+                            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-600" />
                           </div>
-                          <div>
-                            <p className="font-medium">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm sm:text-base truncate">
                               {apt.meeting_type || 'Appointment'}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {format(scheduledDate, 'MMM d')} at {format(scheduledDate, 'h:mm a')}
                               {' • '}{apt.duration} min
                             </p>
                           </div>
                         </div>
                         {isToday_ && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs flex-shrink-0">
                             Today
                           </Badge>
                         )}
