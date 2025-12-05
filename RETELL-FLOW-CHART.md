@@ -32,8 +32,13 @@
 ### MCP Server Configuration
 **Your Calendly MCP URL**:
 ```
-https://mcp.composio.dev/partner/composio/calendly/mcp?customerId=5b0a9a5c-4048-4a0f-a804-8ab38276513b
+https://backend.composio.dev/v3/mcp/4c5f4f5e-4252-4075-8798-f9526620aac7
 ```
+
+**Server Details**:
+- **Name**: `calendly-greenline`
+- **Server ID**: `4c5f4f5e-4252-4075-8798-f9526620aac7`
+- **Auth Config ID**: `ac_TqiOw-L_5D9Z`
 
 Alternative options:
 - **Zapier**: `https://zapier.com/mcp/calendly` (easy setup)
@@ -243,30 +248,14 @@ scheduling 15 minutes to discuss?
 ### Node 6: Create Calendly Invite (MCP)
 **Node Type**: MCP (Calendly)
 
-**MCP URL**: `https://mcp.composio.dev/partner/composio/calendly/mcp?customerId=5b0a9a5c-4048-4a0f-a804-8ab38276513b`
+**MCP URL**: `https://backend.composio.dev/v3/mcp/4c5f4f5e-4252-4075-8798-f9526620aac7`
 
-**MCP Tool**: `create_single_use_scheduling_link`
-
-**MCP Request Parameters** (key-value):
-| Key | Value |
-|-----|-------|
-| `max_event_count` | `1` |
-| `owner_type` | `User` |
-| `owner` | `https://api.calendly.com/users/YOUR_USER_UUID` |
+**MCP Tool Access Scope**: `CALENDLY_EXECUTE_TOOL`
 
 **MCP Response Variables** (key-value):
-| Key | Description | Example Value |
-|-----|-------------|---------------|
-| `booking_url` | The single-use scheduling link to share | `https://calendly.com/d/abc-123-xyz/greenlineai` |
-| `owner` | The Calendly user URI | `https://api.calendly.com/users/YOUR_USER_UUID` |
-| `owner_type` | Type of owner | `User` |
-| `max_event_count` | Max bookings allowed | `1` |
-| `resource.uri` | Full resource URI | `https://api.calendly.com/scheduling_links/...` |
-
-**Output Variable Mapping**:
-| Response Key | Store As Variable |
-|--------------|-------------------|
-| `booking_url` | `calendly_booking_url` |
+| Key | Value |
+|-----|-------|
+| `booking_url` | `{{calendly_booking_url}}` |
 
 #### Transition
 | Condition | Next Node |
