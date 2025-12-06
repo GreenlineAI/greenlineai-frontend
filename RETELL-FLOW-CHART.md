@@ -673,9 +673,8 @@ Have a great rest of your day, {{owner_name}}!
 
 ---
 
-### Node 14: Send Info SMS + End
-**Node Type**: SMS + Ending
-**Content Mode**: Static
+### Node 14: Send Info SMS
+**Node Type**: SMS
 
 **SMS Content**:
 ```
@@ -690,13 +689,13 @@ Reply anytime with questions!
 #### SMS Transitions
 | Transition | Next Node |
 |------------|-----------|
-| **Success** | → Node 14-success: Info SMS Success |
-| **Failure** | → Node 14-failure: Info SMS Failure |
+| **Success** | → Node 14-success: Info SMS Success Response |
+| **Failure** | → Node 14-failure: Info SMS Failure Response |
 
 ---
 
-### Node 14-success: Info SMS Success
-**Node Type**: Ending
+### Node 14-success: Info SMS Success Response
+**Node Type**: Conversation
 **Content Mode**: Static
 
 **Content**:
@@ -706,17 +705,16 @@ chat about growing your business, just reply to that text.
 Thanks for your time today!
 ```
 
-**Call Disposition**: Info Sent - Follow Up Later
-
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| (End of call) | — |
+| User says goodbye or confirms | → Node 14-end: End Call - Info Sent |
+| (Any response) | → Node 14-end: End Call - Info Sent |
 
 ---
 
-### Node 14-failure: Info SMS Failure
-**Node Type**: Ending
+### Node 14-failure: Info SMS Failure Response
+**Node Type**: Conversation
 **Content Mode**: Static
 
 **Content**:
@@ -725,7 +723,23 @@ I had a little trouble sending the text, but you can find us at greenline-ai.com
 Thanks so much for your time today!
 ```
 
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| User says goodbye or confirms | → Node 14-end: End Call - Info Sent |
+| (Any response) | → Node 14-end: End Call - Info Sent |
+
+---
+
+### Node 14-end: End Call - Info Sent
+**Node Type**: Ending
+**Content Mode**: Static
 **Call Disposition**: Info Sent - Follow Up Later
+
+**Content**:
+```
+Take care!
+```
 
 #### Transition
 | Condition | Next Node |
@@ -898,8 +912,9 @@ flowchart TD
         N11[Node 11: End - Not Interested]
         N13[Node 13: End - Meeting Scheduled]
         N14[Node 14: Send Info SMS]
-        N14_s[Node 14-success: Info SMS Success]
-        N14_f[Node 14-failure: Info SMS Failure]
+        N14_s[Node 14-success: Info SMS Success Response]
+        N14_f[Node 14-failure: Info SMS Failure Response]
+        N14_end[Node 14-end: End - Info Sent]
         N15[Node 15: End - Warm Lead]
         N16[Node 16: End - Callback Scheduled]
     end
@@ -966,6 +981,8 @@ flowchart TD
     N8 -->|"No"| N11
     N14 -->|"SMS Success"| N14_s
     N14 -->|"SMS Failure"| N14_f
+    N14_s --> N14_end
+    N14_f --> N14_end
 
     %% Callbacks
     N9 -->|"Agree followup"| N15
@@ -994,9 +1011,10 @@ flowchart TD
     style N6c_verbal fill:#FF9800,color:#fff
     style N11 fill:#f44336,color:#fff
     style N13 fill:#4CAF50,color:#fff
-    style N14 fill:#9C27B0,color:#fff
+    style N14 fill:#2196F3,color:#fff
     style N14_s fill:#4CAF50,color:#fff
     style N14_f fill:#FF9800,color:#fff
+    style N14_end fill:#9C27B0,color:#fff
     style N15 fill:#FF9800,color:#fff
     style N16 fill:#2196F3,color:#fff
 ```
