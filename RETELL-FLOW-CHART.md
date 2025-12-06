@@ -213,13 +213,6 @@ We help home services businesses like yours get more qualified leads.
 Are you currently happy with the number of leads you're getting?
 ```
 
-#### Variables
-| Variable Name | Description | Type |
-|---------------|-------------|------|
-| `lead_satisfaction` | Extract the user's satisfaction level with their current leads. Options: "satisfied", "unsatisfied", "neutral". | Text |
-| `pain_points` | Extract any specific complaints or challenges they mention about getting leads or customers. | Text |
-| `monthly_leads` | If mentioned, extract how many leads or calls they currently receive per month. | Number |
-
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
@@ -243,12 +236,6 @@ We've helped similar businesses increase their lead flow by 2-3x.
 Would you be open to a quick 15-minute strategy call to see if we can help
 your business grow?
 ```
-
-#### Variables
-| Variable Name | Description | Type |
-|---------------|-------------|------|
-| `meeting_interest` | Extract if the user is interested in scheduling a meeting. Options: "yes", "no", "maybe". | Text |
-| `objection` | If they raise a concern or objection, extract what it is (e.g., "too expensive", "tried before", "no time"). | Text |
 
 #### Transition
 | Condition | Next Node |
@@ -274,12 +261,6 @@ The best way to give you an accurate picture is during a quick strategy
 call where we can look at your specific situation. Would you be open to
 scheduling 15 minutes to discuss?
 ```
-
-#### Variables
-| Variable Name | Description | Type |
-|---------------|-------------|------|
-| `budget_concern` | Extract if price is a concern. Listen for phrases like "too expensive", "can't afford", "tight budget". | Boolean |
-| `budget_range` | If they mention a specific budget or what they currently spend on marketing, extract that amount. | Text |
 
 #### Transition
 | Condition | Next Node |
@@ -309,12 +290,16 @@ scheduling 15 minutes to discuss?
 }
 ```
 
-**Response Variables** (key-value):
+**Response Variables** (needs testing):
+> The Function Node may return booking details automatically. Test to confirm if these variables are available:
+
 | Key | Value |
 |-----|-------|
 | `booking_url` | `{{cal_booking_url}}` |
 | `booking_id` | `{{cal_booking_id}}` |
 | `start_time` | `{{cal_start_time}}` |
+
+> If response variables are not available, use a static Cal.com scheduling link in the SMS node.
 
 #### Transition
 | Condition | Next Node |
@@ -329,10 +314,12 @@ scheduling 15 minutes to discuss?
 
 **SMS Content**:
 ```
-Hi! Here's the link to your GreenLine AI strategy call: {{cal_booking_url}}
+Hi! Here's the link to book your GreenLine AI strategy call: https://cal.com/greenlineai
 
 Looking forward to helping your business grow!
 ```
+
+> **Note**: Using static Cal.com link. If testing confirms the Function Node returns `{{cal_booking_url}}`, you can use that instead for a personalized link.
 
 #### SMS Transitions
 | Transition | Next Node |
@@ -352,12 +339,6 @@ Excellent! I just sent you a text with the booking link. You should receive it i
 Is there anything specific you'd like us to cover during that call?
 ```
 
-#### Variables
-| Variable Name | Description | Type |
-|---------------|-------------|------|
-| `meeting_topics` | Extract any specific topics or questions they want to discuss during the strategy call. | Text |
-| `sms_confirmed` | Confirm if user received the SMS. Extract "yes" if they confirm receipt. | Boolean |
-
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
@@ -374,7 +355,7 @@ Is there anything specific you'd like us to cover during that call?
 **Content**:
 ```
 I had a little trouble sending the text, but no worries!
-Your booking is confirmed for {{cal_start_time}}. You'll receive a confirmation email shortly.
+You can book directly at cal.com/greenlineai whenever works for you.
 Is there anything specific you'd like us to cover during that call?
 ```
 
@@ -474,12 +455,6 @@ Can I ask what's holding you back? Is it timing, budget, or something else?
 I want to make sure I can address any concerns you might have.
 ```
 
-#### Variables
-| Variable Name | Description | Type |
-|---------------|-------------|------|
-| `objection_type` | Categorize the objection: "timing", "budget", "trust", "competition", "not_needed", "other". | Text |
-| `objection_details` | Extract the specific details of their concern in their own words. | Text |
-
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
@@ -549,11 +524,6 @@ be okay if I sent you a quick text with some information about what we do?
 That way if you ever need help with leads in the future, you'll have our info handy.
 ```
 
-#### Variables
-| Variable Name | Description | Type |
-|---------------|-------------|------|
-| `info_consent` | Extract if user consents to receiving informational SMS. "yes" or "no". | Boolean |
-
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
@@ -575,12 +545,6 @@ ever slows down?
 That way you'll have a resource ready if you ever need help scaling.
 ```
 
-#### Variables
-| Variable Name | Description | Type |
-|---------------|-------------|------|
-| `followup_consent` | Extract if user agrees to future follow-up contact. | Boolean |
-| `followup_timeframe` | If they mention a specific time to follow up, extract it (e.g., "3 months", "next quarter", "after summer"). | Text |
-
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
@@ -590,7 +554,7 @@ That way you'll have a resource ready if you ever need help scaling.
 ---
 
 ### Node 10: Schedule Callback
-**Node Type**: Conversation + Extract Variable
+**Node Type**: Extract Variable
 **Content Mode**: Static
 
 **Content**:
@@ -604,7 +568,6 @@ I want to make sure I catch you when you have a few minutes.
 |---------------|-------------|------|
 | `callback_date` | Extract the date they want to be called back. Format: YYYY-MM-DD if possible, otherwise store as mentioned (e.g., "tomorrow", "next Tuesday"). | Text |
 | `callback_time` | Extract the preferred time for callback. Format: HH:MM if possible, otherwise store as mentioned (e.g., "morning", "after 2pm"). | Text |
-| `callback_timezone` | If mentioned, extract their timezone. Otherwise default to the business location timezone. | Text |
 
 #### Transition
 | Condition | Next Node |
@@ -662,13 +625,6 @@ you have a wonderful rest of your day. Take care!
 No problem! Is the owner available right now, or would it be better if I
 called back at another time to speak with them?
 ```
-
-#### Variables
-| Variable Name | Description | Type |
-|---------------|-------------|------|
-| `owner_available` | Extract if the owner is available to take the call now. | Boolean |
-| `owner_name` | If they mention the owner's name, extract it for future reference. | Text |
-| `best_time_for_owner` | If they suggest a better time to reach the owner, extract that information. | Text |
 
 #### Transition
 | Condition | Next Node |
