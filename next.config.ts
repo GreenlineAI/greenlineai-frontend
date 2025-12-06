@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  // Server mode for dynamic routes and server components
 };
 
 export default nextConfig;
