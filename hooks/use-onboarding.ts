@@ -2,47 +2,10 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
+import type { Database } from '@/lib/database.types';
 
-export type OnboardingStatus = 'pending' | 'in_review' | 'agent_created' | 'active' | 'paused';
-
-export interface BusinessOnboarding {
-  id: string;
-  user_id: string | null;
-  business_name: string;
-  business_type: string;
-  business_type_other: string | null;
-  owner_name: string;
-  email: string;
-  phone: string;
-  website: string | null;
-  city: string;
-  state: string;
-  zip: string | null;
-  service_radius_miles: number;
-  services: string[];
-  hours_monday: string | null;
-  hours_tuesday: string | null;
-  hours_wednesday: string | null;
-  hours_thursday: string | null;
-  hours_friday: string | null;
-  hours_saturday: string | null;
-  hours_sunday: string | null;
-  greeting_name: string | null;
-  preferred_voice: string;
-  appointment_duration: number;
-  calendar_link: string | null;
-  pricing_info: string | null;
-  special_instructions: string | null;
-  phone_preference: 'new' | 'forward' | 'port';
-  existing_phone_number: string | null;
-  current_phone_provider: string | null;
-  retell_agent_id: string | null;
-  retell_phone_number: string | null;
-  status: OnboardingStatus;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type BusinessOnboarding = Database['public']['Tables']['business_onboarding']['Row'];
+export type OnboardingStatus = Database['public']['Enums']['onboarding_status'];
 
 interface UseOnboardingsOptions {
   status?: OnboardingStatus | 'all';
@@ -54,11 +17,10 @@ export function useOnboardings(options: UseOnboardingsOptions = {}) {
 
   return useQuery({
     queryKey: ['onboardings', status, search],
-    queryFn: async () => {
+    queryFn: async (): Promise<BusinessOnboarding[]> => {
       const supabase = createClient();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let query = (supabase as any)
+      let query = supabase
         .from('business_onboarding')
         .select('*')
         .order('created_at', { ascending: false });
@@ -82,13 +44,12 @@ export function useOnboardings(options: UseOnboardingsOptions = {}) {
 export function useOnboarding(id: string) {
   return useQuery({
     queryKey: ['onboarding', id],
-    queryFn: async () => {
+    queryFn: async (): Promise<BusinessOnboarding | null> => {
       if (!id) return null;
 
       const supabase = createClient();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('business_onboarding')
         .select('*')
         .eq('id', id)
@@ -110,14 +71,13 @@ export function useUpdateOnboarding() {
       updates,
     }: {
       id: string;
-      updates: Partial<BusinessOnboarding>;
-    }) => {
+      updates: Database['public']['Tables']['business_onboarding']['Update'];
+    }): Promise<BusinessOnboarding> => {
       const supabase = createClient();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('business_onboarding')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single();
@@ -138,21 +98,20 @@ export function useOnboardingStats() {
     queryFn: async () => {
       const supabase = createClient();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('business_onboarding')
-        .select('status');
+        .select('status')
+        .returns<{ status: OnboardingStatus }[]>();
 
       if (error) throw error;
 
-      const statusData = data as { status: string }[];
       const stats = {
-        total: statusData.length,
-        pending: statusData.filter((d) => d.status === 'pending').length,
-        in_review: statusData.filter((d) => d.status === 'in_review').length,
-        agent_created: statusData.filter((d) => d.status === 'agent_created').length,
-        active: statusData.filter((d) => d.status === 'active').length,
-        paused: statusData.filter((d) => d.status === 'paused').length,
+        total: data.length,
+        pending: data.filter((d) => d.status === 'pending').length,
+        in_review: data.filter((d) => d.status === 'in_review').length,
+        agent_created: data.filter((d) => d.status === 'agent_created').length,
+        active: data.filter((d) => d.status === 'active').length,
+        paused: data.filter((d) => d.status === 'paused').length,
       };
 
       return stats;

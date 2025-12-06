@@ -21,6 +21,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import type { Database } from "@/lib/database.types";
+
+type BusinessOnboardingInsert = Database['public']['Tables']['business_onboarding']['Insert'];
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -138,9 +141,9 @@ export default function GetStartedPage() {
     try {
       const supabase = createClient();
 
-      const insertData = {
+      const insertData: BusinessOnboardingInsert = {
         business_name: formData.businessName,
-        business_type: formData.businessType as 'landscaping' | 'lawn_care' | 'tree_service' | 'hardscaping' | 'irrigation' | 'snow_removal' | 'general_contractor' | 'hvac' | 'plumbing' | 'electrical' | 'roofing' | 'painting' | 'cleaning' | 'pest_control' | 'pool_service' | 'other',
+        business_type: formData.businessType as BusinessOnboardingInsert['business_type'],
         business_type_other: formData.businessTypeOther || null,
         owner_name: formData.ownerName,
         email: formData.email,
@@ -163,18 +166,17 @@ export default function GetStartedPage() {
         calendar_link: formData.calendarLink || null,
         pricing_info: formData.pricingInfo || null,
         special_instructions: formData.specialInstructions || null,
-        phone_preference: formData.phonePreference as 'new' | 'forward' | 'port',
+        phone_preference: formData.phonePreference as BusinessOnboardingInsert['phone_preference'],
         existing_phone_number: formData.existingPhoneNumber || null,
         current_phone_provider: formData.currentProvider || null,
-        status: "pending" as const,
+        status: "pending",
       };
 
-      // Type assertion needed until database migration is applied
       const { data: insertedData, error: insertError } = await supabase
         .from("business_onboarding")
         .insert(insertData as never)
         .select()
-        .single();
+        .single<Database['public']['Tables']['business_onboarding']['Row']>();
 
       if (insertError) {
         throw insertError;
@@ -186,7 +188,7 @@ export default function GetStartedPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: (insertedData as { id: string } | null)?.id,
+            id: insertedData?.id,
             business_name: formData.businessName,
             business_type: formData.businessType,
             business_type_other: formData.businessTypeOther,
