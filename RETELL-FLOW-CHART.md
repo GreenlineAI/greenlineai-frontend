@@ -553,14 +553,32 @@ That way you'll have a resource ready if you ever need help scaling.
 
 ---
 
-### Node 10: Schedule Callback
-**Node Type**: Extract Variable
+### Node 10: Schedule Callback - Ask
+**Node Type**: Conversation
 **Content Mode**: Static
 
 **Content**:
 ```
 No problem! When would be a better time for me to give you a call back?
 I want to make sure I catch you when you have a few minutes.
+```
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| User provides a date/time | → Node 10a: Extract Callback Time |
+| User says don't call back | → Node 11: End Call - Not Interested |
+| User is unsure about time | → Node 10b: Suggest Callback Time |
+
+---
+
+### Node 10a: Extract Callback Time
+**Node Type**: Extract Variable
+**Content Mode**: Static
+
+**Content**:
+```
+Got it, let me make a note of that.
 ```
 
 #### Variables
@@ -572,9 +590,7 @@ I want to make sure I catch you when you have a few minutes.
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User provides callback time | → Node 16: End Call - Callback Scheduled |
-| User says don't call back | → Node 11: End Call - Not Interested |
-| User is unsure about time | → Node 10b: Suggest Callback Time |
+| Variables extracted | → Node 16: End Call - Callback Scheduled |
 
 ---
 
@@ -591,8 +607,8 @@ Or would a morning or afternoon work better for you?
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User agrees to suggested time | → Node 16: End Call - Callback Scheduled |
-| User provides different time | → Node 16: End Call - Callback Scheduled |
+| User agrees to suggested time | → Node 10a: Extract Callback Time |
+| User provides different time | → Node 10a: Extract Callback Time |
 | User declines callback | → Node 11: End Call - Not Interested |
 
 ---
@@ -904,7 +920,8 @@ flowchart TD
 
     subgraph Callbacks
         N9[Node 9: Soft Close]
-        N10[Node 10: Schedule Callback]
+        N10[Node 10: Schedule Callback - Ask]
+        N10a[Node 10a: Extract Callback Time]
         N10b[Node 10b: Suggest Callback Time]
     end
 
@@ -987,11 +1004,12 @@ flowchart TD
     %% Callbacks
     N9 -->|"Agree followup"| N15
     N9 -->|"Decline"| N11
-    N10 -->|"Gives time"| N16
+    N10 -->|"Gives time"| N10a
     N10 -->|"No callback"| N11
     N10 -->|"Unsure"| N10b
-    N10b -->|"Agrees"| N16
-    N10b -->|"Different time"| N16
+    N10a --> N16
+    N10b -->|"Agrees"| N10a
+    N10b -->|"Different time"| N10a
     N10b -->|"Decline"| N11
 
     %% Owner Flow
@@ -1011,6 +1029,7 @@ flowchart TD
     style N6c_verbal fill:#FF9800,color:#fff
     style N11 fill:#f44336,color:#fff
     style N13 fill:#4CAF50,color:#fff
+    style N10a fill:#673AB7,color:#fff
     style N14 fill:#2196F3,color:#fff
     style N14_s fill:#4CAF50,color:#fff
     style N14_f fill:#FF9800,color:#fff
