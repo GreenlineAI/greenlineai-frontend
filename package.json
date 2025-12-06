@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "build:pages": "npx @opennextjs/cloudflare build",
+    "build": "npx @opennextjs/cloudflare build",
+    "build:next": "next build",
     "start": "next start",
     "lint": "eslint",
     "test-dialer": "node scripts/test-dialer.js",
