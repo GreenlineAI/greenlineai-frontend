@@ -4,7 +4,7 @@ import { ArrowLeft, Calendar, Headphones, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import VapiDemo from "@/components/VapiDemo";
+import RetellDemo from "@/components/RetellDemo";
 
 export default function VoiceDemoPage() {
   const calendlyUrl =
@@ -60,7 +60,7 @@ export default function VoiceDemoPage() {
             {/* Left: Live AI Demo */}
             <div>
               <Card className="bg-white/10 backdrop-blur-sm border-white/20 p-8 md:p-12">
-                <VapiDemo />
+                <RetellDemo />
               </Card>
 
               <div className="mt-6 p-4 bg-blue-500/20 border border-blue-500/30 rounded-xl">

@@ -2,23 +2,27 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
-import Vapi from "@vapi-ai/web";
+import { RetellWebClient } from "retell-client-js-sdk";
 import { Button } from "@/components/ui/button";
 
-const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || "";
-const VAPI_ASSISTANT_ID = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || "";
+const RETELL_AGENT_ID = process.env.NEXT_PUBLIC_RETELL_AGENT_ID || "";
 
-export default function VapiDemo() {
+interface RegisterCallResponse {
+  access_token: string;
+  call_id: string;
+}
+
+export default function RetellDemo() {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [isConnecting, setIsConnecting] = useState(false);
   const [statusText, setStatusText] = useState("Click to talk to our AI");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const vapiRef = useRef<Vapi | null>(null);
+  const retellClientRef = useRef<RetellWebClient | null>(null);
 
   // Check for missing configuration
-  const isMissingConfig = !VAPI_PUBLIC_KEY || !VAPI_ASSISTANT_ID;
+  const isMissingConfig = !RETELL_AGENT_ID;
 
   useEffect(() => {
     if (isMissingConfig) {
@@ -26,84 +30,108 @@ export default function VapiDemo() {
       return;
     }
 
-    const vapiInstance = new Vapi(VAPI_PUBLIC_KEY);
+    const retellClient = new RetellWebClient();
 
-    vapiInstance.on("call-start", () => {
+    retellClient.on("call_started", () => {
       setIsConnecting(false);
       setIsSessionActive(true);
       setErrorMessage(null);
       setStatusText("Connected - Start speaking!");
     });
 
-    vapiInstance.on("call-end", () => {
+    retellClient.on("call_ended", () => {
       setIsSessionActive(false);
       setIsConnecting(false);
       setStatusText("Call ended - Click to try again");
     });
 
-    vapiInstance.on("speech-start", () => {
+    retellClient.on("agent_start_talking", () => {
       setStatusText("AI is speaking...");
     });
 
-    vapiInstance.on("speech-end", () => {
+    retellClient.on("agent_stop_talking", () => {
       setStatusText("Listening...");
     });
 
-    vapiInstance.on("volume-level", (volume: number) => {
-      setVolumeLevel(volume);
+    retellClient.on("audio", (audio: Uint8Array) => {
+      // Calculate volume level from audio data
+      const sum = audio.reduce((acc, val) => acc + Math.abs(val - 128), 0);
+      const avgVolume = sum / audio.length / 128;
+      setVolumeLevel(avgVolume);
     });
 
-    vapiInstance.on("error", (error: unknown) => {
-      console.error("Vapi error:", error);
+    retellClient.on("error", (error: Error) => {
+      console.error("Retell error:", error);
       setIsConnecting(false);
       setIsSessionActive(false);
-
-      // Extract meaningful error message
-      let message = "Connection failed - Please try again";
-      if (error && typeof error === "object") {
-        const err = error as { message?: string; error?: { message?: string }; statusCode?: number };
-        if (err.message) {
-          message = err.message;
-        } else if (err.error?.message) {
-          message = err.error.message;
-        }
-        if (err.statusCode === 401) {
-          message = "Authentication failed - Invalid API key";
-        } else if (err.statusCode === 404) {
-          message = "Assistant not found - Check configuration";
-        }
-      }
-      setErrorMessage(message);
+      setErrorMessage(error.message || "Connection failed - Please try again");
       setStatusText("Error occurred");
     });
 
-    vapiRef.current = vapiInstance;
+    retellClientRef.current = retellClient;
 
     return () => {
-      vapiInstance.stop();
+      retellClient.stopCall();
     };
   }, [isMissingConfig]);
 
-  const startCall = useCallback(() => {
-    if (vapiRef.current && !isSessionActive && !isConnecting) {
-      setIsConnecting(true);
-      setStatusText("Connecting...");
-      vapiRef.current.start(VAPI_ASSISTANT_ID);
+  const startCall = useCallback(async () => {
+    if (!retellClientRef.current || isSessionActive || isConnecting) return;
+
+    setIsConnecting(true);
+    setStatusText("Connecting...");
+    setErrorMessage(null);
+
+    try {
+      // Register the web call via our backend API
+      const response = await fetch("/api/retell/register-call", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          agentId: RETELL_AGENT_ID,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to register call");
+      }
+
+      const data: RegisterCallResponse = await response.json();
+
+      // Start the call with the access token
+      await retellClientRef.current.startCall({
+        accessToken: data.access_token,
+        sampleRate: 24000,
+        captureDeviceId: "default",
+      });
+    } catch (error) {
+      console.error("Failed to start call:", error);
+      setIsConnecting(false);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to start call"
+      );
+      setStatusText("Click to talk to our AI");
     }
   }, [isSessionActive, isConnecting]);
 
   const endCall = useCallback(() => {
-    if (vapiRef.current) {
-      vapiRef.current.stop();
+    if (retellClientRef.current) {
+      retellClientRef.current.stopCall();
       setIsSessionActive(false);
       setStatusText("Click to talk to our AI");
     }
   }, []);
 
   const toggleMute = useCallback(() => {
-    if (vapiRef.current && isSessionActive) {
+    if (retellClientRef.current && isSessionActive) {
       const newMuteState = !isMuted;
-      vapiRef.current.setMuted(newMuteState);
+      if (newMuteState) {
+        retellClientRef.current.mute();
+      } else {
+        retellClientRef.current.unmute();
+      }
       setIsMuted(newMuteState);
     }
   }, [isMuted, isSessionActive]);

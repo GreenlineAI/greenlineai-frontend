@@ -1,16 +1,14 @@
 /**
  * Voice AI Calling Service
- * Supports multiple providers: Stammer AI, Bland AI, Retell AI
+ * Provider: Retell AI
  */
-
-export type VoiceProvider = 'stammer' | 'bland' | 'retell' | 'vapi';
 
 export interface CallRequest {
   phoneNumber: string;
   agentId?: string;
-  prompt?: string;
-  voiceId?: string;
+  fromNumber?: string;
   metadata?: Record<string, unknown>;
+  retellLlmDynamicVariables?: Record<string, string>;
 }
 
 export interface CallResponse {
@@ -26,121 +24,6 @@ export interface CallWebhook {
   transcript?: string;
   recording_url?: string;
   metadata?: Record<string, unknown>;
-}
-
-/**
- * Stammer AI Integration
- */
-export class StammerAI {
-  private apiKey: string;
-  private baseUrl = 'https://api.stammer.ai/v1'; // Update with actual Stammer AI URL
-
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-  }
-
-  async initiateCall(request: CallRequest): Promise<CallResponse> {
-    const response = await fetch(`${this.baseUrl}/calls`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        phone_number: request.phoneNumber,
-        agent_id: request.agentId,
-        voice_id: request.voiceId,
-        prompt: request.prompt,
-        metadata: request.metadata,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Stammer AI error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return {
-      callId: data.call_id,
-      status: data.status,
-      message: data.message,
-    };
-  }
-
-  async getCallStatus(callId: string): Promise<CallWebhook> {
-    const response = await fetch(`${this.baseUrl}/calls/${callId}`, {
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to get call status: ${response.statusText}`);
-    }
-
-    return response.json();
-  }
-}
-
-/**
- * Bland AI Integration
- */
-export class BlandAI {
-  private apiKey: string;
-  private baseUrl = 'https://api.bland.ai/v1';
-
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-  }
-
-  async initiateCall(request: CallRequest): Promise<CallResponse> {
-    const response = await fetch(`${this.baseUrl}/calls`, {
-      method: 'POST',
-      headers: {
-        'authorization': this.apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        phone_number: request.phoneNumber,
-        task: request.prompt || 'Have a conversation with the prospect',
-        voice: request.voiceId || 'maya',
-        wait_for_greeting: true,
-        record: true,
-        metadata: request.metadata,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Bland AI error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return {
-      callId: data.call_id,
-      status: data.status,
-    };
-  }
-
-  async getCallStatus(callId: string): Promise<CallWebhook> {
-    const response = await fetch(`${this.baseUrl}/calls/${callId}`, {
-      headers: {
-        'authorization': this.apiKey,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to get call status: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return {
-      callId: data.call_id,
-      status: data.status,
-      duration: data.call_length,
-      transcript: data.concatenated_transcript,
-      recording_url: data.recording_url,
-    };
-  }
 }
 
 /**
@@ -162,10 +45,11 @@ export class RetellAI {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from_number: process.env.VOICE_AI_PHONE_NUMBER,
+        from_number: request.fromNumber || process.env.RETELL_FROM_NUMBER,
         to_number: request.phoneNumber,
-        agent_id: request.agentId,
+        agent_id: request.agentId || process.env.RETELL_AGENT_ID,
         metadata: request.metadata,
+        retell_llm_dynamic_variables: request.retellLlmDynamicVariables,
       }),
     });
 
@@ -202,6 +86,28 @@ export class RetellAI {
       metadata: data.metadata,
     };
   }
+
+  async listCalls(limit = 50): Promise<CallWebhook[]> {
+    const response = await fetch(`${this.baseUrl}/list-calls?limit=${limit}`, {
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to list calls: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.map((call: Record<string, unknown>) => ({
+      callId: call.call_id,
+      status: mapRetellStatus(call.call_status as string),
+      duration: (call.call_analysis as Record<string, unknown>)?.call_duration,
+      transcript: call.transcript,
+      recording_url: call.recording_url,
+      metadata: call.metadata,
+    }));
+  }
 }
 
 function mapRetellStatus(status: string): CallWebhook['status'] {
@@ -215,19 +121,12 @@ function mapRetellStatus(status: string): CallWebhook['status'] {
 }
 
 /**
- * Factory to get the right provider
+ * Get Retell AI instance
  */
-export function getVoiceProvider(provider: VoiceProvider = 'retell'): StammerAI | BlandAI | RetellAI {
-  const apiKey = process.env.VOICE_AI_API_KEY || '';
-  
-  switch (provider) {
-    case 'stammer':
-      return new StammerAI(apiKey);
-    case 'bland':
-      return new BlandAI(apiKey);
-    case 'retell':
-      return new RetellAI(apiKey);
-    default:
-      throw new Error(`Unsupported provider: ${provider}`);
+export function getVoiceProvider(): RetellAI {
+  const apiKey = process.env.RETELL_API_KEY || '';
+  if (!apiKey) {
+    throw new Error('RETELL_API_KEY environment variable is not set');
   }
+  return new RetellAI(apiKey);
 }

@@ -1,16 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { Check, Star, Phone, Zap, Building, Headphones, MessageSquare, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default function Pricing() {
+  const [isAnnual, setIsAnnual] = useState(false);
+
   const plans = [
     {
       name: "Starter",
       subtitle: "Solo operators",
-      price: "$149",
-      priceUnit: "/month",
+      monthlyPrice: 149,
+      annualPrice: 124, // ~17% discount (2 months free)
       icon: Phone,
       popular: false,
       description: "Perfect for one-person operations",
@@ -28,8 +31,8 @@ export default function Pricing() {
     {
       name: "Professional",
       subtitle: "Most popular",
-      price: "$297",
-      priceUnit: "/month",
+      monthlyPrice: 297,
+      annualPrice: 247, // ~17% discount (2 months free)
       icon: Headphones,
       popular: true,
       description: "For growing home services businesses",
@@ -49,8 +52,8 @@ export default function Pricing() {
     {
       name: "Business",
       subtitle: "High volume",
-      price: "$497",
-      priceUnit: "/month",
+      monthlyPrice: 497,
+      annualPrice: 414, // ~17% discount (2 months free)
       icon: Building,
       popular: false,
       description: "For established businesses with high call volume",
@@ -89,6 +92,33 @@ export default function Pricing() {
             One missed call could cost you $500+. Our AI answers every call
             for a fraction of what you'd pay a receptionist.
           </p>
+
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <span className={`text-sm font-medium ${!isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>
+              Monthly
+            </span>
+            <button
+              onClick={() => setIsAnnual(!isAnnual)}
+              className={`relative w-14 h-7 rounded-full transition-colors ${
+                isAnnual ? 'bg-primary-600' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                  isAnnual ? 'translate-x-8' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className={`text-sm font-medium ${isAnnual ? 'text-slate-900' : 'text-slate-500'}`}>
+              Annual
+            </span>
+            {isAnnual && (
+              <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
+                2 months free
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-12">
@@ -123,10 +153,16 @@ export default function Pricing() {
                 <div className="text-center mb-4">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-4xl font-bold text-slate-900">
-                      {plan.price}
+                      ${isAnnual ? plan.annualPrice : plan.monthlyPrice}
                     </span>
-                    <span className="text-slate-600">{plan.priceUnit}</span>
+                    <span className="text-slate-600">/month</span>
                   </div>
+                  {isAnnual && (
+                    <div className="text-sm text-slate-500 mt-1">
+                      <span className="line-through">${plan.monthlyPrice}/mo</span>
+                      <span className="text-green-600 ml-2">Save ${(plan.monthlyPrice - plan.annualPrice) * 12}/yr</span>
+                    </div>
+                  )}
                   <p className="text-sm text-slate-600 mt-2">{plan.description}</p>
                 </div>
 
