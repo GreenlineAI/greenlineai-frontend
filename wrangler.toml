@@ -1,6 +1,10 @@
 name = "greenlineai-frontend"
-compatibility_date = "2024-01-01"
-pages_build_output_dir = "out"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# OpenNext builds to .open-next directory
+main = ".open-next/worker.js"
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
 
 [vars]
 NEXT_PUBLIC_DEMO_PHONE = "+14083654503"
