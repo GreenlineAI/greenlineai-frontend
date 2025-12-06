@@ -30,6 +30,7 @@ interface DataTableProps<T> {
   getRowId: (item: T) => string;
   onRowClick?: (item: T) => void;
   emptyMessage?: string;
+  emptyState?: React.ReactNode;
 }
 
 export function DataTable<T>({
@@ -42,6 +43,7 @@ export function DataTable<T>({
   getRowId,
   onRowClick,
   emptyMessage = 'No data available',
+  emptyState,
 }: DataTableProps<T>) {
   const handleSelectAll = (checked: boolean) => {
     if (!onSelectChange) return;
@@ -106,6 +108,11 @@ export function DataTable<T>({
   }
 
   if (data.length === 0) {
+    // If custom emptyState is provided, render it without the table
+    if (emptyState) {
+      return <>{emptyState}</>;
+    }
+
     return (
       <div className="rounded-md border">
         <Table>

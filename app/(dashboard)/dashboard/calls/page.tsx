@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Phone, Clock, Calendar, Play, FileText, Search } from 'lucide-react';
+import { Phone, Clock, Calendar, Play, FileText, Search, PhoneIncoming, Headphones, PlayCircle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ import { CallStatusBadge, MeetingBookedBadge } from '@/components/shared/StatusB
 import { useCalls, useCall } from '@/hooks/use-calls';
 import type { OutreachCall, CallStatus } from '@/lib/types';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 export default function CallHistoryPage() {
   const [page, setPage] = useState(1);
@@ -217,7 +218,31 @@ export default function CallHistoryPage() {
               isLoading={isLoading}
               getRowId={(call) => call.id}
               onRowClick={handleRowClick}
-              emptyMessage="No calls yet. Start dialing to see your call history."
+              emptyState={
+                <div className="py-16 text-center">
+                  <div className="h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
+                    <PhoneIncoming className="h-8 w-8 text-primary-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No calls yet</h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                    Your call history will appear here once your AI receptionist starts receiving calls.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button asChild>
+                      <Link href="/#demo">
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Try a Test Call
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link href="/dashboard/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Configure AI
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              }
             />
           </CardContent>
         </Card>

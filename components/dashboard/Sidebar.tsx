@@ -14,11 +14,14 @@ import {
   LogOut,
   Zap,
   X,
+  Shield,
+  Building,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/supabase/hooks";
+import { useQuery } from "@tanstack/react-query";
 
 // Main navigation for inbound voice AI businesses
 const navigation = [
@@ -37,6 +40,11 @@ const outreachNavigation = [
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
 ];
 
+// Admin navigation (only shown to admins)
+const adminNavigation = [
+  { name: "Onboarding", href: "/admin/onboarding", icon: Building },
+];
+
 interface SidebarProps {
   onClose?: () => void;
 }
@@ -45,6 +53,26 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
+
+  // Check if user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ['user-is-admin', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const supabase = createClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from('admin_users')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .single();
+
+      const adminData = data as { role: string } | null;
+      return adminData && ['super_admin', 'admin'].includes(adminData.role);
+    },
+    enabled: !!user?.id,
+  });
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -138,6 +166,35 @@ export default function Sidebar({ onClose }: SidebarProps) {
             );
           })}
         </div>
+
+        {/* Admin Section - Only visible to admins */}
+        {isAdmin && (
+          <div className="pt-4 mt-4 border-t border-slate-800">
+            <p className="px-3 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              Admin
+            </p>
+            {adminNavigation.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={handleNavClick}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary-600 text-white"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       {/* User section */}

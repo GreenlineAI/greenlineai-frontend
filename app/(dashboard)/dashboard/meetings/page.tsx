@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, MapPin, Phone, Mail, Building, Search, Filter } from 'lucide-react';
+import Link from 'next/link';
+import { Calendar, Clock, MapPin, Phone, Mail, Building, Search, Filter, Settings, PlayCircle, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -273,12 +274,34 @@ export default function MeetingsPage() {
           </div>
         ) : (
           <Card>
-            <CardContent className="p-12 text-center">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-xl font-medium text-muted-foreground">No meetings found</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                {searchQuery ? 'Try adjusting your search filters' : 'Meetings will appear here when they are booked'}
+            <CardContent className="py-16 text-center">
+              <div className="h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-primary-600" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                {searchQuery ? 'No meetings found' : 'No meetings yet'}
+              </h3>
+              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                {searchQuery
+                  ? 'Try adjusting your search filters'
+                  : 'Meetings booked by your AI receptionist will appear here automatically.'}
               </p>
+              {!searchQuery && (
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button asChild>
+                    <Link href="/dashboard/settings?tab=integrations">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Connect Calendar
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/#demo">
+                      <PlayCircle className="mr-2 h-4 w-4" />
+                      Try a Test Call
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

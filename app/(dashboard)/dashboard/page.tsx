@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Bot,
   Headphones,
+  Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { StatsCard } from '@/components/shared/StatsCard';
 import { CallsLineChart } from '@/components/charts/CallsLineChart';
 import { CallOutcomesChart } from '@/components/charts/CallOutcomesChart';
+import { GettingStartedChecklist } from '@/components/dashboard/GettingStartedChecklist';
+import { WelcomeEmptyState } from '@/components/dashboard/WelcomeEmptyState';
 import { useUser } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -280,6 +283,17 @@ export default function DashboardPage() {
 
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'there';
 
+  // Check if user is new (no calls and no appointments)
+  const isNewUser = !statsLoading &&
+    (stats?.callsToday === 0 && stats?.callsThisWeek === 0 && stats?.appointmentsBooked === 0) &&
+    (!recentCalls || recentCalls.length === 0);
+
+  // Check onboarding status (you can expand this with real checks)
+  const hasCompletedOnboarding = user?.user_metadata?.onboarding_complete || false;
+  const hasConfiguredVoiceAI = user?.user_metadata?.voice_ai_configured || false;
+  const hasConnectedCalendar = user?.user_metadata?.calendar_connected || false;
+  const hasMadeTestCall = !isNewUser; // If they have calls, they've tested
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -310,6 +324,16 @@ export default function DashboardPage() {
       </div>
 
       <main className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Getting Started Checklist for New Users */}
+        {isNewUser && (
+          <GettingStartedChecklist
+            hasCompletedOnboarding={hasCompletedOnboarding}
+            hasConfiguredVoiceAI={hasConfiguredVoiceAI}
+            hasConnectedCalendar={hasConnectedCalendar}
+            hasMadeTestCall={hasMadeTestCall}
+          />
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {statsLoading ? (
@@ -462,11 +486,19 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <PhoneIncoming className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No calls yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-3">
+                    <PhoneIncoming className="h-6 w-6 text-primary-600" />
+                  </div>
+                  <p className="font-medium text-muted-foreground">No calls yet</p>
+                  <p className="text-sm text-muted-foreground mt-1 mb-4">
                     Calls will appear here once your AI starts receiving them
                   </p>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/#demo">
+                      <PlayCircle className="mr-2 h-4 w-4" />
+                      Try a Test Call
+                    </Link>
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -526,11 +558,19 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No upcoming appointments</p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="h-6 w-6 text-primary-600" />
+                  </div>
+                  <p className="font-medium text-muted-foreground">No upcoming appointments</p>
+                  <p className="text-sm text-muted-foreground mt-1 mb-4">
                     Appointments booked by your AI will appear here
                   </p>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/dashboard/settings?tab=integrations">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Connect Calendar
+                    </Link>
+                  </Button>
                 </div>
               )}
             </CardContent>

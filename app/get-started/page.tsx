@@ -170,12 +170,55 @@ export default function GetStartedPage() {
       };
 
       // Type assertion needed until database migration is applied
-      const { error: insertError } = await supabase
+      const { data: insertedData, error: insertError } = await supabase
         .from("business_onboarding")
-        .insert(insertData as never);
+        .insert(insertData as never)
+        .select()
+        .single();
 
       if (insertError) {
         throw insertError;
+      }
+
+      // Send notification email (don't block on failure)
+      try {
+        await fetch('/api/onboarding/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: (insertedData as { id: string } | null)?.id,
+            business_name: formData.businessName,
+            business_type: formData.businessType,
+            business_type_other: formData.businessTypeOther,
+            owner_name: formData.ownerName,
+            email: formData.email,
+            phone: formData.phone,
+            website: formData.website,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zip,
+            service_radius_miles: parseInt(formData.serviceRadius),
+            services: formData.services,
+            hours_monday: formData.hoursMonday,
+            hours_tuesday: formData.hoursTuesday,
+            hours_wednesday: formData.hoursWednesday,
+            hours_thursday: formData.hoursThursday,
+            hours_friday: formData.hoursFriday,
+            hours_saturday: formData.hoursSaturday,
+            hours_sunday: formData.hoursSunday,
+            greeting_name: formData.greetingName || formData.businessName,
+            appointment_duration: parseInt(formData.appointmentDuration),
+            calendar_link: formData.calendarLink,
+            pricing_info: formData.pricingInfo,
+            special_instructions: formData.specialInstructions,
+            phone_preference: formData.phonePreference,
+            existing_phone_number: formData.existingPhoneNumber,
+            current_phone_provider: formData.currentProvider,
+          }),
+        });
+      } catch (notifyError) {
+        // Don't fail the submission if notification fails
+        console.error('Notification error (non-blocking):', notifyError);
       }
 
       setIsComplete(true);

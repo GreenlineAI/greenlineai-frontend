@@ -12,6 +12,9 @@ import {
   ArrowRight,
   Clock,
   Building,
+  Sparkles,
+  FileSpreadsheet,
+  Target,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -147,6 +150,11 @@ export default function OutreachDashboardPage() {
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
   const activeCampaigns = campaigns?.filter((c) => c.status === 'active') || [];
 
+  // Check if user is completely new to outreach
+  const isNewToOutreach = !statsLoading &&
+    stats?.totalLeads === 0 &&
+    (!recentCalls || recentCalls.length === 0);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -176,6 +184,39 @@ export default function OutreachDashboardPage() {
       </div>
 
       <main className="p-6 space-y-6">
+        {/* Welcome Card for New Users */}
+        {isNewToOutreach && (
+          <Card className="border-primary-200 bg-gradient-to-r from-primary-50 to-blue-50">
+            <CardContent className="py-8">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="h-20 w-20 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="h-10 w-10 text-primary-600" />
+                </div>
+                <div className="text-center md:text-left flex-1">
+                  <h3 className="text-xl font-semibold mb-2">Welcome to Outreach!</h3>
+                  <p className="text-muted-foreground mb-4 max-w-lg">
+                    Ready to book more meetings? Import your leads and let our AI help you reach out to potential customers efficiently.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                    <Button asChild>
+                      <Link href="/dashboard/leads">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import Your First Leads
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link href="/dashboard/campaigns/new">
+                        <Target className="mr-2 h-4 w-4" />
+                        Create a Campaign
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {statsLoading ? (
@@ -307,9 +348,21 @@ export default function OutreachDashboardPage() {
                     </div>
                   ))}
                   {(!leadsData?.leads || leadsData.leads.length === 0) && (
-                    <p className="text-center text-sm text-muted-foreground py-4">
-                      No leads yet
-                    </p>
+                    <div className="text-center py-8">
+                      <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-3">
+                        <Users className="h-6 w-6 text-primary-600" />
+                      </div>
+                      <p className="font-medium text-muted-foreground">No leads yet</p>
+                      <p className="text-xs text-muted-foreground mt-1 mb-3">
+                        Import leads to start your outreach
+                      </p>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href="/dashboard/leads">
+                          <Upload className="mr-2 h-3 w-3" />
+                          Import Leads
+                        </Link>
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
@@ -358,9 +411,21 @@ export default function OutreachDashboardPage() {
                     );
                   })}
                   {activeCampaigns.length === 0 && (
-                    <p className="text-center text-sm text-muted-foreground py-4">
-                      No active campaigns
-                    </p>
+                    <div className="text-center py-8">
+                      <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-3">
+                        <Target className="h-6 w-6 text-primary-600" />
+                      </div>
+                      <p className="font-medium text-muted-foreground">No active campaigns</p>
+                      <p className="text-xs text-muted-foreground mt-1 mb-3">
+                        Create a campaign to organize your outreach
+                      </p>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href="/dashboard/campaigns/new">
+                          <Calendar className="mr-2 h-3 w-3" />
+                          New Campaign
+                        </Link>
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
@@ -425,9 +490,21 @@ export default function OutreachDashboardPage() {
                     </div>
                   ))}
                   {(!recentCalls || recentCalls.length === 0) && (
-                    <p className="text-center text-sm text-muted-foreground py-4">
-                      No calls yet
-                    </p>
+                    <div className="text-center py-8">
+                      <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-3">
+                        <Phone className="h-6 w-6 text-primary-600" />
+                      </div>
+                      <p className="font-medium text-muted-foreground">No calls yet</p>
+                      <p className="text-xs text-muted-foreground mt-1 mb-3">
+                        Start dialing to see your call history
+                      </p>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href="/dashboard/dialer">
+                          <PhoneCall className="mr-2 h-3 w-3" />
+                          Start Dialing
+                        </Link>
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
