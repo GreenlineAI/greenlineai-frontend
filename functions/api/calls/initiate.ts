@@ -165,6 +165,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         from_number: env.RETELL_FROM_NUMBER,
         to_number: phoneNumber,
         override_agent_id: selectedAgentId,
+        first_sentence: "Hi there! This is Sarah from GreenLine AI. How are you doing today?",
         metadata: {
           leadId: leadId || '',
           campaignId: campaignId || '',
