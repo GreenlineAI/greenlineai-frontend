@@ -11,57 +11,83 @@ flowchart TD
     C --> D[Schedule Retry]
     D --> E[End Call]
 
-    B -->|Yes| F[Greeting: Hi, this is Alex from GreenLine AI]
+    B -->|Yes| F[Greeting Node<br/>📝 Prompt OR Static]
 
     F --> G{Speaking with Decision Maker?}
-    G -->|No - Gatekeeper| H[Ask to speak with owner/manager]
+    G -->|No - Gatekeeper| H[Gatekeeper Response<br/>📝 Prompt OR Static]
     H --> I{Transferred?}
-    I -->|No| J[Ask for best time to call back]
+    I -->|No| J[Callback Request<br/>📝 Prompt OR Static]
     J --> K[Log callback time]
     K --> E
     I -->|Yes| F
 
-    G -->|Yes| L[Is this a good time to talk?]
-    L -->|No| M[When would be better?]
+    G -->|Yes| L[Availability Check<br/>📝 Prompt OR Static]
+    L -->|No| M[Reschedule Response<br/>📝 Prompt OR Static]
     M --> K
 
-    L -->|Yes| N[Pain Point Discovery]
+    L -->|Yes| N[Pain Point Discovery<br/>📝 Prompt OR Static]
     N --> O{Current Lead Gen Satisfaction?}
 
-    O -->|Happy with current| P[Acknowledge & soft close]
-    P --> Q[Offer to follow up in future]
+    O -->|Happy with current| P[Soft Close<br/>📝 Prompt OR Static]
+    P --> Q[Future Follow-up<br/>📝 Prompt OR Static]
     Q --> R[Log: Not Interested Now]
     R --> E
 
-    O -->|Some challenges| S[Dig deeper into pain points]
+    O -->|Some challenges| S[Deep Dive Questions<br/>📝 Prompt OR Static]
     S --> T{Interested in Solution?}
 
     O -->|Frustrated| S
 
     T -->|No| P
-    T -->|Maybe| U[Share quick value prop]
+    T -->|Maybe| U[Value Prop<br/>📝 Prompt OR Static]
     U --> V{Want to learn more?}
 
-    T -->|Yes| W[Pitch: 15-min Strategy Call]
+    T -->|Yes| W[Meeting Pitch<br/>📝 Prompt OR Static]
 
     V -->|No| P
     V -->|Yes| W
 
     W --> X{Interested in Meeting?}
-    X -->|No| Y[Offer alternative: Email info]
+    X -->|No| Y[Email Alternative<br/>📝 Prompt OR Static]
     Y --> Z[Send follow-up email]
     Z --> R
 
-    X -->|Yes| AA[Send Calendly Link via SMS]
-    AA --> AB[Confirm they received it]
-    AB --> AC{Booked?}
-    AC -->|Yes| AD[Confirm meeting details]
+    X -->|Yes| AA[📱 SMS Node]
+    AA -->|Success| AB[SMS Success Response<br/>📝 Prompt OR Static]
+    AA -->|Failure| AB2[SMS Failure Response<br/>📝 Prompt OR Static]
+    AB --> AC[🔧 Function Node: Cal.com<br/>Create Appointment]
+    AB2 --> AC2[Verbal Booking Fallback<br/>📝 Prompt OR Static]
+    AC2 --> AC
+    AC -->|Success| AD[Booking Confirmation<br/>📝 Prompt OR Static]
+    AC -->|Failure| AD2[Booking Error Response<br/>📝 Prompt OR Static]
     AD --> AE[Log: Meeting Booked ✅]
-    AE --> AF[Thank & End Call]
+    AD2 --> AG
+    AE --> AF[Closing<br/>📝 Prompt OR Static]
 
-    AC -->|Will book later| AG[Set follow-up reminder]
+    AG[Set follow-up reminder]
     AG --> AH[Log: Pending Booking]
     AH --> AF
+    AF --> END[End Call]
+```
+
+## Node Configuration
+
+Each conversation node in the flow supports two content modes:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| **Prompt** | AI generates dynamic response based on context | When personalization or situational awareness is needed |
+| **Static Sentence** | Pre-defined text spoken exactly as written | For consistent messaging, compliance, or specific scripts |
+
+### Configuration Example
+
+```json
+{
+  "node_id": "greeting",
+  "content_mode": "prompt",  // or "static"
+  "prompt": "Introduce yourself warmly and ask if now is a good time to talk briefly about their lead generation.",
+  "static_text": "Hi, this is Alex from GreenLine AI. Do you have a quick moment to chat?"
+}
 ```
 
 ## Conversation States
@@ -70,30 +96,58 @@ flowchart TD
 - Introduce as Alex from GreenLine AI
 - Be warm and professional
 - Immediately ask if it's a good time
+- **Mode:** Prompt OR Static
 
 ### 2. Gatekeeper Handling
 - Politely ask to speak with the owner or decision maker
 - If unavailable, get best callback time
 - Never pitch to gatekeepers
+- **Mode:** Prompt OR Static
 
 ### 3. Pain Point Discovery
 Key questions to ask:
 - "How are you currently getting new leads for your business?"
 - "Are you happy with the quality and volume of leads you're getting?"
 - "What would it mean for your business if you could 2-3x your qualified leads?"
+- **Mode:** Prompt OR Static
 
 ### 4. Value Proposition
 - We help home services businesses generate more qualified leads
 - AI-powered outreach that works 24/7
 - Clients typically see 2-3x increase in qualified leads
+- **Mode:** Prompt OR Static
 
-### 5. Meeting Booking
-- Offer a brief 15-minute strategy call
-- Send Calendly link via SMS: `https://calendly.com/greenlineai`
-- Confirm they received the link
-- Verify booking before ending call
+### 5. SMS Node
+Sends booking link via SMS to the lead's phone number.
 
-### 6. Objection Handling
+| Transition | Response Node |
+|------------|---------------|
+| **Success** | SMS Success Response (Prompt OR Static) - e.g., "Great, I just sent you a link to book directly." |
+| **Failure** | SMS Failure Response (Prompt OR Static) - e.g., "I wasn't able to send the link, but let me help you book right now." |
+
+### 6. Meeting Booking (Function Node: Cal.com)
+Uses the built-in Cal.com function node to create appointments directly:
+
+```json
+{
+  "node_type": "function",
+  "function": "cal_com_create_booking",
+  "parameters": {
+    "event_type_id": "your-event-type-id",
+    "attendee_name": "{{lead_name}}",
+    "attendee_email": "{{lead_email}}",
+    "attendee_phone": "{{lead_phone}}",
+    "start_time": "{{selected_time}}"
+  }
+}
+```
+
+| Transition | Response Node |
+|------------|---------------|
+| **Success** | Booking Confirmation (Prompt OR Static) - Confirms meeting details |
+| **Failure** | Booking Error Response (Prompt OR Static) - Offers to follow up or retry |
+
+### 7. Objection Handling
 
 | Objection | Response |
 |-----------|----------|
@@ -132,7 +186,27 @@ The agent receives these variables for personalization:
 }
 ```
 
-### Calendly Integration
-- Link sent via SMS during call
-- Webhook receives booking confirmation
-- Automatically updates lead status in database
+### Cal.com Function Node Integration
+Uses the built-in Retell function node to create appointments via Cal.com API:
+
+| Parameter | Description |
+|-----------|-------------|
+| `event_type_id` | Your Cal.com event type ID |
+| `attendee_name` | Lead's name (from dynamic variables) |
+| `attendee_email` | Lead's email address |
+| `attendee_phone` | Lead's phone number |
+| `start_time` | Selected appointment time (ISO 8601) |
+
+**Transitions:**
+- **Success**: Proceeds to booking confirmation node
+- **Failure**: Routes to error handling with follow-up reminder
+
+### SMS Node Integration
+Sends booking link via Twilio SMS:
+
+| Transition | Description |
+|------------|-------------|
+| **Success** | SMS delivered - proceed to confirmation response |
+| **Failure** | SMS failed - route to verbal booking fallback |
+
+Each transition can be configured with either a **Prompt** (AI-generated response) or **Static Sentence** (pre-defined text).

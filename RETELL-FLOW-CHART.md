@@ -11,83 +11,122 @@
 
 ## Node Components Available
 
-| Node Type | Purpose |
-|-----------|---------|
-| **Conversation** | Main dialogue nodes with AI speaking/listening |
-| **Transition** | Silent routing without AI speaking, just passes control |
-| **Function** | Execute custom functions |
-| **Call Transfer** | Transfer to human agent |
-| **Press Digit** | IVR-style inputs |
-| **Logic Split Node** | Conditional branching based on conditions |
-| **Agent Transfer** | Switch between agents |
-| **SMS** | Send text messages (static prompt only - no variable interpolation) |
-| **Extract Variable** | Capture user information |
-| **MCP** | Model Context Protocol integration (connects to external services) |
-| **Ending** | End call with disposition |
+| Node Type | Purpose | Content Mode |
+|-----------|---------|--------------|
+| **Conversation** | Main dialogue nodes with AI speaking/listening | 📝 Prompt OR Static |
+| **Transition** | Silent routing without AI speaking, just passes control | N/A |
+| **Function** | Execute custom functions (e.g., Cal.com booking) | N/A |
+| **Call Transfer** | Transfer to human agent | 📝 Prompt OR Static |
+| **Press Digit** | IVR-style inputs | 📝 Prompt OR Static |
+| **Logic Split Node** | Conditional branching based on conditions | N/A |
+| **Agent Transfer** | Switch between agents | N/A |
+| **SMS** | Send text messages with success/failure transitions | 📝 Prompt OR Static (for response nodes) |
+| **Extract Variable** | Capture user information | 📝 Prompt OR Static |
+| **Ending** | End call with disposition | 📝 Prompt OR Static |
+
+### Content Mode Legend
+
+| Mode | Description |
+|------|-------------|
+| **Prompt** | AI generates dynamic response based on context and variables |
+| **Static** | Pre-defined text spoken exactly as written |
 
 ---
 
-## MCP Integration: Calendly
+## Function Node Integration: Cal.com
 
-### MCP Server Configuration
-**Your Calendly MCP URL**:
+### Why Cal.com Function Node?
+The built-in Function Node with Cal.com is **easier to configure** than MCP integrations:
+- No external MCP server setup required
+- Built-in Retell function - just configure and use
+- Direct API integration with Cal.com
+- Reliable success/failure transitions
+
+### Function Node Configuration
+
+**Function Name**: `cal_com_create_booking`
+
+**Parameters**:
+| Parameter | Description | Type |
+|-----------|-------------|------|
+| `event_type_id` | Your Cal.com event type ID | String |
+| `attendee_name` | Lead's name (from variables) | String |
+| `attendee_email` | Lead's email address | String |
+| `attendee_phone` | Lead's phone number | String |
+| `start_time` | Selected appointment time (ISO 8601) | String |
+| `timezone` | Lead's timezone | String |
+
+**Example Configuration**:
+```json
+{
+  "function": "cal_com_create_booking",
+  "parameters": {
+    "event_type_id": "your-event-type-id",
+    "attendee_name": "{{owner_name}}",
+    "attendee_email": "{{lead_email}}",
+    "attendee_phone": "{{phone}}",
+    "start_time": "{{selected_time}}",
+    "timezone": "America/Los_Angeles"
+  }
+}
 ```
-https://backend.composio.dev/v3/mcp/4c5f4f5e-4252-4075-8798-f9526620aac7
-```
 
-**Server Details**:
-- **Name**: `calendly-greenline`
-- **Server ID**: `4c5f4f5e-4252-4075-8798-f9526620aac7`
-- **Auth Config ID**: `ac_TqiOw-L_5D9Z`
+### Function Node Transitions
 
-Alternative options:
-- **Zapier**: `https://zapier.com/mcp/calendly` (easy setup)
-- **Universal MCP**: `https://github.com/universal-mcp/calendly` (self-hosted)
-
-### Calendly MCP Tools Available
-| Tool | Purpose |
-|------|---------|
-| `get_current_user` | Get authenticated Calendly user info |
-| `create_scheduling_link` | Create a booking link for an event type |
-| `create_single_use_scheduling_link` | Create one-time use booking link |
-| `get_event` | Get scheduled event details |
-| `cancel_event` | Cancel a scheduled event |
-| `get_event_invitee` | Get invitee details for an event |
-| `create_invitee_no_show` | Mark invitee as no-show |
-| `create_webhook_subscription` | Subscribe to Calendly events |
+| Transition | Description | Next Action |
+|------------|-------------|-------------|
+| **Success** | Booking created successfully | Proceed to confirmation response node |
+| **Failure** | Booking failed (API error, slot unavailable) | Route to fallback/error handling node |
 
 ### Required Environment Variables
 ```
-CALENDLY_ACCESS_TOKEN=your_personal_access_token
-# OR OAuth:
-CALENDLY_CLIENT_ID=your_client_id
-CALENDLY_CLIENT_SECRET=your_client_secret
+CAL_COM_API_KEY=your_cal_com_api_key
+CAL_COM_EVENT_TYPE_ID=your_event_type_id
 ```
 
 ---
 
-## SMS Limitations in Retell AI
+## SMS Node Configuration
 
-**Important**: The SMS node in Retell AI is **static** - it only accepts a prompt/message and does NOT support variable interpolation like `{{owner_name}}` or `{{business_name}}`.
+The SMS node sends text messages and supports **success/failure transitions** with configurable response nodes.
 
-### Workarounds
+### SMS Node Transitions
 
-1. **Use MCP + Function Node**:
-   - Use MCP to generate dynamic content (like Calendly links)
+| Transition | Description | Response Node |
+|------------|-------------|---------------|
+| **Success** | SMS delivered successfully | SMS Success Response (📝 Prompt OR Static) |
+| **Failure** | SMS failed to send | SMS Failure Response (📝 Prompt OR Static) |
+
+### Example SMS Flow
+
+```
+[SMS Node: Send Booking Link]
+    ├── Success → [Conversation: "Great, I just sent you the link!"] (Prompt OR Static)
+    └── Failure → [Conversation: "I had trouble sending the link, let me help you book now."] (Prompt OR Static)
+```
+
+### SMS Content Options
+
+| Mode | Description |
+|------|-------------|
+| **Prompt** | AI generates SMS content based on context |
+| **Static** | Pre-defined message sent exactly as written |
+
+### SMS Limitations
+
+**Note**: SMS content has limited variable interpolation. For dynamic content:
+
+1. **Use Function Node first**:
    - Use a Function node to construct the SMS message with variables
    - Pass the constructed message to the SMS node
 
 2. **Use Static Messages**:
    - Keep SMS content generic without personalization
-   - Example: "Here's your booking link: [URL]"
+   - Example: "Here's your booking link: https://cal.com/greenlineai"
 
-3. **Use External SMS Service**:
-   - Use a Function node to call an external API (Twilio, etc.)
-   - This allows full control over message content with variables
-
-### Recommended Flow for Dynamic SMS
+### Recommended Flow for Booking SMS
 ```
-[Extract Variables] → [MCP: Create Calendly Link] → [Function: Build SMS] → [SMS: Send]
+[Function: Cal.com Create Booking] → [SMS: Send Confirmation] → Success/Failure Response Nodes
 ```
 
 ---
@@ -97,9 +136,10 @@ CALENDLY_CLIENT_SECRET=your_client_secret
 ---
 
 ### Node 1: Welcome Node
-**Node Type**: Conversation (Static Sentence)
+**Node Type**: Conversation
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 Hi there! This is Alex calling from GreenLine AI, a marketing agency. I hope you're doing well today!
 Is now a good time to chat, or should I call back at a better time?
@@ -116,8 +156,9 @@ Is now a good time to chat, or should I call back at a better time?
 
 ### Node 1b: Introduction (Optional)
 **Node Type**: Conversation
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 Of course! My name is Alex and I'm reaching out from GreenLine AI.
 We help home service businesses get more qualified leads through AI-powered marketing.
@@ -135,8 +176,9 @@ Is this something you have a few minutes to hear about?
 
 ### Node 2: Extract Variables
 **Node Type**: Extract Variable
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 Perfect! Before we dive in, I just want to make sure I have the right info.
 Am I speaking with the business owner?
@@ -162,8 +204,9 @@ Am I speaking with the business owner?
 
 ### Node 3: Main Qualification
 **Node Type**: Conversation
+**Content Mode**: Prompt
 
-**Prompt**:
+**Content**:
 ```
 Great to meet you, {{owner_name}}! I'll keep this super brief.
 We help home services businesses like yours get more qualified leads.
@@ -189,8 +232,9 @@ Are you currently happy with the number of leads you're getting?
 
 ### Node 4: Value Proposition
 **Node Type**: Conversation
+**Content Mode**: Prompt
 
-**Prompt**:
+**Content**:
 ```
 I hear that a lot. Many {{business_type}} businesses struggle to get consistent,
 quality leads. We specialize in AI-powered outreach and targeted marketing.
@@ -218,8 +262,9 @@ your business grow?
 
 ### Node 5: Pricing Discussion
 **Node Type**: Conversation
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 Great question! Our pricing depends on your specific needs and goals.
 Generally, clients invest between $500-2000 per month, and most see a
@@ -245,42 +290,66 @@ scheduling 15 minutes to discuss?
 
 ---
 
-### Node 6: Create Calendly Invite (MCP)
-**Node Type**: MCP (Calendly)
+### Node 6: Create Booking (Function Node: Cal.com)
+**Node Type**: Function
+**Function**: `cal_com_create_booking`
 
-**MCP URL**: `https://backend.composio.dev/v3/mcp/4c5f4f5e-4252-4075-8798-f9526620aac7`
+**Function Configuration**:
+```json
+{
+  "function": "cal_com_create_booking",
+  "parameters": {
+    "event_type_id": "{{cal_event_type_id}}",
+    "attendee_name": "{{owner_name}}",
+    "attendee_email": "{{lead_email}}",
+    "attendee_phone": "{{phone}}",
+    "start_time": "{{selected_time}}",
+    "timezone": "America/Los_Angeles"
+  }
+}
+```
 
-**MCP Tool Access Scope**: `CALENDLY_EXECUTE_TOOL`
-
-**MCP Response Variables** (key-value):
+**Response Variables** (key-value):
 | Key | Value |
 |-----|-------|
-| `booking_url` | `{{calendly_booking_url}}` |
+| `booking_url` | `{{cal_booking_url}}` |
+| `booking_id` | `{{cal_booking_id}}` |
+| `start_time` | `{{cal_start_time}}` |
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| MCP returns scheduling link successfully | → Node 6b: Send SMS with Calendly Link |
-| MCP fails | → Node 6c: Fallback - Static Calendly Link |
+| Function returns booking successfully | → Node 6b: Send SMS with Booking Link |
+| Function fails (API error, slot unavailable) | → Node 6c: Fallback - Verbal Booking |
 
 ---
 
-### Node 6b: Send SMS with Calendly Link
-**Node Type**: SMS + Conversation
+### Node 6b: Send SMS with Booking Link
+**Node Type**: SMS
 
-**Prompt**:
+**SMS Content**:
 ```
-Excellent! I'm sending you a text right now with a link to book a time
-that works best for you. You should receive it in just a second.
-
-Is there anything specific you'd like us to cover during that call?
-```
-
-**SMS Content** (Note: SMS in Retell is static - use Function node to build dynamic content):
-```
-Hi! Here's the link to schedule your GreenLine AI strategy call: {{calendly_booking_url}}
+Hi! Here's the link to your GreenLine AI strategy call: {{cal_booking_url}}
 
 Looking forward to helping your business grow!
+```
+
+#### SMS Transitions
+| Transition | Next Node |
+|------------|-----------|
+| **Success** | → Node 6b-success: SMS Success Response |
+| **Failure** | → Node 6b-failure: SMS Failure Response |
+
+---
+
+### Node 6b-success: SMS Success Response
+**Node Type**: Conversation
+**Content Mode**: Static
+
+**Content**:
+```
+Excellent! I just sent you a text with the booking link. You should receive it in just a second.
+Is there anything specific you'd like us to cover during that call?
 ```
 
 #### Variables
@@ -293,44 +362,111 @@ Looking forward to helping your business grow!
 | Condition | Next Node |
 |-----------|-----------|
 | User confirms or has no questions | → Node 13: End Call - Meeting Scheduled |
-| User didn't receive SMS or asks to resend | → Node 6: Create Calendly Invite (retry) |
+| User didn't receive SMS or asks to resend | → Node 6b: Send SMS (retry) |
 | User changes mind | → Node 8: Last Attempt |
 
 ---
 
-### Node 6c: Fallback - Static Calendly Link
-**Node Type**: SMS + Conversation
+### Node 6b-failure: SMS Failure Response
+**Node Type**: Conversation
+**Content Mode**: Static
 
-**Purpose**: Fallback if MCP fails - sends the static Calendly URL
-
-**Prompt**:
+**Content**:
 ```
-I'm sending you a text right now with our scheduling link.
-You should receive it in just a moment!
-
+I had a little trouble sending the text, but no worries!
+Your booking is confirmed for {{cal_start_time}}. You'll receive a confirmation email shortly.
 Is there anything specific you'd like us to cover during that call?
-```
-
-**SMS Content**:
-```
-Hi! Book your GreenLine AI strategy call here: https://calendly.com/greenlineai
-
-Looking forward to helping your business grow!
 ```
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
 | User confirms | → Node 13: End Call - Meeting Scheduled |
-| User didn't receive SMS | → Node 6c: Fallback (retry once) |
+| User has concerns | → Node 7: Handle Objection |
+
+---
+
+### Node 6c: Fallback - Verbal Booking
+**Node Type**: Conversation
+**Content Mode**: Static
+
+**Purpose**: Fallback if Cal.com Function fails - offer to book verbally or send static link
+
+**Content**:
+```
+I'm having a little trouble with our booking system, but no worries!
+Let me send you a text with our scheduling link so you can book at your convenience.
+You should receive it in just a moment!
+```
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| User agrees to receive link | → Node 6c-sms: Send Fallback SMS |
+| User prefers verbal booking | → Node 6c-verbal: Verbal Booking |
 | User changes mind | → Node 8: Last Attempt |
+
+---
+
+### Node 6c-sms: Send Fallback SMS
+**Node Type**: SMS
+
+**SMS Content**:
+```
+Hi! Book your GreenLine AI strategy call here: https://cal.com/greenlineai
+
+Looking forward to helping your business grow!
+```
+
+#### SMS Transitions
+| Transition | Next Node |
+|------------|-----------|
+| **Success** | → Node 6c-sms-success: Fallback SMS Success |
+| **Failure** | → Node 6c-verbal: Verbal Booking |
+
+---
+
+### Node 6c-sms-success: Fallback SMS Success
+**Node Type**: Conversation
+**Content Mode**: Static
+
+**Content**:
+```
+I just sent that over. You can book a time that works best for you right from that link.
+Is there anything else I can help you with?
+```
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| User confirms | → Node 13: End Call - Meeting Scheduled |
+| User has questions | → Node 7: Handle Objection |
+
+---
+
+### Node 6c-verbal: Verbal Booking
+**Node Type**: Conversation
+**Content Mode**: Static
+
+**Content**:
+```
+No problem! Let's do this the old-fashioned way.
+What day this week or next works best for a quick 15-minute call?
+```
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| User provides time | → Node 16: End Call - Callback Scheduled |
+| User declines | → Node 8: Last Attempt |
 
 ---
 
 ### Node 7: Handle Objection
 **Node Type**: Conversation
+**Content Mode**: Prompt
 
-**Prompt**:
+**Content**:
 ```
 I totally understand. A lot of business owners feel the same way at first.
 Can I ask what's holding you back? Is it timing, budget, or something else?
@@ -356,8 +492,9 @@ I want to make sure I can address any concerns you might have.
 
 ### Node 7b: Budget Objection Response
 **Node Type**: Conversation
+**Content Mode**: Prompt
 
-**Prompt**:
+**Content**:
 ```
 I completely understand budget is important. Here's the thing - our clients
 typically see a positive ROI within the first month. We're not an expense,
@@ -379,8 +516,9 @@ of your time?
 
 ### Node 7c: Trust Objection Response
 **Node Type**: Conversation
+**Content Mode**: Prompt
 
-**Prompt**:
+**Content**:
 ```
 That's a fair concern. A lot of marketing companies over-promise and under-deliver.
 What makes us different is we use AI to target people who are actively looking
@@ -401,8 +539,9 @@ you can cancel anytime. Would you be open to at least hearing how it works?
 
 ### Node 8: Last Attempt
 **Node Type**: Conversation
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 No problem at all, I appreciate your time. Before I let you go - would it
 be okay if I sent you a quick text with some information about what we do?
@@ -425,8 +564,9 @@ That way if you ever need help with leads in the future, you'll have our info ha
 
 ### Node 9: Soft Close
 **Node Type**: Conversation
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 That's great to hear that business is going well! We love to hear success stories.
 Would you be open to me following up in a few months in case your lead flow
@@ -451,8 +591,9 @@ That way you'll have a resource ready if you ever need help scaling.
 
 ### Node 10: Schedule Callback
 **Node Type**: Conversation + Extract Variable
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 No problem! When would be a better time for me to give you a call back?
 I want to make sure I catch you when you have a few minutes.
@@ -476,8 +617,9 @@ I want to make sure I catch you when you have a few minutes.
 
 ### Node 10b: Suggest Callback Time
 **Node Type**: Conversation
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 How about I give you a call back tomorrow around the same time?
 Or would a morning or afternoon work better for you?
@@ -494,8 +636,9 @@ Or would a morning or afternoon work better for you?
 
 ### Node 11: End Call - Not Interested
 **Node Type**: Ending
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 I completely understand. Thanks so much for your time today, and I hope
 you have a wonderful rest of your day. Take care!
@@ -512,8 +655,9 @@ you have a wonderful rest of your day. Take care!
 
 ### Node 12: Ask for Owner
 **Node Type**: Conversation
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 No problem! Is the owner available right now, or would it be better if I
 called back at another time to speak with them?
@@ -537,8 +681,9 @@ called back at another time to speak with them?
 
 ### Node 12b: Transfer to Owner
 **Node Type**: Conversation
+**Content Mode**: Static
 
-**Prompt**:
+**Content**:
 ```
 Perfect! I'll hold while you transfer me. Thank you so much for your help!
 ```
@@ -553,8 +698,9 @@ Perfect! I'll hold while you transfer me. Thank you so much for your help!
 
 ### Node 13: End Call - Meeting Scheduled
 **Node Type**: Ending
+**Content Mode**: Prompt
 
-**Prompt**:
+**Content**:
 ```
 Awesome! We're all set. You should have that link in your texts now.
 I'm really looking forward to showing you how we can help {{business_name}} grow.
@@ -573,15 +719,9 @@ Have a great rest of your day, {{owner_name}}!
 
 ### Node 14: Send Info SMS + End
 **Node Type**: SMS + Ending
+**Content Mode**: Static
 
-**Prompt**:
-```
-Perfect, I just sent that over. If you ever have questions or want to
-chat about growing your business, just reply to that text.
-Thanks for your time today!
-```
-
-**SMS Content** (static - no variable interpolation in Retell SMS):
+**SMS Content**:
 ```
 Thanks for chatting with GreenLine AI today!
 
@@ -589,6 +729,44 @@ When you're ready to get more leads, we're here to help:
 https://greenline-ai.com
 
 Reply anytime with questions!
+```
+
+#### SMS Transitions
+| Transition | Next Node |
+|------------|-----------|
+| **Success** | → Node 14-success: Info SMS Success |
+| **Failure** | → Node 14-failure: Info SMS Failure |
+
+---
+
+### Node 14-success: Info SMS Success
+**Node Type**: Ending
+**Content Mode**: Static
+
+**Content**:
+```
+Perfect, I just sent that over. If you ever have questions or want to
+chat about growing your business, just reply to that text.
+Thanks for your time today!
+```
+
+**Call Disposition**: Info Sent - Follow Up Later
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| (End of call) | — |
+
+---
+
+### Node 14-failure: Info SMS Failure
+**Node Type**: Ending
+**Content Mode**: Static
+
+**Content**:
+```
+I had a little trouble sending the text, but you can find us at greenline-ai.com anytime.
+Thanks so much for your time today!
 ```
 
 **Call Disposition**: Info Sent - Follow Up Later
@@ -602,8 +780,9 @@ Reply anytime with questions!
 
 ### Node 15: End Call - Warm Lead
 **Node Type**: Ending
+**Content Mode**: Prompt
 
-**Prompt**:
+**Content**:
 ```
 Sounds great! I'll make a note to check back in with you. Keep up the
 great work with {{business_name}}, and I hope your success continues!
@@ -622,8 +801,9 @@ Have a wonderful day!
 
 ### Node 16: End Call - Callback Scheduled
 **Node Type**: Ending
+**Content Mode**: Prompt
 
-**Prompt**:
+**Content**:
 ```
 Perfect! I've got you down for {{callback_date}} at {{callback_time}}.
 I'll give you a call then. Thanks so much for your time, and talk to you soon!
@@ -659,7 +839,7 @@ These variables are injected into the call from your GreenLine AI dashboard:
 
 | Disposition | When to Use | Follow-up Action |
 |-------------|-------------|------------------|
-| **Meeting Scheduled** | User agreed to strategy call, sent Calendly | Monitor for booking, follow up if no booking in 48h |
+| **Meeting Scheduled** | User agreed to strategy call, booked via Cal.com | Monitor for booking, follow up if no booking in 48h |
 | **Callback Scheduled** | User requested specific callback time | Call at scheduled time |
 | **Warm Lead - Follow Up Later** | User happy now but open to future contact | Follow up in 3-6 months |
 | **Info Sent - Follow Up Later** | Sent info SMS, user may convert later | Follow up in 2-4 weeks |
@@ -672,16 +852,17 @@ These variables are injected into the call from your GreenLine AI dashboard:
 
 ## Implementation Checklist
 
-- [ ] Create all nodes in Retell dashboard (16 base + 2 new: 6b, 6c)
-- [ ] Configure Calendly MCP server (Composio recommended)
-- [ ] Set up `CALENDLY_ACCESS_TOKEN` environment variable
-- [ ] Configure MCP node (Node 6) with Calendly tool
+- [ ] Create all nodes in Retell dashboard (includes new SMS success/failure response nodes)
+- [ ] Configure Cal.com Function Node (Node 6) with API key
+- [ ] Set up `CAL_COM_API_KEY` environment variable
+- [ ] Set up `CAL_COM_EVENT_TYPE_ID` environment variable
 - [ ] Configure transitions between each node
 - [ ] Add Extract Variable nodes with proper descriptions
-- [ ] Set up SMS nodes (static content only - no variables)
+- [ ] Set up SMS nodes with success/failure transitions
+- [ ] Configure SMS response nodes (Prompt OR Static content)
 - [ ] Configure CRM variable pass-through
-- [ ] Test MCP → SMS flow for Calendly booking
-- [ ] Test fallback flow when MCP fails
+- [ ] Test Function Node → SMS flow for Cal.com booking
+- [ ] Test fallback flow when Function Node fails
 - [ ] Test all conversation paths
 - [ ] Deploy and monitor performance
 
@@ -729,10 +910,14 @@ flowchart TD
         N5[Node 5: Pricing Discussion]
     end
 
-    subgraph Scheduling["Calendly MCP + SMS"]
-        N6[Node 6: Create Calendly Invite<br/>MCP: create_single_use_scheduling_link]
-        N6b[Node 6b: Send SMS with Calendly Link]
-        N6c[Node 6c: Fallback Static Link]
+    subgraph Scheduling["Cal.com Function + SMS"]
+        N6[Node 6: Create Booking<br/>Function: cal_com_create_booking]
+        N6b[Node 6b: Send SMS]
+        N6b_s[Node 6b-success: SMS Success]
+        N6b_f[Node 6b-failure: SMS Failure]
+        N6c[Node 6c: Fallback - Verbal Booking]
+        N6c_sms[Node 6c-sms: Fallback SMS]
+        N6c_verbal[Node 6c-verbal: Verbal Booking]
     end
 
     subgraph Objections
@@ -756,7 +941,9 @@ flowchart TD
     subgraph Endings
         N11[Node 11: End - Not Interested]
         N13[Node 13: End - Meeting Scheduled]
-        N14[Node 14: Send Info SMS + End]
+        N14[Node 14: Send Info SMS]
+        N14_s[Node 14-success: Info SMS Success]
+        N14_f[Node 14-failure: Info SMS Failure]
         N15[Node 15: End - Warm Lead]
         N16[Node 16: End - Callback Scheduled]
     end
@@ -788,14 +975,23 @@ flowchart TD
     N5 -->|"Too expensive"| N7
     N5 -->|"Decline"| N8
 
-    %% MCP + SMS Flow
-    N6 -->|"MCP Success"| N6b
-    N6 -->|"MCP Fail"| N6c
-    N6b -->|"Confirmed"| N13
-    N6b -->|"Retry"| N6
-    N6b -->|"Changed mind"| N8
-    N6c -->|"Confirmed"| N13
+    %% Function Node + SMS Flow
+    N6 -->|"Function Success"| N6b
+    N6 -->|"Function Fail"| N6c
+    N6b -->|"SMS Success"| N6b_s
+    N6b -->|"SMS Failure"| N6b_f
+    N6b_s -->|"Confirmed"| N13
+    N6b_s -->|"Retry"| N6b
+    N6b_s -->|"Changed mind"| N8
+    N6b_f -->|"Continue"| N13
+    N6b_f -->|"Concerns"| N7
+    N6c -->|"Send link"| N6c_sms
+    N6c -->|"Verbal"| N6c_verbal
     N6c -->|"Changed mind"| N8
+    N6c_sms -->|"SMS Success"| N13
+    N6c_sms -->|"SMS Failure"| N6c_verbal
+    N6c_verbal -->|"Time given"| N16
+    N6c_verbal -->|"Decline"| N8
 
     %% Objection Handling
     N7 -->|"Timing"| N10
@@ -812,6 +1008,8 @@ flowchart TD
     %% Last Attempt
     N8 -->|"Send info"| N14
     N8 -->|"No"| N11
+    N14 -->|"SMS Success"| N14_s
+    N14 -->|"SMS Failure"| N14_f
 
     %% Callbacks
     N9 -->|"Agree followup"| N15
@@ -833,10 +1031,16 @@ flowchart TD
     %% Styling
     style N6 fill:#4CAF50,color:#fff
     style N6b fill:#2196F3,color:#fff
+    style N6b_s fill:#4CAF50,color:#fff
+    style N6b_f fill:#FF9800,color:#fff
     style N6c fill:#FF9800,color:#fff
+    style N6c_sms fill:#2196F3,color:#fff
+    style N6c_verbal fill:#FF9800,color:#fff
     style N11 fill:#f44336,color:#fff
     style N13 fill:#4CAF50,color:#fff
     style N14 fill:#9C27B0,color:#fff
+    style N14_s fill:#4CAF50,color:#fff
+    style N14_f fill:#FF9800,color:#fff
     style N15 fill:#FF9800,color:#fff
     style N16 fill:#2196F3,color:#fff
 ```
@@ -845,8 +1049,8 @@ flowchart TD
 
 | Color | Meaning |
 |-------|---------|
-| 🟢 Green | Success paths (MCP, Meeting Scheduled) |
-| 🔵 Blue | SMS/Callback nodes |
-| 🟠 Orange | Fallback/Warm lead paths |
+| 🟢 Green | Success paths (Function Node, Meeting Scheduled, SMS Success) |
+| 🔵 Blue | SMS nodes/Callback nodes |
+| 🟠 Orange | Fallback/Warm lead paths/SMS Failure |
 | 🟣 Purple | Info sent |
 | 🔴 Red | Not interested/End |
