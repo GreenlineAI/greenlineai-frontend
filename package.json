@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx @opennextjs/cloudflare build",
+    "build": "npx @opennextjs/cloudflare build && node scripts/fix-cloudflare-assets.js",
     "build:next": "next build",
+    "build:pages": "npx @opennextjs/cloudflare build && node scripts/fix-cloudflare-assets.js",
     "start": "next start",
     "lint": "eslint",
     "test-dialer": "node scripts/test-dialer.js",
