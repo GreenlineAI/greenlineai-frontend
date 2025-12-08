@@ -148,7 +148,7 @@ Is now a good time to chat, or should I call back at a better time?
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User says yes, now is good, they have time | → Node 2: Extract Variables |
+| User says yes, now is good, they have time | → Node 2: Ask About Business |
 | User says no, busy, not a good time | → Node 10: Schedule Callback |
 | User asks who is calling or wants more info | → Node 1b: Introduction |
 
@@ -168,21 +168,35 @@ Is this something you have a few minutes to hear about?
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User agrees to hear more | → Node 2: Extract Variables |
+| User agrees to hear more | → Node 2: Ask About Business |
 | User declines or not interested | → Node 11: End Call - Not Interested |
 | User requests callback | → Node 10: Schedule Callback |
 
 ---
 
-### Node 2: Extract Variables
-**Node Type**: Extract Variable
+### Node 2: Ask About Business
+**Node Type**: Conversation
 **Content Mode**: Static
 
 **Content**:
 ```
-Perfect! Before we dive in, I just want to make sure I have the right info.
-Am I speaking with the business owner?
+Perfect! Before we dive in, I'd love to know a bit more about you.
+Could you tell me your name and a little about your business?
 ```
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| User provides information about themselves | → Node 2a: Extract Variables |
+| User refuses to share or is evasive | → Node 3: Main Qualification |
+| User says they are not the owner | → Node 12: Ask for Owner |
+
+---
+
+### Node 2a: Extract Variables
+**Node Type**: Extract Variable
+
+**Purpose**: Silently extract information from the user's previous response about themselves and their business.
 
 #### Variables
 | Variable Name | Description | Type |
@@ -196,9 +210,9 @@ Am I speaking with the business owner?
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User confirms they are the owner | → Node 3: Main Qualification |
-| User says they are not the owner | → Node 12: Ask for Owner |
-| User is unsure or evasive | → Node 3: Main Qualification |
+| Variables extracted, user is owner | → Node 3: Main Qualification |
+| Variables extracted, user is not owner | → Node 12: Ask for Owner |
+| Default | → Node 3: Main Qualification |
 
 ---
 
@@ -209,15 +223,18 @@ Am I speaking with the business owner?
 **Content**:
 ```
 Great to meet you, {{owner_name}}! I'll keep this super brief.
-We help home services businesses like yours get more qualified leads.
-Are you currently happy with the number of leads you're getting?
+We help {{business_type}} businesses like yours never miss a call again
+with our AI phone answering service.
+
+Do you ever have trouble keeping up with incoming calls, or find yourself
+missing calls when you're out on jobs?
 ```
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User says no, could be better, needs more leads | → Node 4: Value Proposition |
-| User says yes, happy, getting enough leads | → Node 9: Soft Close |
+| User says yes, misses calls, has trouble | → Node 4: Value Proposition |
+| User says no, handles calls fine | → Node 9: Soft Close |
 | User says not interested or asks to stop | → Node 11: End Call - Not Interested |
 | User asks about pricing or cost | → Node 5: Pricing Discussion |
 
@@ -229,18 +246,21 @@ Are you currently happy with the number of leads you're getting?
 
 **Content**:
 ```
-I hear that a lot. Many {{business_type}} businesses struggle to get consistent,
-quality leads. We specialize in AI-powered outreach and targeted marketing.
-We've helped similar businesses increase their lead flow by 2-3x.
+I hear that a lot. Every missed call is potentially hundreds or even thousands
+of dollars walking out the door.
 
-Would you be open to a quick 15-minute strategy call to see if we can help
-your business grow?
+Our AI phone agent answers your calls 24/7 - it sounds just like a real person,
+books appointments, answers questions about your services, and even qualifies
+leads before they ever reach you.
+
+Would you be open to a quick 15-minute demo call so I can show you exactly
+how it works for {{business_type}} businesses?
 ```
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User agrees to schedule, says yes or sure | → Node 6: Create Calendly Invite (MCP) |
+| User agrees to schedule, says yes or sure | → Node 6: Check Availability |
 | User says maybe, needs to think about it | → Node 7: Handle Objection |
 | User says no, not interested | → Node 8: Last Attempt |
 | User asks questions about the service | → Node 5: Pricing Discussion |
@@ -253,27 +273,102 @@ your business grow?
 
 **Content**:
 ```
-Great question! Our pricing depends on your specific needs and goals.
-Generally, clients invest between $500-2000 per month, and most see a
-3-5x return on that investment within the first 90 days.
+Great question! Our AI phone agent starts at just $297 per month.
+When you think about it, that's less than a single missed job could cost you.
 
-The best way to give you an accurate picture is during a quick strategy
-call where we can look at your specific situation. Would you be open to
-scheduling 15 minutes to discuss?
+Most of our clients tell us it pays for itself within the first week
+just from the calls they would have missed.
+
+The best way to see if it's right for you is a quick 15-minute demo
+where I can show you exactly how it would work for {{business_name}}.
+Would you be open to that?
 ```
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User agrees to schedule a call | → Node 6: Create Calendly Invite (MCP) |
+| User agrees to schedule a call | → Node 6: Check Availability |
 | User says too expensive or budget concerns | → Node 7: Handle Objection |
 | User declines | → Node 8: Last Attempt |
 
 ---
 
-### Node 6: Create Booking (Function Node: Cal.com)
+### Node 6: Check Availability (Function Node: Cal.com)
+**Node Type**: Function
+**Function**: `cal_com_check_availability`
+
+**Purpose**: Check available time slots before asking the user to pick a time.
+
+**Function Configuration**:
+```json
+{
+  "function": "cal_com_check_availability",
+  "parameters": {
+    "event_type_id": "{{cal_event_type_id}}",
+    "timezone": "America/Los_Angeles",
+    "date_range": "next_7_days"
+  }
+}
+```
+
+**Response Variables**:
+| Variable | Description |
+|----------|-------------|
+| `available_slots` | Array of available time slots |
+| `next_available` | The next available slot |
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| Function returns available slots | → Node 6a: Offer Time Slots |
+| Function fails (API error) | → Node 6c: Fallback - Verbal Booking |
+
+---
+
+### Node 6a: Offer Time Slots
+**Node Type**: Conversation
+**Content Mode**: Prompt
+
+**Purpose**: Present available times to the user and let them choose.
+
+**Content**:
+```
+I have some times available this week. How does {{next_available}} work for you?
+Or if that doesn't work, I can find another time that fits your schedule.
+```
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| User agrees to the offered time | → Node 6b: Create Booking |
+| User requests a different time | → Node 6a-alt: Extract Preferred Time |
+| User changes mind or declines | → Node 8: Last Attempt |
+
+---
+
+### Node 6a-alt: Extract Preferred Time
+**Node Type**: Extract Variable
+
+**Purpose**: Capture the user's preferred time if they didn't accept the first offer.
+
+#### Variables
+| Variable Name | Description | Type |
+|---------------|-------------|------|
+| `preferred_time` | The time the user requested (e.g., "Tuesday afternoon", "tomorrow morning") | Text |
+
+#### Transition
+| Condition | Next Node |
+|-----------|-----------|
+| Time extracted | → Node 6b: Create Booking |
+| Unable to extract | → Node 6c: Fallback - Verbal Booking |
+
+---
+
+### Node 6b: Create Booking (Function Node: Cal.com)
 **Node Type**: Function
 **Function**: `cal_com_create_booking`
+
+**Purpose**: Create the actual booking after user selects a time.
 
 **Function Configuration**:
 ```json
@@ -290,72 +385,68 @@ scheduling 15 minutes to discuss?
 }
 ```
 
-**Response Variables** (needs testing):
-> The Function Node may return booking details automatically. Test to confirm if these variables are available:
-
-| Key | Value |
-|-----|-------|
-| `booking_url` | `{{cal_booking_url}}` |
-| `booking_id` | `{{cal_booking_id}}` |
-| `start_time` | `{{cal_start_time}}` |
-
-> If response variables are not available, use a static Cal.com scheduling link in the SMS node.
+**Response Variables**:
+| Variable | Description |
+|----------|-------------|
+| `booking_url` | Link to the booking confirmation |
+| `booking_id` | Unique booking identifier |
+| `confirmed_time` | The confirmed appointment time |
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| Function returns booking successfully | → Node 6b: Send SMS with Booking Link |
-| Function fails (API error, slot unavailable) | → Node 6c: Fallback - Verbal Booking |
+| Booking created successfully | → Node 6c: Send SMS Confirmation |
+| Booking fails (slot taken, API error) | → Node 6d: Fallback - Verbal Booking |
 
 ---
 
-### Node 6b: Send SMS with Booking Link
+### Node 6c: Send SMS Confirmation
 **Node Type**: SMS
+
+**Purpose**: Send confirmation SMS after booking is created.
 
 **SMS Content**:
 ```
-Hi! Here's the link to book your GreenLine AI strategy call: https://cal.com/greenlineai
+Hi {{owner_name}}! Your GreenLine AI demo is confirmed for {{confirmed_time}}.
 
-Looking forward to helping your business grow!
+Looking forward to showing you how our AI phone agent can help {{business_name}}!
 ```
-
-> **Note**: Using static Cal.com link. If testing confirms the Function Node returns `{{cal_booking_url}}`, you can use that instead for a personalized link.
 
 #### SMS Transitions
 | Transition | Next Node |
 |------------|-----------|
-| **Success** | → Node 6b-success: SMS Success Response |
-| **Failure** | → Node 6b-failure: SMS Failure Response |
+| **Success** | → Node 6c-success: SMS Success Response |
+| **Failure** | → Node 6c-failure: SMS Failure Response |
 
 ---
 
-### Node 6b-success: SMS Success Response
+### Node 6c-success: SMS Success Response
 **Node Type**: Conversation
 **Content Mode**: Static
 
 **Content**:
 ```
-Excellent! I just sent you a text with the booking link. You should receive it in just a second.
-Is there anything specific you'd like us to cover during that call?
+Excellent! I just sent you a confirmation text. You should receive it in just a second.
+Is there anything specific you'd like us to cover during that demo?
 ```
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
 | User confirms or has no questions | → Node 13: End Call - Meeting Scheduled |
-| User didn't receive SMS or asks to resend | → Node 6b: Send SMS (retry) |
+| User didn't receive SMS or asks to resend | → Node 6c: Send SMS Confirmation (retry) |
 | User changes mind | → Node 8: Last Attempt |
 
 ---
 
-### Node 6b-failure: SMS Failure Response
+### Node 6c-failure: SMS Failure Response
 **Node Type**: Conversation
 **Content Mode**: Static
 
 **Content**:
 ```
-I had a little trouble sending the text, but no worries!
-You can book directly at cal.com/greenlineai whenever works for you.
+I had a little trouble sending the confirmation text, but no worries - you're all booked!
+Your demo is set for {{confirmed_time}}. You'll receive an email confirmation shortly.
 Is there anything specific you'd like us to cover during that call?
 ```
 
@@ -367,47 +458,46 @@ Is there anything specific you'd like us to cover during that call?
 
 ---
 
-### Node 6c: Fallback - Verbal Booking
+### Node 6d: Fallback - Verbal Booking
 **Node Type**: Conversation
 **Content Mode**: Static
 
-**Purpose**: Fallback if Cal.com Function fails - offer to book verbally or send static link
+**Purpose**: Fallback if Cal.com booking fails - offer to book verbally or send static link.
 
 **Content**:
 ```
 I'm having a little trouble with our booking system, but no worries!
 Let me send you a text with our scheduling link so you can book at your convenience.
-You should receive it in just a moment!
 ```
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User agrees to receive link | → Node 6c-sms: Send Fallback SMS |
-| User prefers verbal booking | → Node 6c-verbal: Verbal Booking |
+| User agrees to receive link | → Node 6d-sms: Send Fallback SMS |
+| User prefers verbal booking | → Node 6d-verbal: Verbal Booking |
 | User changes mind | → Node 8: Last Attempt |
 
 ---
 
-### Node 6c-sms: Send Fallback SMS
+### Node 6d-sms: Send Fallback SMS
 **Node Type**: SMS
 
 **SMS Content**:
 ```
-Hi! Book your GreenLine AI strategy call here: https://cal.com/greenlineai
+Hi! Book your GreenLine AI demo here: https://cal.com/greenlineai
 
-Looking forward to helping your business grow!
+Looking forward to showing you how our AI phone agent can help your business!
 ```
 
 #### SMS Transitions
 | Transition | Next Node |
 |------------|-----------|
-| **Success** | → Node 6c-sms-success: Fallback SMS Success |
-| **Failure** | → Node 6c-verbal: Verbal Booking |
+| **Success** | → Node 6d-sms-success: Fallback SMS Success |
+| **Failure** | → Node 6d-verbal: Verbal Booking |
 
 ---
 
-### Node 6c-sms-success: Fallback SMS Success
+### Node 6d-sms-success: Fallback SMS Success
 **Node Type**: Conversation
 **Content Mode**: Static
 
@@ -425,14 +515,14 @@ Is there anything else I can help you with?
 
 ---
 
-### Node 6c-verbal: Verbal Booking
+### Node 6d-verbal: Verbal Booking
 **Node Type**: Conversation
 **Content Mode**: Static
 
 **Content**:
 ```
 No problem! Let's do this the old-fashioned way.
-What day this week or next works best for a quick 15-minute call?
+What day this week or next works best for a quick 15-minute demo?
 ```
 
 #### Transition
@@ -471,19 +561,20 @@ I want to make sure I can address any concerns you might have.
 
 **Content**:
 ```
-I completely understand budget is important. Here's the thing - our clients
-typically see a positive ROI within the first month. We're not an expense,
-we're an investment that pays for itself.
+I completely understand - every dollar counts when you're running a business.
 
-What if I could show you exactly how much revenue we could generate for
-{{business_name}}? Would a no-obligation strategy call be worth 15 minutes
-of your time?
+Here's how I look at it: at $297 a month, if the AI agent books you just ONE
+extra job that you would have missed, it's already paid for itself.
+
+Most {{business_type}} jobs are what, $200, $500, maybe more? One saved call
+and you're in the green. Would a quick 15-minute demo be worth seeing how
+it could work for {{business_name}}?
 ```
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User agrees to the call | → Node 6: Create Calendly Invite (MCP) |
+| User agrees to the call | → Node 6: Check Availability |
 | User still hesitant | → Node 10: Schedule Callback |
 | User firmly declines | → Node 11: End Call - Not Interested |
 
@@ -495,18 +586,21 @@ of your time?
 
 **Content**:
 ```
-That's a fair concern. A lot of marketing companies over-promise and under-deliver.
-What makes us different is we use AI to target people who are actively looking
-for {{business_type}} services in your area.
+That's a fair concern. A lot of tech solutions promise the world and don't deliver.
 
-We also don't lock you into long contracts - if we're not delivering results,
-you can cancel anytime. Would you be open to at least hearing how it works?
+What makes our AI phone agent different is you can actually hear it in action
+before you commit. It sounds like a real person - most callers can't tell the
+difference.
+
+And there's no long contract - if it's not working for you, you can cancel
+anytime. Would you be open to just hearing a quick demo to see what it
+sounds like?
 ```
 
 #### Transition
 | Condition | Next Node |
 |-----------|-----------|
-| User agrees to learn more | → Node 6: Create Calendly Invite (MCP) |
+| User agrees to learn more | → Node 6: Check Availability |
 | User wants to think about it | → Node 10: Schedule Callback |
 | User firmly declines | → Node 11: End Call - Not Interested |
 
@@ -519,9 +613,9 @@ you can cancel anytime. Would you be open to at least hearing how it works?
 **Content**:
 ```
 No problem at all, I appreciate your time. Before I let you go - would it
-be okay if I sent you a quick text with some information about what we do?
+be okay if I sent you a quick text with some information about our AI phone agent?
 
-That way if you ever need help with leads in the future, you'll have our info handy.
+That way if you ever find yourself missing calls, you'll have our info handy.
 ```
 
 #### Transition
@@ -538,11 +632,12 @@ That way if you ever need help with leads in the future, you'll have our info ha
 
 **Content**:
 ```
-That's great to hear that business is going well! We love to hear success stories.
-Would you be open to me following up in a few months in case your lead flow
-ever slows down?
+That's great to hear you're staying on top of your calls! We love to hear that.
 
-That way you'll have a resource ready if you ever need help scaling.
+Would you be open to me following up in a few months? A lot of business owners
+find that as they grow, keeping up with calls gets harder.
+
+That way you'll have a resource ready if you ever need help.
 ```
 
 #### Transition
@@ -890,20 +985,24 @@ flowchart TD
     end
 
     subgraph Qualification
-        N2[Node 2: Extract Variables]
+        N2[Node 2: Ask About Business]
+        N2a[Node 2a: Extract Variables]
         N3[Node 3: Main Qualification]
         N4[Node 4: Value Proposition]
         N5[Node 5: Pricing Discussion]
     end
 
-    subgraph Scheduling["Cal.com Function + SMS"]
-        N6[Node 6: Create Booking<br/>Function: cal_com_create_booking]
-        N6b[Node 6b: Send SMS]
-        N6b_s[Node 6b-success: SMS Success]
-        N6b_f[Node 6b-failure: SMS Failure]
-        N6c[Node 6c: Fallback - Verbal Booking]
-        N6c_sms[Node 6c-sms: Fallback SMS]
-        N6c_verbal[Node 6c-verbal: Verbal Booking]
+    subgraph Scheduling["Cal.com Functions + SMS"]
+        N6[Node 6: Check Availability<br/>Function: cal_com_check_availability]
+        N6a[Node 6a: Offer Time Slots]
+        N6a_alt[Node 6a-alt: Extract Preferred Time]
+        N6b[Node 6b: Create Booking<br/>Function: cal_com_create_booking]
+        N6c[Node 6c: Send SMS Confirmation]
+        N6c_s[Node 6c-success: SMS Success]
+        N6c_f[Node 6c-failure: SMS Failure]
+        N6d[Node 6d: Fallback - Verbal Booking]
+        N6d_sms[Node 6d-sms: Fallback SMS]
+        N6d_verbal[Node 6d-verbal: Verbal Booking]
     end
 
     subgraph Objections
@@ -945,10 +1044,13 @@ flowchart TD
     N1b -->|"Callback"| N10
 
     %% Qualification Flow
-    N2 -->|"Is owner"| N3
+    N2 -->|"Shares info"| N2a
+    N2 -->|"Evasive"| N3
     N2 -->|"Not owner"| N12
-    N3 -->|"Needs leads"| N4
-    N3 -->|"Happy with leads"| N9
+    N2a -->|"Is owner"| N3
+    N2a -->|"Not owner"| N12
+    N3 -->|"Misses calls"| N4
+    N3 -->|"Handles calls fine"| N9
     N3 -->|"Not interested"| N11
     N3 -->|"Pricing?"| N5
 
@@ -963,23 +1065,34 @@ flowchart TD
     N5 -->|"Too expensive"| N7
     N5 -->|"Decline"| N8
 
-    %% Function Node + SMS Flow
-    N6 -->|"Function Success"| N6b
-    N6 -->|"Function Fail"| N6c
-    N6b -->|"SMS Success"| N6b_s
-    N6b -->|"SMS Failure"| N6b_f
-    N6b_s -->|"Confirmed"| N13
-    N6b_s -->|"Retry"| N6b
-    N6b_s -->|"Changed mind"| N8
-    N6b_f -->|"Continue"| N13
-    N6b_f -->|"Concerns"| N7
-    N6c -->|"Send link"| N6c_sms
-    N6c -->|"Verbal"| N6c_verbal
-    N6c -->|"Changed mind"| N8
-    N6c_sms -->|"SMS Success"| N13
-    N6c_sms -->|"SMS Failure"| N6c_verbal
-    N6c_verbal -->|"Time given"| N16
-    N6c_verbal -->|"Decline"| N8
+    %% Check Availability + Offer Times
+    N6 -->|"Has slots"| N6a
+    N6 -->|"API Fail"| N6d
+    N6a -->|"Accepts time"| N6b
+    N6a -->|"Different time"| N6a_alt
+    N6a -->|"Declines"| N8
+    N6a_alt -->|"Time extracted"| N6b
+    N6a_alt -->|"Unable"| N6d
+
+    %% Create Booking + SMS Flow
+    N6b -->|"Booking Success"| N6c
+    N6b -->|"Booking Fail"| N6d
+    N6c -->|"SMS Success"| N6c_s
+    N6c -->|"SMS Failure"| N6c_f
+    N6c_s -->|"Confirmed"| N13
+    N6c_s -->|"Retry"| N6c
+    N6c_s -->|"Changed mind"| N8
+    N6c_f -->|"Continue"| N13
+    N6c_f -->|"Concerns"| N7
+
+    %% Fallback Flow
+    N6d -->|"Send link"| N6d_sms
+    N6d -->|"Verbal"| N6d_verbal
+    N6d -->|"Changed mind"| N8
+    N6d_sms -->|"SMS Success"| N13
+    N6d_sms -->|"SMS Failure"| N6d_verbal
+    N6d_verbal -->|"Time given"| N16
+    N6d_verbal -->|"Decline"| N8
 
     %% Objection Handling
     N7 -->|"Timing"| N10
@@ -1020,13 +1133,17 @@ flowchart TD
     N12b -->|"Failed"| N10
 
     %% Styling
+    style N2a fill:#673AB7,color:#fff
     style N6 fill:#4CAF50,color:#fff
-    style N6b fill:#2196F3,color:#fff
-    style N6b_s fill:#4CAF50,color:#fff
-    style N6b_f fill:#FF9800,color:#fff
-    style N6c fill:#FF9800,color:#fff
-    style N6c_sms fill:#2196F3,color:#fff
-    style N6c_verbal fill:#FF9800,color:#fff
+    style N6a fill:#2196F3,color:#fff
+    style N6a_alt fill:#673AB7,color:#fff
+    style N6b fill:#4CAF50,color:#fff
+    style N6c fill:#2196F3,color:#fff
+    style N6c_s fill:#4CAF50,color:#fff
+    style N6c_f fill:#FF9800,color:#fff
+    style N6d fill:#FF9800,color:#fff
+    style N6d_sms fill:#2196F3,color:#fff
+    style N6d_verbal fill:#FF9800,color:#fff
     style N11 fill:#f44336,color:#fff
     style N13 fill:#4CAF50,color:#fff
     style N10a fill:#673AB7,color:#fff
