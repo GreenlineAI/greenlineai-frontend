@@ -468,6 +468,50 @@ export type Database = {
           updated_at?: string
         }
       }
+      integrations: {
+        Row: {
+          id: string
+          user_id: string
+          provider: 'google_calendar' | 'slack' | 'hubspot' | 'salesforce'
+          access_token: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          provider_user_id: string | null
+          provider_email: string | null
+          metadata: Json
+          connected_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          provider: 'google_calendar' | 'slack' | 'hubspot' | 'salesforce'
+          access_token: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          provider_user_id?: string | null
+          provider_email?: string | null
+          metadata?: Json
+          connected_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          provider?: 'google_calendar' | 'slack' | 'hubspot' | 'salesforce'
+          access_token?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          provider_user_id?: string | null
+          provider_email?: string | null
+          metadata?: Json
+          connected_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

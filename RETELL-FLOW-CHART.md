@@ -146,11 +146,11 @@ Is now a good time to chat, or should I call back at a better time?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User says yes, now is good, they have time | → Node 2: Ask About Business |
-| User says no, busy, not a good time | → Node 10: Schedule Callback |
-| User asks who is calling or wants more info | → Node 1b: Introduction |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User says yes, now is good, they have time | → Node 2: Ask About Business | Prompt |
+| User says no, busy, not a good time | → Node 10: Schedule Callback | Prompt |
+| User asks who is calling or wants more info | → Node 1b: Introduction | Prompt |
 
 ---
 
@@ -166,11 +166,11 @@ Is this something you have a few minutes to hear about?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to hear more | → Node 2: Ask About Business |
-| User declines or not interested | → Node 11: End Call - Not Interested |
-| User requests callback | → Node 10: Schedule Callback |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to hear more | → Node 2: Ask About Business | Prompt |
+| User declines or not interested | → Node 11: End Call - Not Interested | Prompt |
+| User requests callback | → Node 10: Schedule Callback | Prompt |
 
 ---
 
@@ -185,11 +185,11 @@ Could you tell me your name and a little about your business?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User provides information about themselves | → Node 2a: Extract Variables |
-| User refuses to share or is evasive | → Node 3: Main Qualification |
-| User says they are not the owner | → Node 12: Ask for Owner |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User provides information about themselves | → Node 2a: Extract Variables | Prompt |
+| User refuses to share or is evasive | → Node 3: Main Qualification | Prompt |
+| User says they are not the owner | → Node 12: Ask for Owner | Prompt |
 
 ---
 
@@ -208,11 +208,11 @@ Could you tell me your name and a little about your business?
 | `current_marketing` | Extract any information about their current marketing methods or lead generation sources. | Text |
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| Variables extracted, user is owner | → Node 3: Main Qualification |
-| Variables extracted, user is not owner | → Node 12: Ask for Owner |
-| Default | → Node 3: Main Qualification |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| `{{is_owner}} == "yes"` | → Node 3: Main Qualification | Equation |
+| `{{is_owner}} == "no"` | → Node 12: Ask for Owner | Equation |
+| Default | → Node 3: Main Qualification | Equation |
 
 ---
 
@@ -231,12 +231,12 @@ missing calls when you're out on jobs?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User says yes, misses calls, has trouble | → Node 4: Value Proposition |
-| User says no, handles calls fine | → Node 9: Soft Close |
-| User says not interested or asks to stop | → Node 11: End Call - Not Interested |
-| User asks about pricing or cost | → Node 5: Pricing Discussion |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User says yes, misses calls, has trouble | → Node 4: Value Proposition | Prompt |
+| User says no, handles calls fine | → Node 9: Soft Close | Prompt |
+| User says not interested or asks to stop | → Node 11: End Call - Not Interested | Prompt |
+| User asks about pricing or cost | → Node 5: Pricing Discussion | Prompt |
 
 ---
 
@@ -258,12 +258,12 @@ how it works for {{business_type}} businesses?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to schedule, says yes or sure | → Node 6: Check Availability |
-| User says maybe, needs to think about it | → Node 7: Handle Objection |
-| User says no, not interested | → Node 8: Last Attempt |
-| User asks questions about the service | → Node 5: Pricing Discussion |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to schedule, says yes or sure | → Node 6: Check Availability | Prompt |
+| User says maybe, needs to think about it | → Node 7: Handle Objection | Prompt |
+| User says no, not interested | → Node 8: Last Attempt | Prompt |
+| User asks questions about the service | → Node 5: Pricing Discussion | Prompt |
 
 ---
 
@@ -285,11 +285,11 @@ Would you be open to that?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to schedule a call | → Node 6: Check Availability |
-| User says too expensive or budget concerns | → Node 7: Handle Objection |
-| User declines | → Node 8: Last Attempt |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to schedule a call | → Node 6: Check Availability | Prompt |
+| User says too expensive or budget concerns | → Node 7: Handle Objection | Prompt |
+| User declines | → Node 8: Last Attempt | Prompt |
 
 ---
 
@@ -318,10 +318,10 @@ Would you be open to that?
 | `next_available` | The next available slot |
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| Function returns available slots | → Node 6a: Offer Time Slots |
-| Function fails (API error) | → Node 6c: Fallback - Verbal Booking |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| `{{available_slots}} != null` | → Node 6a: Offer Time Slots | Equation |
+| `{{available_slots}} == null` | → Node 6c: Fallback - Verbal Booking | Equation |
 
 ---
 
@@ -338,11 +338,11 @@ Or if that doesn't work, I can find another time that fits your schedule.
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to the offered time | → Node 6b: Create Booking |
-| User requests a different time | → Node 6a-alt: Extract Preferred Time |
-| User changes mind or declines | → Node 8: Last Attempt |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to the offered time | → Node 6b: Create Booking | Prompt |
+| User requests a different time | → Node 6a-alt: Extract Preferred Time | Prompt |
+| User changes mind or declines | → Node 8: Last Attempt | Prompt |
 
 ---
 
@@ -357,10 +357,10 @@ Or if that doesn't work, I can find another time that fits your schedule.
 | `preferred_time` | The time the user requested (e.g., "Tuesday afternoon", "tomorrow morning") | Text |
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| Time extracted | → Node 6b: Create Booking |
-| Unable to extract | → Node 6c: Fallback - Verbal Booking |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| `{{preferred_time}} != ""` | → Node 6b: Create Booking | Equation |
+| `{{preferred_time}} == ""` | → Node 6c: Fallback - Verbal Booking | Equation |
 
 ---
 
@@ -393,10 +393,10 @@ Or if that doesn't work, I can find another time that fits your schedule.
 | `confirmed_time` | The confirmed appointment time |
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| Booking created successfully | → Node 6c: Send SMS Confirmation |
-| Booking fails (slot taken, API error) | → Node 6d: Fallback - Verbal Booking |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| `{{booking_id}} != null` | → Node 6c: Send SMS Confirmation | Equation |
+| `{{booking_id}} == null` | → Node 6d: Fallback - Verbal Booking | Equation |
 
 ---
 
@@ -412,7 +412,7 @@ Hi {{owner_name}}! Your GreenLine AI demo is confirmed for {{confirmed_time}}.
 Looking forward to showing you how our AI phone agent can help {{business_name}}!
 ```
 
-#### SMS Transitions
+#### SMS Transitions (Built-in)
 | Transition | Next Node |
 |------------|-----------|
 | **Success** | → Node 6c-success: SMS Success Response |
@@ -431,11 +431,11 @@ Is there anything specific you'd like us to cover during that demo?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User confirms or has no questions | → Node 13: End Call - Meeting Scheduled |
-| User didn't receive SMS or asks to resend | → Node 6c: Send SMS Confirmation (retry) |
-| User changes mind | → Node 8: Last Attempt |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User confirms or has no questions | → Node 13: End Call - Meeting Scheduled | Prompt |
+| User didn't receive SMS or asks to resend | → Node 6c: Send SMS Confirmation (retry) | Prompt |
+| User changes mind | → Node 8: Last Attempt | Prompt |
 
 ---
 
@@ -451,10 +451,10 @@ Is there anything specific you'd like us to cover during that call?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User confirms | → Node 13: End Call - Meeting Scheduled |
-| User has concerns | → Node 7: Handle Objection |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User confirms | → Node 13: End Call - Meeting Scheduled | Prompt |
+| User has concerns | → Node 7: Handle Objection | Prompt |
 
 ---
 
@@ -471,11 +471,11 @@ Let me send you a text with our scheduling link so you can book at your convenie
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to receive link | → Node 6d-sms: Send Fallback SMS |
-| User prefers verbal booking | → Node 6d-verbal: Verbal Booking |
-| User changes mind | → Node 8: Last Attempt |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to receive link | → Node 6d-sms: Send Fallback SMS | Prompt |
+| User prefers verbal booking | → Node 6d-verbal: Verbal Booking | Prompt |
+| User changes mind | → Node 8: Last Attempt | Prompt |
 
 ---
 
@@ -489,7 +489,7 @@ Hi! Book your GreenLine AI demo here: https://cal.com/greenlineai
 Looking forward to showing you how our AI phone agent can help your business!
 ```
 
-#### SMS Transitions
+#### SMS Transitions (Built-in)
 | Transition | Next Node |
 |------------|-----------|
 | **Success** | → Node 6d-sms-success: Fallback SMS Success |
@@ -508,10 +508,10 @@ Is there anything else I can help you with?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User confirms | → Node 13: End Call - Meeting Scheduled |
-| User has questions | → Node 7: Handle Objection |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User confirms | → Node 13: End Call - Meeting Scheduled | Prompt |
+| User has questions | → Node 7: Handle Objection | Prompt |
 
 ---
 
@@ -526,10 +526,10 @@ What day this week or next works best for a quick 15-minute demo?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User provides time | → Node 16: End Call - Callback Scheduled |
-| User declines | → Node 8: Last Attempt |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User provides time | → Node 16: End Call - Callback Scheduled | Prompt |
+| User declines | → Node 8: Last Attempt | Prompt |
 
 ---
 
@@ -546,12 +546,12 @@ I want to make sure I can address any concerns you might have.
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| Objection is timing - too busy right now | → Node 10: Schedule Callback |
-| Objection is budget - can't afford it | → Node 7b: Budget Objection Response |
-| Objection is trust - tried before and failed | → Node 7c: Trust Objection Response |
-| User remains firm on no | → Node 8: Last Attempt |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| Objection is timing - too busy right now | → Node 10: Schedule Callback | Prompt |
+| Objection is budget - can't afford it | → Node 7b: Budget Objection Response | Prompt |
+| Objection is trust - tried before and failed | → Node 7c: Trust Objection Response | Prompt |
+| User remains firm on no | → Node 8: Last Attempt | Prompt |
 
 ---
 
@@ -572,11 +572,11 @@ it could work for {{business_name}}?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to the call | → Node 6: Check Availability |
-| User still hesitant | → Node 10: Schedule Callback |
-| User firmly declines | → Node 11: End Call - Not Interested |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to the call | → Node 6: Check Availability | Prompt |
+| User still hesitant | → Node 10: Schedule Callback | Prompt |
+| User firmly declines | → Node 11: End Call - Not Interested | Prompt |
 
 ---
 
@@ -598,11 +598,11 @@ sounds like?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to learn more | → Node 6: Check Availability |
-| User wants to think about it | → Node 10: Schedule Callback |
-| User firmly declines | → Node 11: End Call - Not Interested |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to learn more | → Node 6: Check Availability | Prompt |
+| User wants to think about it | → Node 10: Schedule Callback | Prompt |
+| User firmly declines | → Node 11: End Call - Not Interested | Prompt |
 
 ---
 
@@ -619,10 +619,10 @@ That way if you ever find yourself missing calls, you'll have our info handy.
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to receive info | → Node 14: Send Info SMS + End |
-| User declines | → Node 11: End Call - Not Interested |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to receive info | → Node 14: Send Info SMS + End | Prompt |
+| User declines | → Node 11: End Call - Not Interested | Prompt |
 
 ---
 
@@ -641,10 +641,10 @@ That way you'll have a resource ready if you ever need help.
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to follow-up | → Node 15: End Call - Warm Lead |
-| User declines follow-up | → Node 11: End Call - Not Interested |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to follow-up | → Node 15: End Call - Warm Lead | Prompt |
+| User declines follow-up | → Node 11: End Call - Not Interested | Prompt |
 
 ---
 
@@ -659,11 +659,11 @@ I want to make sure I catch you when you have a few minutes.
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User provides a date/time | → Node 10a: Extract Callback Time |
-| User says don't call back | → Node 11: End Call - Not Interested |
-| User is unsure about time | → Node 10b: Suggest Callback Time |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User provides a date/time | → Node 10a: Extract Callback Time | Prompt |
+| User says don't call back | → Node 11: End Call - Not Interested | Prompt |
+| User is unsure about time | → Node 10b: Suggest Callback Time | Prompt |
 
 ---
 
@@ -683,9 +683,9 @@ Got it, let me make a note of that.
 | `callback_time` | Extract the preferred time for callback. Format: HH:MM if possible, otherwise store as mentioned (e.g., "morning", "after 2pm"). | Text |
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| Variables extracted | → Node 16: End Call - Callback Scheduled |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| `{{callback_date}} != "" AND {{callback_time}} != ""` | → Node 16: End Call - Callback Scheduled | Equation |
 
 ---
 
@@ -700,11 +700,11 @@ Or would a morning or afternoon work better for you?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User agrees to suggested time | → Node 10a: Extract Callback Time |
-| User provides different time | → Node 10a: Extract Callback Time |
-| User declines callback | → Node 11: End Call - Not Interested |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User agrees to suggested time | → Node 10a: Extract Callback Time | Prompt |
+| User provides different time | → Node 10a: Extract Callback Time | Prompt |
+| User declines callback | → Node 11: End Call - Not Interested | Prompt |
 
 ---
 
@@ -721,9 +721,9 @@ you have a wonderful rest of your day. Take care!
 **Call Disposition**: Not Interested
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| (End of call) | — |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| (End of call) | — | — |
 
 ---
 
@@ -738,11 +738,11 @@ called back at another time to speak with them?
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| Owner is available now | → Node 12b: Transfer to Owner |
-| Owner not available, suggests callback time | → Node 10: Schedule Callback |
-| They don't want to provide info | → Node 11: End Call - Not Interested |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| Owner is available now | → Node 12b: Transfer to Owner | Prompt |
+| Owner not available, suggests callback time | → Node 10: Schedule Callback | Prompt |
+| They don't want to provide info | → Node 11: End Call - Not Interested | Prompt |
 
 ---
 
@@ -756,10 +756,10 @@ Perfect! I'll hold while you transfer me. Thank you so much for your help!
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| Owner gets on the line | → Node 1: Welcome Node |
-| Transfer fails or owner unavailable | → Node 10: Schedule Callback |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| Owner gets on the line | → Node 1: Welcome Node | Prompt |
+| Transfer fails or owner unavailable | → Node 10: Schedule Callback | Prompt |
 
 ---
 
@@ -778,9 +778,9 @@ Have a great rest of your day, {{owner_name}}!
 **Call Disposition**: Meeting Scheduled
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| (End of call) | — |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| (End of call) | — | — |
 
 ---
 
@@ -797,7 +797,7 @@ https://greenline-ai.com
 Reply anytime with questions!
 ```
 
-#### SMS Transitions
+#### SMS Transitions (Built-in)
 | Transition | Next Node |
 |------------|-----------|
 | **Success** | → Node 14-success: Info SMS Success Response |
@@ -817,10 +817,10 @@ Thanks for your time today!
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User says goodbye or confirms | → Node 14-end: End Call - Info Sent |
-| (Any response) | → Node 14-end: End Call - Info Sent |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User says goodbye or confirms | → Node 14-end: End Call - Info Sent | Prompt |
+| (Any response) | → Node 14-end: End Call - Info Sent | Prompt |
 
 ---
 
@@ -835,10 +835,10 @@ Thanks so much for your time today!
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| User says goodbye or confirms | → Node 14-end: End Call - Info Sent |
-| (Any response) | → Node 14-end: End Call - Info Sent |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| User says goodbye or confirms | → Node 14-end: End Call - Info Sent | Prompt |
+| (Any response) | → Node 14-end: End Call - Info Sent | Prompt |
 
 ---
 
@@ -853,9 +853,9 @@ Take care!
 ```
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| (End of call) | — |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| (End of call) | — | — |
 
 ---
 
@@ -874,9 +874,9 @@ Have a wonderful day!
 **Call Disposition**: Warm Lead - Follow Up Later
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| (End of call) | — |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| (End of call) | — | — |
 
 ---
 
@@ -893,9 +893,9 @@ I'll give you a call then. Thanks so much for your time, and talk to you soon!
 **Call Disposition**: Callback Scheduled
 
 #### Transition
-| Condition | Next Node |
-|-----------|-----------|
-| (End of call) | — |
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| (End of call) | — | — |
 
 ---
 

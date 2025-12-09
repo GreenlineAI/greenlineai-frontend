@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { User, Mic, Bell, Key, Link, Users, Upload } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { User, Mic, Bell, Key, Link, Users, Upload, Clock, Check, Loader2, ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -34,14 +35,14 @@ export default function SettingsPage() {
     phone: '',
   });
 
-  // Voice AI state
+  // Voice AI state (Retell AI)
   const [voiceSettings, setVoiceSettings] = useState({
-    vapiApiKey: '',
-    assistantId: process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID || '',
-    phoneNumberId: '',
-    voiceGender: 'female',
+    retellApiKey: '',
+    agentId1: process.env.NEXT_PUBLIC_RETELL_AGENT_ID_1 || '',
+    agentId2: process.env.NEXT_PUBLIC_RETELL_AGENT_ID_2 || '',
+    fromNumber: '',
     recordingEnabled: true,
-    openingScript: 'Hi, this is Sarah from Revues AI. Is this the owner of the business?',
+    openingScript: 'Hi there! This is Alex calling from GreenLine AI, a marketing agency. I hope you\'re doing well today!',
     voicemailMessage: 'Hi, I was calling about your business. Please call us back at your convenience.',
   });
 
@@ -62,6 +63,95 @@ export default function SettingsPage() {
     workingHoursEnd: '17:00',
     workingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
   });
+
+  // Integration state
+  interface Integration {
+    id: string;
+    provider: string;
+    provider_email: string;
+    connected_at: string;
+    metadata: {
+      name?: string;
+      picture?: string;
+    };
+  }
+
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [loadingIntegrations, setLoadingIntegrations] = useState(true);
+  const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
+  const [disconnectingProvider, setDisconnectingProvider] = useState<string | null>(null);
+
+  // Fetch integrations on mount
+  useEffect(() => {
+    fetchIntegrations();
+
+    // Check for success/error messages in URL
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const error = params.get('error');
+
+    if (success === 'google_connected') {
+      toast.success('Google Calendar connected successfully!');
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard/settings?tab=integrations');
+    } else if (error) {
+      const errorMessages: Record<string, string> = {
+        oauth_failed: 'Failed to start Google authentication',
+        missing_params: 'Missing authentication parameters',
+        invalid_state: 'Invalid authentication state. Please try again.',
+        token_exchange_failed: 'Failed to complete authentication',
+        callback_failed: 'Authentication callback failed',
+        access_denied: 'Access was denied. Please try again.',
+      };
+      toast.error(errorMessages[error] || 'Authentication failed');
+      window.history.replaceState({}, '', '/dashboard/settings?tab=integrations');
+    }
+  }, []);
+
+  const fetchIntegrations = async () => {
+    try {
+      const response = await fetch('/api/integrations');
+      if (response.ok) {
+        const data = await response.json();
+        setIntegrations(data.integrations || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch integrations:', error);
+    } finally {
+      setLoadingIntegrations(false);
+    }
+  };
+
+  const handleConnectGoogle = () => {
+    setConnectingProvider('google_calendar');
+    // Redirect to Google OAuth
+    window.location.href = '/api/auth/google';
+  };
+
+  const handleDisconnect = async (provider: string) => {
+    setDisconnectingProvider(provider);
+    try {
+      const response = await fetch(`/api/integrations/${provider}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Integration disconnected');
+        setIntegrations(integrations.filter(i => i.provider !== provider));
+      } else {
+        toast.error('Failed to disconnect integration');
+      }
+    } catch (error) {
+      console.error('Disconnect error:', error);
+      toast.error('Failed to disconnect integration');
+    } finally {
+      setDisconnectingProvider(null);
+    }
+  };
+
+  const getIntegration = (provider: string) => {
+    return integrations.find(i => i.provider === provider);
+  };
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -210,69 +300,87 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle>Voice AI Settings</CardTitle>
                 <CardDescription>
-                  Configure your Vapi voice AI settings for outbound calls.
+                  Configure your Retell AI settings for outbound calls.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>Note:</strong> Retell AI settings are configured via environment variables in Cloudflare Pages.
+                    The settings below are for reference only.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="retell-key">Retell API Key</Label>
+                  <Input
+                    id="retell-key"
+                    type="password"
+                    value={voiceSettings.retellApiKey}
+                    onChange={(e) => setVoiceSettings({ ...voiceSettings, retellApiKey: e.target.value })}
+                    placeholder="Configured in environment variables"
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Set via RETELL_API_KEY environment variable
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="vapi-key">Vapi API Key</Label>
+                    <Label htmlFor="agent-id-1">Primary Agent ID</Label>
                     <Input
-                      id="vapi-key"
-                      type="password"
-                      value={voiceSettings.vapiApiKey}
-                      onChange={(e) => setVoiceSettings({ ...voiceSettings, vapiApiKey: e.target.value })}
-                      placeholder="sk-..."
+                      id="agent-id-1"
+                      value={voiceSettings.agentId1}
+                      onChange={(e) => setVoiceSettings({ ...voiceSettings, agentId1: e.target.value })}
+                      placeholder="Configured in environment variables"
+                      disabled
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Set via RETELL_AGENT_ID_1
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="assistant-id">Assistant ID</Label>
+                    <Label htmlFor="agent-id-2">Secondary Agent ID</Label>
                     <Input
-                      id="assistant-id"
-                      value={voiceSettings.assistantId}
-                      onChange={(e) => setVoiceSettings({ ...voiceSettings, assistantId: e.target.value })}
+                      id="agent-id-2"
+                      value={voiceSettings.agentId2}
+                      onChange={(e) => setVoiceSettings({ ...voiceSettings, agentId2: e.target.value })}
+                      placeholder="Configured in environment variables"
+                      disabled
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Set via RETELL_AGENT_ID_2
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone-number-id">Phone Number ID</Label>
+                  <Label htmlFor="from-number">From Phone Number</Label>
                   <Input
-                    id="phone-number-id"
-                    value={voiceSettings.phoneNumberId}
-                    onChange={(e) => setVoiceSettings({ ...voiceSettings, phoneNumberId: e.target.value })}
-                    placeholder="Your Vapi phone number ID"
+                    id="from-number"
+                    value={voiceSettings.fromNumber}
+                    onChange={(e) => setVoiceSettings({ ...voiceSettings, fromNumber: e.target.value })}
+                    placeholder="Configured in environment variables"
+                    disabled
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Set via RETELL_FROM_NUMBER - Get this from your Retell dashboard
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="voice-gender">Voice Gender</Label>
-                    <Select
-                      value={voiceSettings.voiceGender}
-                      onValueChange={(v) => setVoiceSettings({ ...voiceSettings, voiceGender: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="male">Male</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <Label>Call Recording</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Record all outbound calls (configured in Retell dashboard)
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between space-y-2">
-                    <div>
-                      <Label>Call Recording</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Record all outbound calls
-                      </p>
-                    </div>
-                    <Switch
-                      checked={voiceSettings.recordingEnabled}
-                      onCheckedChange={(v) => setVoiceSettings({ ...voiceSettings, recordingEnabled: v })}
-                    />
-                  </div>
+                  <Switch
+                    checked={voiceSettings.recordingEnabled}
+                    onCheckedChange={(v) => setVoiceSettings({ ...voiceSettings, recordingEnabled: v })}
+                    disabled
+                  />
                 </div>
 
                 <Separator />
@@ -459,64 +567,149 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                      <span className="font-bold text-blue-600">G</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">Google Calendar</p>
-                      <p className="text-sm text-muted-foreground">
-                        Sync booked meetings to your calendar
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline">Connect</Button>
-                </div>
+                {/* Google Calendar - Active Integration */}
+                {(() => {
+                  const googleIntegration = getIntegration('google_calendar');
+                  const isConnected = !!googleIntegration;
+                  const isConnecting = connectingProvider === 'google_calendar';
+                  const isDisconnecting = disconnectingProvider === 'google_calendar';
 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  return (
+                    <div className={`flex items-center justify-between p-4 border rounded-lg ${isConnected ? 'border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/30' : ''}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${isConnected ? 'bg-green-100' : 'bg-blue-100'}`}>
+                          {isConnected ? (
+                            <Check className="h-6 w-6 text-green-600" />
+                          ) : (
+                            <span className="font-bold text-blue-600">G</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">Google Calendar</p>
+                            {isConnected && (
+                              <Badge variant="default" className="text-xs bg-green-600">
+                                <Check className="h-3 w-3 mr-1" />
+                                Connected
+                              </Badge>
+                            )}
+                          </div>
+                          {isConnected ? (
+                            <p className="text-sm text-muted-foreground">
+                              Connected as {googleIntegration.provider_email}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              Sync booked meetings to your calendar
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isConnected ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open('https://calendar.google.com', '_blank')}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              Open Calendar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDisconnect('google_calendar')}
+                              disabled={isDisconnecting}
+                            >
+                              {isDisconnecting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Disconnect'
+                              )}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            onClick={handleConnectGoogle}
+                            disabled={isConnecting || loadingIntegrations}
+                          >
+                            {isConnecting || loadingIntegrations ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : null}
+                            {loadingIntegrations ? 'Loading...' : isConnecting ? 'Connecting...' : 'Connect'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Slack - Coming Soon */}
+                <div className="flex items-center justify-between p-4 border rounded-lg opacity-75">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center">
                       <span className="font-bold text-purple-600">S</span>
                     </div>
                     <div>
-                      <p className="font-medium">Slack</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">Slack</p>
+                        <Badge variant="secondary" className="text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Coming Soon
+                        </Badge>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Get real-time notifications in Slack
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline">Connect</Button>
+                  <Button variant="outline" disabled>Connect</Button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                {/* HubSpot - Coming Soon */}
+                <div className="flex items-center justify-between p-4 border rounded-lg opacity-75">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
                       <span className="font-bold text-green-600">H</span>
                     </div>
                     <div>
-                      <p className="font-medium">HubSpot</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">HubSpot</p>
+                        <Badge variant="secondary" className="text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Coming Soon
+                        </Badge>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Sync leads and activities to HubSpot
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline">Connect</Button>
+                  <Button variant="outline" disabled>Connect</Button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
+                {/* Salesforce - Coming Soon */}
+                <div className="flex items-center justify-between p-4 border rounded-lg opacity-75">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
                       <span className="font-bold text-blue-600">SF</span>
                     </div>
                     <div>
-                      <p className="font-medium">Salesforce</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">Salesforce</p>
+                        <Badge variant="secondary" className="text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Coming Soon
+                        </Badge>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Sync leads and activities to Salesforce
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline">Connect</Button>
+                  <Button variant="outline" disabled>Connect</Button>
                 </div>
               </CardContent>
             </Card>
@@ -526,79 +719,83 @@ export default function SettingsPage() {
           <TabsContent value="api">
             <Card>
               <CardHeader>
-                <CardTitle>API Keys</CardTitle>
+                <CardTitle>Retell AI Configuration</CardTitle>
                 <CardDescription>
-                  Manage your API keys for external integrations.
+                  Webhook URLs and settings for your Retell AI voice agent integration.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="p-4 border rounded-lg space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Production API Key</p>
-                      <p className="text-sm text-muted-foreground">
-                        Use this key for production integrations
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">Regenerate</Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="password"
-                      value="sk_live_placeholder_key_here"
-                      readOnly
-                      className="font-mono"
-                    />
-                    <Button variant="outline" size="sm" onClick={() => toast.success('Copied!')}>
-                      Copy
-                    </Button>
-                  </div>
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>About Retell AI:</strong> GreenLine AI uses Retell AI to power intelligent voice conversations with your leads. Configure the webhook URLs below in your Retell dashboard to enable real-time call tracking and analytics.
+                  </p>
                 </div>
-
-                <div className="p-4 border rounded-lg space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Test API Key</p>
-                      <p className="text-sm text-muted-foreground">
-                        Use this key for testing and development
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">Regenerate</Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="password"
-                      value="sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                      readOnly
-                      className="font-mono"
-                    />
-                    <Button variant="outline" size="sm" onClick={() => toast.success('Copied!')}>
-                      Copy
-                    </Button>
-                  </div>
-                </div>
-
-                <Separator />
 
                 <div>
                   <h3 className="font-medium mb-4">Webhook Endpoints</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add these URLs to your Retell AI dashboard under Agent Settings → Webhook URL to receive call events.
+                  </p>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Vapi Webhook URL</Label>
+                      <Label>Primary Webhook URL</Label>
                       <div className="flex items-center gap-2">
                         <Input
-                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/vapi/webhook`}
+                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/retell/webhook`}
                           readOnly
                           className="font-mono text-sm"
                         />
-                        <Button variant="outline" size="sm" onClick={() => toast.success('Copied!')}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/api/retell/webhook`);
+                            toast.success('Copied!');
+                          }}
+                        >
                           Copy
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Configure this URL in your Vapi dashboard to receive call events.
+                        Receives all call lifecycle events including call_started, call_ended, and call_analyzed. Updates lead status and stores call recordings automatically.
                       </p>
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>Post-Call Analysis URL</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/retell/post-call`}
+                          readOnly
+                          className="font-mono text-sm"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/api/retell/post-call`);
+                            toast.success('Copied!');
+                          }}
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Receives transcripts, sentiment analysis, and call summaries. Used to determine meeting bookings and update lead outcomes.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      <strong>Setup Instructions:</strong>
+                    </p>
+                    <ol className="text-sm text-amber-800 dark:text-amber-200 mt-2 list-decimal list-inside space-y-1">
+                      <li>Log in to your Retell AI dashboard at retellai.com</li>
+                      <li>Navigate to your Agent → Settings → Webhook URL</li>
+                      <li>Paste the Primary Webhook URL above</li>
+                      <li>Save your changes and test with a sample call</li>
+                    </ol>
                   </div>
                 </div>
               </CardContent>
