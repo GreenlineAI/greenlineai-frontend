@@ -1,19 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Star, Phone, Zap, Building, Headphones, MessageSquare, Clock } from "lucide-react";
+import { Check, Star, Phone, Zap, Building, Headphones, MessageSquare, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { STRIPE_PRICES } from "@/lib/stripe/config";
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const plans = [
     {
       name: "Starter",
+      key: "starter",
       subtitle: "Solo operators",
       monthlyPrice: 149,
       annualPrice: 124, // ~17% discount (2 months free)
+      priceIdMonthly: STRIPE_PRICES.starter.monthly,
+      priceIdAnnual: STRIPE_PRICES.starter.annual,
       icon: Phone,
       popular: false,
       description: "Perfect for one-person operations",
@@ -30,9 +35,12 @@ export default function Pricing() {
     },
     {
       name: "Professional",
+      key: "professional",
       subtitle: "Most popular",
       monthlyPrice: 297,
       annualPrice: 247, // ~17% discount (2 months free)
+      priceIdMonthly: STRIPE_PRICES.professional.monthly,
+      priceIdAnnual: STRIPE_PRICES.professional.annual,
       icon: Headphones,
       popular: true,
       description: "For growing home services businesses",
@@ -51,9 +59,12 @@ export default function Pricing() {
     },
     {
       name: "Business",
+      key: "business",
       subtitle: "High volume",
       monthlyPrice: 497,
       annualPrice: 414, // ~17% discount (2 months free)
+      priceIdMonthly: STRIPE_PRICES.business.monthly,
+      priceIdAnnual: STRIPE_PRICES.business.annual,
       icon: Building,
       popular: false,
       description: "For established businesses with high call volume",
@@ -67,14 +78,49 @@ export default function Pricing() {
         "Dedicated account manager",
         "99.9% uptime SLA",
       ],
-      cta: "Book Strategy Call",
+      cta: "Contact Sales",
       note: "Best for businesses with 100+ calls/month",
     },
   ];
 
-  const handleGetStarted = () => {
-    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
-    window.open(calendlyUrl, "_blank");
+  const handleCheckout = async (plan: typeof plans[0]) => {
+    // For Business plan, redirect to Calendly for sales call
+    if (plan.key === "business") {
+      const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
+      window.open(calendlyUrl, "_blank");
+      return;
+    }
+
+    setLoadingPlan(plan.key);
+
+    try {
+      const priceId = isAnnual ? plan.priceIdAnnual : plan.priceIdMonthly;
+
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.url;
+      } else {
+        const error = await response.json();
+        // If unauthorized, redirect to signup
+        if (response.status === 401) {
+          window.location.href = `/signup?plan=${plan.key}&billing=${isAnnual ? 'annual' : 'monthly'}`;
+        } else {
+          console.error("Checkout error:", error);
+          alert(error.error || "Failed to start checkout. Please try again.");
+        }
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("Failed to start checkout. Please try again.");
+    } finally {
+      setLoadingPlan(null);
+    }
   };
 
   return (
@@ -186,8 +232,12 @@ export default function Pricing() {
                 <Button
                   variant={plan.popular ? "default" : "outline"}
                   className="w-full"
-                  onClick={handleGetStarted}
+                  onClick={() => handleCheckout(plan)}
+                  disabled={loadingPlan === plan.key}
                 >
+                  {loadingPlan === plan.key && (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  )}
                   {plan.cta}
                 </Button>
               </Card>

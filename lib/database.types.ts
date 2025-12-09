@@ -90,6 +90,11 @@ export type Database = {
           name: string | null
           company: string | null
           plan: 'leads' | 'outreach' | 'whitelabel'
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'canceling' | null
+          subscription_period_end: string | null
+          payment_failed_at: string | null
           created_at: string
           updated_at: string
         }
@@ -99,6 +104,11 @@ export type Database = {
           name?: string | null
           company?: string | null
           plan?: 'leads' | 'outreach' | 'whitelabel'
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'canceling' | null
+          subscription_period_end?: string | null
+          payment_failed_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -108,6 +118,11 @@ export type Database = {
           name?: string | null
           company?: string | null
           plan?: 'leads' | 'outreach' | 'whitelabel'
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: 'active' | 'trialing' | 'past_due' | 'canceled' | 'canceling' | null
+          subscription_period_end?: string | null
+          payment_failed_at?: string | null
           created_at?: string
           updated_at?: string
         }
