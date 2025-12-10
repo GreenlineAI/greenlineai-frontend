@@ -210,9 +210,9 @@ Could you tell me your name and a little about your business?
 #### Transition
 | Condition | Next Node | Type |
 |-----------|-----------|------|
-| `{{is_owner}} == "yes"` | → Node 3: Main Qualification | Equation |
-| `{{is_owner}} == "no"` | → Node 12: Ask for Owner | Equation |
-| Default | → Node 3: Main Qualification | Equation |
+| Person confirms they are the owner or decision maker | → Node 3: Main Qualification | Prompt |
+| Person indicates they are not the owner | → Node 12: Ask for Owner | Prompt |
+| Ownership unclear, proceed with conversation | → Node 3: Main Qualification | Prompt |
 
 ---
 
@@ -320,8 +320,8 @@ Would you be open to that?
 #### Transition
 | Condition | Next Node | Type |
 |-----------|-----------|------|
-| `{{available_slots}} != null` | → Node 6a: Offer Time Slots | Equation |
-| `{{available_slots}} == null` | → Node 6c: Fallback - Verbal Booking | Equation |
+| Availability check returns slots successfully | → Node 6a: Offer Time Slots | Prompt |
+| Availability check fails or returns no slots | → Node 6d: Fallback - Verbal Booking | Prompt |
 
 ---
 
@@ -359,8 +359,8 @@ Or if that doesn't work, I can find another time that fits your schedule.
 #### Transition
 | Condition | Next Node | Type |
 |-----------|-----------|------|
-| `{{preferred_time}} != ""` | → Node 6b: Create Booking | Equation |
-| `{{preferred_time}} == ""` | → Node 6c: Fallback - Verbal Booking | Equation |
+| User provides a clear time preference | → Node 6b: Create Booking | Prompt |
+| User is unclear or doesn't provide a time | → Node 6d: Fallback - Verbal Booking | Prompt |
 
 ---
 
@@ -389,14 +389,14 @@ Or if that doesn't work, I can find another time that fits your schedule.
 | Variable | Description |
 |----------|-------------|
 | `booking_url` | Link to the booking confirmation |
-| `booking_id` | Unique booking identifier |
+| `booking_confirmed` | Whether the booking was successful (true/false) |
 | `confirmed_time` | The confirmed appointment time |
 
 #### Transition
 | Condition | Next Node | Type |
 |-----------|-----------|------|
-| `{{booking_id}} != null` | → Node 6c: Send SMS Confirmation | Equation |
-| `{{booking_id}} == null` | → Node 6d: Fallback - Verbal Booking | Equation |
+| Booking function returns success | → Node 6c: Send SMS Confirmation | Prompt |
+| Booking function returns failure or error | → Node 6d: Fallback - Verbal Booking | Prompt |
 
 ---
 
@@ -685,7 +685,7 @@ Got it, let me make a note of that.
 #### Transition
 | Condition | Next Node | Type |
 |-----------|-----------|------|
-| `{{callback_date}} != "" AND {{callback_time}} != ""` | → Node 16: End Call - Callback Scheduled | Equation |
+| Callback date and time extracted successfully | → Node 16: End Call - Callback Scheduled | Prompt |
 
 ---
 
