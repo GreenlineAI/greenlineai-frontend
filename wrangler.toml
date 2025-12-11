@@ -15,7 +15,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOi
 VOICE_AI_PROVIDER = "retell"
 
 # Retell AI - Get your keys from https://www.retellai.com/
-RETELL_API_KEY = "key_7128cb9dae3666f93d5df369fa0a"
 RETELL_AGENT_ID_1 = "agent_0b4f642e103baf6ac974fbef47"
 RETELL_AGENT_ID_2 = "agent_0b4f642e103baf6ac974fbef47"
 # Web demo agent ID (for browser-based voice calls)
