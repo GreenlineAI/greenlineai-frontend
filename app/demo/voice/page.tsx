@@ -15,11 +15,11 @@ export default function VoiceDemoPage() {
   };
 
   const suggestedQuestions = [
-    "What kind of leads do you have for home services?",
-    "How does your done-for-you outreach work?",
-    "Can you tell me about pricing?",
-    "What industries do you cover?",
-    "How are your leads verified?",
+    "What does GreenLine AI do?",
+    "How much does it cost?",
+    "How long does setup take?",
+    "What types of businesses do you work with?",
+    "Can I book a strategy call?",
   ];
 
   return (
@@ -50,9 +50,9 @@ export default function VoiceDemoPage() {
               Talk to Our AI Sales Assistant
             </h1>
             <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-              Have questions about our lead generation services? Talk directly
-              to our AI assistant. Ask about pricing, lead quality, or how our
-              done-for-you outreach works.
+              Meet Alex, our AI voice assistant. Ask about GreenLine AI&apos;s
+              services, pricing plans, or how AI phone agents can help your
+              home service business answer calls 24/7.
             </p>
           </div>
 
@@ -65,9 +65,8 @@ export default function VoiceDemoPage() {
 
               <div className="mt-6 p-4 bg-blue-500/20 border border-blue-500/30 rounded-xl">
                 <p className="text-blue-200 text-sm">
-                  <strong>Note:</strong> This AI assistant can answer your
-                  questions about GreenLine AI services, lead pricing, and help
-                  you understand if we&apos;re a good fit for your agency.
+                  <strong>Note:</strong> Alex can answer questions about GreenLine AI&apos;s
+                  services, pricing, and how AI phone agents work for home service businesses.
                 </p>
               </div>
             </div>

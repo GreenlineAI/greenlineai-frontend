@@ -19,7 +19,7 @@ RETELL_API_KEY = "key_7128cb9dae3666f93d5df369fa0a"
 RETELL_AGENT_ID_1 = "agent_0b4f642e103baf6ac974fbef47"
 RETELL_AGENT_ID_2 = "agent_0b4f642e103baf6ac974fbef47"
 # Web demo agent ID (for browser-based voice calls)
-NEXT_PUBLIC_RETELL_AGENT_ID = "agent_0b4f642e103baf6ac974fbef47"
+NEXT_PUBLIC_RETELL_AGENT_ID = "agent_81e91c4c823836e7a67fde04b7"
 # Get a phone number from Retell Dashboard -> Phone Numbers
 RETELL_FROM_NUMBER = "+16262258141"
 
