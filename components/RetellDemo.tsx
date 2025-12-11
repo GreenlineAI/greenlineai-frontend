@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import { RetellWebClient } from "retell-client-js-sdk";
-import { Button } from "@/components/ui/button";
 
 const RETELL_AGENT_ID = process.env.NEXT_PUBLIC_RETELL_AGENT_ID || "";
 
@@ -200,10 +199,9 @@ export default function RetellDemo() {
 
       {/* Mute button when active */}
       {isSessionActive && (
-        <Button
-          variant="outline"
+        <button
           onClick={toggleMute}
-          className="gap-2 border-white/30 text-white hover:bg-white/10"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/30 text-white bg-transparent hover:bg-white/10 transition-colors"
         >
           {isMuted ? (
             <>
@@ -216,7 +214,7 @@ export default function RetellDemo() {
               Mute
             </>
           )}
-        </Button>
+        </button>
       )}
 
       {/* Instructions */}
