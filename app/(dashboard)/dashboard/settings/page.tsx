@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { User, Mic, Bell, Key, Link, Users, Upload, Clock, Check, Loader2, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Mic, Bell, Link, Key, Check, Loader2, ExternalLink, Clock, Building2, MapPin, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,31 +20,103 @@ import {
 } from '@/components/ui/select';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useUser } from '@/lib/supabase/hooks';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import Papa from 'papaparse';
+
+const BUSINESS_TYPES = [
+  { value: 'landscaping', label: 'Landscaping' },
+  { value: 'lawn_care', label: 'Lawn Care' },
+  { value: 'tree_service', label: 'Tree Service' },
+  { value: 'hardscaping', label: 'Hardscaping' },
+  { value: 'irrigation', label: 'Irrigation' },
+  { value: 'snow_removal', label: 'Snow Removal' },
+  { value: 'general_contractor', label: 'General Contractor' },
+  { value: 'hvac', label: 'HVAC' },
+  { value: 'plumbing', label: 'Plumbing' },
+  { value: 'electrical', label: 'Electrical' },
+  { value: 'roofing', label: 'Roofing' },
+  { value: 'painting', label: 'Painting' },
+  { value: 'cleaning', label: 'Cleaning' },
+  { value: 'pest_control', label: 'Pest Control' },
+  { value: 'pool_service', label: 'Pool Service' },
+  { value: 'other', label: 'Other' },
+];
+
+type BusinessType = 'landscaping' | 'lawn_care' | 'tree_service' | 'hardscaping' | 'irrigation' | 'snow_removal' | 'general_contractor' | 'hvac' | 'plumbing' | 'electrical' | 'roofing' | 'painting' | 'cleaning' | 'pest_control' | 'pool_service' | 'other';
+
+interface BusinessSettings {
+  id?: string;
+  business_name: string;
+  business_type: BusinessType;
+  business_type_other: string;
+  owner_name: string;
+  email: string;
+  phone: string;
+  website: string;
+  city: string;
+  state: string;
+  zip: string;
+  service_radius_miles: number;
+  services: string[];
+  hours_monday: string;
+  hours_tuesday: string;
+  hours_wednesday: string;
+  hours_thursday: string;
+  hours_friday: string;
+  hours_saturday: string;
+  hours_sunday: string;
+  greeting_name: string;
+  appointment_duration: number;
+  calendar_link: string;
+  pricing_info: string;
+  special_instructions: string;
+  status: string;
+}
 
 export default function SettingsPage() {
   const { user } = useUser();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Profile state
   const [profile, setProfile] = useState({
-    name: user?.user_metadata?.name || '',
-    email: user?.email || '',
-    company: user?.user_metadata?.company || '',
+    name: '',
+    email: '',
+    company: '',
     phone: '',
   });
 
-  // Voice AI state (Retell AI)
-  const [voiceSettings, setVoiceSettings] = useState({
-    retellApiKey: '',
-    agentId1: process.env.NEXT_PUBLIC_RETELL_AGENT_ID_1 || '',
-    agentId2: process.env.NEXT_PUBLIC_RETELL_AGENT_ID_2 || '',
-    fromNumber: '',
-    recordingEnabled: true,
-    openingScript: 'Hi there! This is Alex calling from GreenLine AI, a marketing agency. I hope you\'re doing well today!',
-    voicemailMessage: 'Hi, I was calling about your business. Please call us back at your convenience.',
+  // Business settings state
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
+    business_name: '',
+    business_type: 'landscaping',
+    business_type_other: '',
+    owner_name: '',
+    email: '',
+    phone: '',
+    website: '',
+    city: '',
+    state: '',
+    zip: '',
+    service_radius_miles: 25,
+    services: [],
+    hours_monday: '9:00 AM - 5:00 PM',
+    hours_tuesday: '9:00 AM - 5:00 PM',
+    hours_wednesday: '9:00 AM - 5:00 PM',
+    hours_thursday: '9:00 AM - 5:00 PM',
+    hours_friday: '9:00 AM - 5:00 PM',
+    hours_saturday: '',
+    hours_sunday: '',
+    greeting_name: '',
+    appointment_duration: 30,
+    calendar_link: '',
+    pricing_info: '',
+    special_instructions: '',
+    status: 'pending',
   });
+
+  const [servicesInput, setServicesInput] = useState('');
 
   // Notification state
   const [notifications, setNotifications] = useState({
@@ -53,15 +125,6 @@ export default function SettingsPage() {
     dailySummary: true,
     weeklyReport: true,
     slackWebhook: '',
-  });
-
-  // Dialer state
-  const [dialerSettings, setDialerSettings] = useState({
-    autoDialDelay: 3,
-    dailyLimit: 100,
-    workingHoursStart: '09:00',
-    workingHoursEnd: '17:00',
-    workingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
   });
 
   // Integration state
@@ -81,32 +144,79 @@ export default function SettingsPage() {
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
   const [disconnectingProvider, setDisconnectingProvider] = useState<string | null>(null);
 
-  // Fetch integrations on mount
+  // Load data on mount
   useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user]);
+
+  const loadData = async () => {
+    if (!user) return;
+
+    const supabase = createClient();
+
+    // Load profile
+    setProfile({
+      name: user.user_metadata?.name || '',
+      email: user.email || '',
+      company: user.user_metadata?.company || '',
+      phone: '',
+    });
+
+    // Check if user is admin
+    const { data: adminData } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    setIsAdmin(adminData?.role === 'super_admin' || adminData?.role === 'admin');
+
+    // Load business settings
+    const { data: businessData } = await supabase
+      .from('business_onboarding')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (businessData) {
+      setBusinessSettings({
+        id: businessData.id,
+        business_name: businessData.business_name || '',
+        business_type: businessData.business_type || 'landscaping',
+        business_type_other: businessData.business_type_other || '',
+        owner_name: businessData.owner_name || '',
+        email: businessData.email || '',
+        phone: businessData.phone || '',
+        website: businessData.website || '',
+        city: businessData.city || '',
+        state: businessData.state || '',
+        zip: businessData.zip || '',
+        service_radius_miles: businessData.service_radius_miles || 25,
+        services: businessData.services || [],
+        hours_monday: businessData.hours_monday || '',
+        hours_tuesday: businessData.hours_tuesday || '',
+        hours_wednesday: businessData.hours_wednesday || '',
+        hours_thursday: businessData.hours_thursday || '',
+        hours_friday: businessData.hours_friday || '',
+        hours_saturday: businessData.hours_saturday || '',
+        hours_sunday: businessData.hours_sunday || '',
+        greeting_name: businessData.greeting_name || '',
+        appointment_duration: businessData.appointment_duration || 30,
+        calendar_link: businessData.calendar_link || '',
+        pricing_info: businessData.pricing_info || '',
+        special_instructions: businessData.special_instructions || '',
+        status: businessData.status || 'pending',
+      });
+      setServicesInput(businessData.services?.join(', ') || '');
+    }
+
+    // Load integrations
     fetchIntegrations();
 
-    // Check for success/error messages in URL
-    const params = new URLSearchParams(window.location.search);
-    const success = params.get('success');
-    const error = params.get('error');
-
-    if (success === 'google_connected') {
-      toast.success('Google Calendar connected successfully!');
-      // Clean up URL
-      window.history.replaceState({}, '', '/dashboard/settings?tab=integrations');
-    } else if (error) {
-      const errorMessages: Record<string, string> = {
-        oauth_failed: 'Failed to start Google authentication',
-        missing_params: 'Missing authentication parameters',
-        invalid_state: 'Invalid authentication state. Please try again.',
-        token_exchange_failed: 'Failed to complete authentication',
-        callback_failed: 'Authentication callback failed',
-        access_denied: 'Access was denied. Please try again.',
-      };
-      toast.error(errorMessages[error] || 'Authentication failed');
-      window.history.replaceState({}, '', '/dashboard/settings?tab=integrations');
-    }
-  }, []);
+    setLoading(false);
+  };
 
   const fetchIntegrations = async () => {
     try {
@@ -124,7 +234,6 @@ export default function SettingsPage() {
 
   const handleConnectGoogle = () => {
     setConnectingProvider('google_calendar');
-    // Redirect to Google OAuth
     window.location.href = '/api/auth/google';
   };
 
@@ -155,17 +264,61 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async () => {
     setSaving(true);
-    // Simulate save
     await new Promise(resolve => setTimeout(resolve, 1000));
     toast.success('Profile saved');
     setSaving(false);
   };
 
-  const handleSaveVoiceSettings = async () => {
+  const handleSaveBusinessSettings = async () => {
+    if (!user) return;
+
     setSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success('Voice AI settings saved');
-    setSaving(false);
+    const supabase = createClient();
+
+    // Parse services from comma-separated input
+    const services = servicesInput
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    // Prepare data for database (exclude id for insert, include only changed fields)
+    const { id: _id, status: _status, ...settingsWithoutId } = businessSettings;
+    const settingsToSave = {
+      ...settingsWithoutId,
+      services,
+      user_id: user.id,
+    };
+
+    try {
+      if (businessSettings.id) {
+        // Update existing
+        const { error } = await supabase
+          .from('business_onboarding')
+          .update(settingsToSave)
+          .eq('id', businessSettings.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { data, error } = await supabase
+          .from('business_onboarding')
+          .insert(settingsToSave)
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setBusinessSettings(prev => ({ ...prev, id: data.id }));
+        }
+      }
+
+      toast.success('Business settings saved');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSaveNotifications = async () => {
@@ -175,12 +328,25 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
-  const handleSaveDialerSettings = async () => {
-    setSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success('Dialer settings saved');
-    setSaving(false);
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
+      pending: { variant: 'secondary', label: 'Pending Setup' },
+      in_review: { variant: 'outline', label: 'In Review' },
+      agent_created: { variant: 'outline', label: 'Agent Created' },
+      active: { variant: 'default', label: 'Active' },
+      paused: { variant: 'destructive', label: 'Paused' },
+    };
+    const config = statusConfig[status] || statusConfig.pending;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -188,18 +354,18 @@ export default function SettingsPage() {
       <div className="border-b bg-card px-6 py-4">
         <PageHeader
           title="Settings"
-          description="Manage your account and preferences"
+          description="Manage your account and AI voice agent configuration"
         />
       </div>
 
       <main className="p-6">
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-5">
+          <TabsList className={`grid w-full max-w-2xl ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="voice" className="gap-2">
+            <TabsTrigger value="business" className="gap-2">
               <Mic className="h-4 w-4" />
               Voice AI
             </TabsTrigger>
@@ -211,10 +377,12 @@ export default function SettingsPage() {
               <Link className="h-4 w-4" />
               Integrations
             </TabsTrigger>
-            <TabsTrigger value="api" className="gap-2">
-              <Key className="h-4 w-4" />
-              API
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="api" className="gap-2">
+                <Key className="h-4 w-4" />
+                API
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Profile Tab */}
@@ -294,177 +462,359 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* Voice AI Tab */}
-          <TabsContent value="voice">
-            <Card>
-              <CardHeader>
-                <CardTitle>Voice AI Settings</CardTitle>
-                <CardDescription>
-                  Configure your Retell AI settings for outbound calls.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>Note:</strong> Retell AI settings are configured via environment variables in Cloudflare Pages.
-                    The settings below are for reference only.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="retell-key">Retell API Key</Label>
-                  <Input
-                    id="retell-key"
-                    type="password"
-                    value={voiceSettings.retellApiKey}
-                    onChange={(e) => setVoiceSettings({ ...voiceSettings, retellApiKey: e.target.value })}
-                    placeholder="Configured in environment variables"
-                    disabled
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Set via RETELL_API_KEY environment variable
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="agent-id-1">Primary Agent ID</Label>
-                    <Input
-                      id="agent-id-1"
-                      value={voiceSettings.agentId1}
-                      onChange={(e) => setVoiceSettings({ ...voiceSettings, agentId1: e.target.value })}
-                      placeholder="Configured in environment variables"
-                      disabled
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Set via RETELL_AGENT_ID_1
-                    </p>
+          {/* Business/Voice AI Tab */}
+          <TabsContent value="business">
+            <div className="space-y-6">
+              {/* Status Card */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>AI Voice Agent Status</CardTitle>
+                      <CardDescription>
+                        Your AI agent configuration and setup status
+                      </CardDescription>
+                    </div>
+                    {getStatusBadge(businessSettings.status)}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="agent-id-2">Secondary Agent ID</Label>
-                    <Input
-                      id="agent-id-2"
-                      value={voiceSettings.agentId2}
-                      onChange={(e) => setVoiceSettings({ ...voiceSettings, agentId2: e.target.value })}
-                      placeholder="Configured in environment variables"
-                      disabled
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Set via RETELL_AGENT_ID_2
-                    </p>
-                  </div>
-                </div>
+                </CardHeader>
+                <CardContent>
+                  {businessSettings.status === 'pending' && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <strong>Setup Required:</strong> Please complete your business information below.
+                        Once submitted, our team will configure your AI voice agent and notify you when it&apos;s ready.
+                      </p>
+                    </div>
+                  )}
+                  {businessSettings.status === 'active' && (
+                    <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950">
+                      <p className="text-sm text-green-800 dark:text-green-200">
+                        <strong>Active:</strong> Your AI voice agent is live and ready to take calls!
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="from-number">From Phone Number</Label>
-                  <Input
-                    id="from-number"
-                    value={voiceSettings.fromNumber}
-                    onChange={(e) => setVoiceSettings({ ...voiceSettings, fromNumber: e.target.value })}
-                    placeholder="Configured in environment variables"
-                    disabled
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Set via RETELL_FROM_NUMBER - Get this from your Retell dashboard
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                  <div>
-                    <Label>Call Recording</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Record all outbound calls (configured in Retell dashboard)
-                    </p>
-                  </div>
-                  <Switch
-                    checked={voiceSettings.recordingEnabled}
-                    onCheckedChange={(v) => setVoiceSettings({ ...voiceSettings, recordingEnabled: v })}
-                    disabled
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label htmlFor="opening-script">Opening Script</Label>
-                  <Textarea
-                    id="opening-script"
-                    value={voiceSettings.openingScript}
-                    onChange={(e) => setVoiceSettings({ ...voiceSettings, openingScript: e.target.value })}
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    The AI will use this as the opening line when calling leads.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="voicemail-message">Voicemail Message</Label>
-                  <Textarea
-                    id="voicemail-message"
-                    value={voiceSettings.voicemailMessage}
-                    onChange={(e) => setVoiceSettings({ ...voiceSettings, voicemailMessage: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="font-medium">Dialer Settings</h3>
+              {/* Business Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Business Information
+                  </CardTitle>
+                  <CardDescription>
+                    Tell us about your business so we can train your AI agent
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="auto-dial-delay">Auto-dial Delay (seconds)</Label>
+                      <Label htmlFor="business_name">Business Name *</Label>
                       <Input
-                        id="auto-dial-delay"
-                        type="number"
-                        min={1}
-                        max={30}
-                        value={dialerSettings.autoDialDelay}
-                        onChange={(e) => setDialerSettings({ ...dialerSettings, autoDialDelay: parseInt(e.target.value) })}
+                        id="business_name"
+                        value={businessSettings.business_name}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, business_name: e.target.value })}
+                        placeholder="Mike's Landscaping"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="daily-limit">Daily Call Limit</Label>
+                      <Label htmlFor="greeting_name">How should the AI greet callers?</Label>
                       <Input
-                        id="daily-limit"
-                        type="number"
-                        min={1}
-                        max={1000}
-                        value={dialerSettings.dailyLimit}
-                        onChange={(e) => setDialerSettings({ ...dialerSettings, dailyLimit: parseInt(e.target.value) })}
+                        id="greeting_name"
+                        value={businessSettings.greeting_name}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, greeting_name: e.target.value })}
+                        placeholder="Mike's Landscaping or just Mike"
                       />
                     </div>
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="working-start">Working Hours Start</Label>
+                      <Label htmlFor="business_type">Business Type *</Label>
+                      <Select
+                        value={businessSettings.business_type}
+                        onValueChange={(value: BusinessType) => setBusinessSettings({ ...businessSettings, business_type: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select business type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BUSINESS_TYPES.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {businessSettings.business_type === 'other' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="business_type_other">Please specify</Label>
+                        <Input
+                          id="business_type_other"
+                          value={businessSettings.business_type_other}
+                          onChange={(e) => setBusinessSettings({ ...businessSettings, business_type_other: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="owner_name">Owner/Contact Name *</Label>
                       <Input
-                        id="working-start"
-                        type="time"
-                        value={dialerSettings.workingHoursStart}
-                        onChange={(e) => setDialerSettings({ ...dialerSettings, workingHoursStart: e.target.value })}
+                        id="owner_name"
+                        value={businessSettings.owner_name}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, owner_name: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="working-end">Working Hours End</Label>
+                      <Label htmlFor="business_phone">Business Phone *</Label>
                       <Input
-                        id="working-end"
-                        type="time"
-                        value={dialerSettings.workingHoursEnd}
-                        onChange={(e) => setDialerSettings({ ...dialerSettings, workingHoursEnd: e.target.value })}
+                        id="business_phone"
+                        value={businessSettings.phone}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, phone: e.target.value })}
+                        placeholder="(555) 123-4567"
                       />
                     </div>
                   </div>
-                </div>
 
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveVoiceSettings} disabled={saving}>
-                    {saving ? 'Saving...' : 'Save Settings'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="business_email">Business Email *</Label>
+                      <Input
+                        id="business_email"
+                        type="email"
+                        value={businessSettings.email}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        value={businessSettings.website}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, website: e.target.value })}
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Service Area */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Service Area
+                  </CardTitle>
+                  <CardDescription>
+                    Where does your business operate?
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Input
+                        id="city"
+                        value={businessSettings.city}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, city: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State *</Label>
+                      <Input
+                        id="state"
+                        value={businessSettings.state}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, state: e.target.value })}
+                        placeholder="CA"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="zip">ZIP Code</Label>
+                      <Input
+                        id="zip"
+                        value={businessSettings.zip}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, zip: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="service_radius">Service Radius (miles)</Label>
+                    <Input
+                      id="service_radius"
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={businessSettings.service_radius_miles}
+                      onChange={(e) => setBusinessSettings({ ...businessSettings, service_radius_miles: parseInt(e.target.value) || 25 })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      How far will you travel to service customers?
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Services */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Services Offered</CardTitle>
+                  <CardDescription>
+                    List the services you provide (the AI will use this to answer questions)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="services">Services (comma-separated) *</Label>
+                    <Textarea
+                      id="services"
+                      value={servicesInput}
+                      onChange={(e) => setServicesInput(e.target.value)}
+                      placeholder="Lawn mowing, Leaf cleanup, Mulching, Spring cleanup, Fall cleanup, Hedge trimming"
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Example: Lawn mowing, Leaf cleanup, Mulching, Spring cleanup
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pricing_info">General Pricing Info</Label>
+                    <Textarea
+                      id="pricing_info"
+                      value={businessSettings.pricing_info}
+                      onChange={(e) => setBusinessSettings({ ...businessSettings, pricing_info: e.target.value })}
+                      placeholder="Starting at $50 for basic lawn care. Free estimates available."
+                      rows={2}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Optional: General pricing the AI can reference (not exact quotes)
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Business Hours */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Business Hours
+                  </CardTitle>
+                  <CardDescription>
+                    When are you available for appointments?
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { key: 'hours_monday', label: 'Monday' },
+                      { key: 'hours_tuesday', label: 'Tuesday' },
+                      { key: 'hours_wednesday', label: 'Wednesday' },
+                      { key: 'hours_thursday', label: 'Thursday' },
+                      { key: 'hours_friday', label: 'Friday' },
+                      { key: 'hours_saturday', label: 'Saturday' },
+                      { key: 'hours_sunday', label: 'Sunday' },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="space-y-2">
+                        <Label htmlFor={key}>{label}</Label>
+                        <Input
+                          id={key}
+                          value={businessSettings[key as keyof BusinessSettings] as string}
+                          onChange={(e) => setBusinessSettings({ ...businessSettings, [key]: e.target.value })}
+                          placeholder="9:00 AM - 5:00 PM or Closed"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Appointment Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Appointment Settings
+                  </CardTitle>
+                  <CardDescription>
+                    Configure how appointments are booked
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="appointment_duration">Default Appointment Duration (minutes)</Label>
+                      <Select
+                        value={businessSettings.appointment_duration.toString()}
+                        onValueChange={(value) => setBusinessSettings({ ...businessSettings, appointment_duration: parseInt(value) })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 minutes</SelectItem>
+                          <SelectItem value="30">30 minutes</SelectItem>
+                          <SelectItem value="45">45 minutes</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                          <SelectItem value="90">1.5 hours</SelectItem>
+                          <SelectItem value="120">2 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="calendar_link">Calendar Booking Link</Label>
+                      <Input
+                        id="calendar_link"
+                        value={businessSettings.calendar_link}
+                        onChange={(e) => setBusinessSettings({ ...businessSettings, calendar_link: e.target.value })}
+                        placeholder="https://calendly.com/your-business"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Calendly, Cal.com, or Google Calendar link
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Special Instructions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Special Instructions</CardTitle>
+                  <CardDescription>
+                    Any additional information for your AI agent
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    value={businessSettings.special_instructions}
+                    onChange={(e) => setBusinessSettings({ ...businessSettings, special_instructions: e.target.value })}
+                    placeholder="Example: Always mention our 10% discount for first-time customers. We don't service commercial properties."
+                    rows={4}
+                  />
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end">
+                <Button onClick={handleSaveBusinessSettings} disabled={saving} size="lg">
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Business Settings'
+                  )}
+                </Button>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Notifications Tab */}
@@ -567,7 +917,7 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Google Calendar - Active Integration */}
+                {/* Google Calendar */}
                 {(() => {
                   const googleIntegration = getIntegration('google_calendar');
                   const isConnected = !!googleIntegration;
@@ -689,118 +1039,77 @@ export default function SettingsPage() {
                   </div>
                   <Button variant="outline" disabled>Connect</Button>
                 </div>
-
-                {/* Salesforce - Coming Soon */}
-                <div className="flex items-center justify-between p-4 border rounded-lg opacity-75">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                      <span className="font-bold text-blue-600">SF</span>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">Salesforce</p>
-                        <Badge variant="secondary" className="text-xs">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Coming Soon
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Sync leads and activities to Salesforce
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="outline" disabled>Connect</Button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* API Tab */}
-          <TabsContent value="api">
-            <Card>
-              <CardHeader>
-                <CardTitle>Retell AI Configuration</CardTitle>
-                <CardDescription>
-                  Webhook URLs and settings for your Retell AI voice agent integration.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>About Retell AI:</strong> GreenLine AI uses Retell AI to power intelligent voice conversations with your leads. Configure the webhook URLs below in your Retell dashboard to enable real-time call tracking and analytics.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-4">Webhook Endpoints</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Add these URLs to your Retell AI dashboard under Agent Settings → Webhook URL to receive call events.
-                  </p>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Primary Webhook URL</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/retell/webhook`}
-                          readOnly
-                          className="font-mono text-sm"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/api/retell/webhook`);
-                            toast.success('Copied!');
-                          }}
-                        >
-                          Copy
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Receives all call lifecycle events including call_started, call_ended, and call_analyzed. Updates lead status and stores call recordings automatically.
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Post-Call Analysis URL</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/retell/post-call`}
-                          readOnly
-                          className="font-mono text-sm"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/api/retell/post-call`);
-                            toast.success('Copied!');
-                          }}
-                        >
-                          Copy
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Receives transcripts, sentiment analysis, and call summaries. Used to determine meeting bookings and update lead outcomes.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+          {/* API Tab - Admin Only */}
+          {isAdmin && (
+            <TabsContent value="api">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Retell AI Configuration</CardTitle>
+                  <CardDescription>
+                    Webhook URLs and settings for Retell AI integration (Admin Only)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
                     <p className="text-sm text-amber-800 dark:text-amber-200">
-                      <strong>Setup Instructions:</strong>
+                      <strong>Admin Only:</strong> This section is only visible to administrators.
                     </p>
-                    <ol className="text-sm text-amber-800 dark:text-amber-200 mt-2 list-decimal list-inside space-y-1">
-                      <li>Log in to your Retell AI dashboard at retellai.com</li>
-                      <li>Navigate to your Agent → Settings → Webhook URL</li>
-                      <li>Paste the Primary Webhook URL above</li>
-                      <li>Save your changes and test with a sample call</li>
-                    </ol>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
+                  <div>
+                    <h3 className="font-medium mb-4">Webhook Endpoints</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Primary Webhook URL</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/retell/webhook`}
+                            readOnly
+                            className="font-mono text-sm"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/api/retell/webhook`);
+                              toast.success('Copied!');
+                            }}
+                          >
+                            Copy
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Post-Call Analysis URL</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/api/retell/post-call`}
+                            readOnly
+                            className="font-mono text-sm"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/api/retell/post-call`);
+                              toast.success('Copied!');
+                            }}
+                          >
+                            Copy
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
