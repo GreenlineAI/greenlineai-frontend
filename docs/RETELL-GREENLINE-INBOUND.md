@@ -265,35 +265,98 @@ For most home service businesses, one missed call could mean losing a $200, $500
 Would it help if I showed you exactly how this would work for your business? We do free 15-minute strategy calls where we walk through everything.
 ```
 
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Interested in strategy call | → Node 5: Qualification |
+| Still hesitant / needs to think | → Node 4b: Soft Close |
+| Describes their business | → Node 5: Qualification |
+
 ---
 
-### Node 5: Qualification
+### Node 4b: Soft Close
+**Type**: Conversation
+**Mode**: Prompt
+
+```
+No problem at all - I get it. Running a business means being careful with every expense.
+
+Tell you what: our strategy call is completely free, no obligation. We'll show you exactly how many leads are in your area and how the AI would sound for your business. If it's not a fit, no hard feelings.
+
+Would you at least want to see that before you decide? It only takes about 15 minutes.
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Agrees to strategy call | → Node 5: Qualification |
+| Still not interested | → Node 9: Polite End |
+
+---
+
+### Node 5: Qualification - Business Info
 **Type**: Extract Variable + Conversation
 
 **Variables to capture**:
 - `business_type` - Type of service business
 - `business_name` - Name of their company
+
+**Content**:
+```
+Great! Let me get a few quick details so we can personalize this for you.
+
+What's the name of your company, and what type of services do you offer?
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Provides business name and type | → Node 5a: Contact Info |
+| Not home services industry | → Node 7: Not a Fit |
+
+---
+
+### Node 5a: Contact Info
+**Type**: Extract Variable + Conversation
+
+**Variables to capture**:
 - `caller_name` - Contact name
+- `caller_phone` - Phone number (if different from caller ID)
+- `caller_email` - Email address
+
+**Content**:
+```
+Perfect! And who am I speaking with today? Just need your name and the best email to send the calendar invite to.
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Provides name and email | → Node 5b: Location & Situation |
+
+---
+
+### Node 5b: Location & Situation
+**Type**: Extract Variable + Conversation
+
+**Variables to capture**:
 - `location` - City/area they serve
 - `current_situation` - How they handle calls now
 - `call_volume` - Approximate calls per day/week
 
 **Content**:
 ```
-[After capturing business type]
+Thanks, {{caller_name}}! A couple more quick questions:
 
-That's perfect - we work with a lot of [business_type] businesses. They're seeing great results.
+What area do you serve? And roughly how many calls do you get per day or week?
 
-A couple quick questions so I can tell you exactly how this would help:
-- How many calls do you typically get per day or week?
-- Right now, who answers your phones when you're on a job?
+Also curious - right now, who's handling your phones when you're out on jobs?
 ```
 
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Home service business, shows interest | → Node 6: Book Strategy Call |
-| Not home services industry | → Node 7: Not a Fit |
+| Provides location and call info | → Node 6: Book Strategy Call |
 | Wants to sign up now | → Node 8: Direct to Website |
 
 ---
@@ -338,6 +401,23 @@ Is there anything else I can help you with?
 I love the enthusiasm! The easiest way to get started is to head to greenline-ai.com - you can sign up there and be live within 30 minutes.
 
 Or if you'd prefer to talk through everything first, I can set you up with a quick strategy call. What works better for you?
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Wants strategy call instead | → Node 5: Qualification |
+| Will go to website | → Node 9: Polite End |
+
+---
+
+### Node 9: Polite End
+**Type**: Conversation
+
+```
+No problem at all! Thanks so much for calling GreenLine AI. If you ever have questions or want to chat, we're always here.
+
+Have a great day, and best of luck with your business!
 ```
 
 ---
