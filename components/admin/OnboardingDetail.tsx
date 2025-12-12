@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Building,
@@ -76,7 +75,8 @@ function formatBusinessType(type: string, other?: string | null): string {
     .join(' ');
 }
 
-function formatPhonePreference(pref: string): string {
+function formatPhonePreference(pref: string | null): string {
+  if (!pref) return 'Not specified';
   const labels: Record<string, string> = {
     new: 'Get a new local number',
     forward: 'Forward existing number',
@@ -90,8 +90,6 @@ interface OnboardingDetailProps {
 }
 
 export default function OnboardingDetail({ id }: OnboardingDetailProps) {
-  const router = useRouter();
-
   const { data: onboarding, isLoading } = useOnboarding(id);
   const updateMutation = useUpdateOnboarding();
 
@@ -102,7 +100,7 @@ export default function OnboardingDetail({ id }: OnboardingDetailProps) {
   // Initialize form when data loads
   useEffect(() => {
     if (onboarding) {
-      setStatus(onboarding.status);
+      setStatus(onboarding.status || '');
       setNotes(onboarding.notes || '');
     }
   }, [onboarding]);
@@ -241,7 +239,7 @@ The agent should:
             <div>
               <h1 className="text-xl font-bold">{onboarding.business_name}</h1>
               <p className="text-sm text-muted-foreground">
-                Submitted {format(new Date(onboarding.created_at), 'MMMM d, yyyy')}
+                Submitted {onboarding.created_at ? format(new Date(onboarding.created_at), 'MMMM d, yyyy') : 'N/A'}
               </p>
             </div>
           </div>
@@ -453,7 +451,7 @@ The agent should:
               </CardHeader>
               <CardContent className="space-y-4">
                 <Select
-                  value={status || onboarding.status}
+                  value={status || onboarding.status || ''}
                   onValueChange={(v) => handleStatusChange(v as OnboardingStatus)}
                 >
                   <SelectTrigger>
@@ -517,11 +515,11 @@ The agent should:
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Created</span>
-                  <span>{format(new Date(onboarding.created_at), 'MMM d, yyyy h:mm a')}</span>
+                  <span>{onboarding.created_at ? format(new Date(onboarding.created_at), 'MMM d, yyyy h:mm a') : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Updated</span>
-                  <span>{format(new Date(onboarding.updated_at), 'MMM d, yyyy h:mm a')}</span>
+                  <span>{onboarding.updated_at ? format(new Date(onboarding.updated_at), 'MMM d, yyyy h:mm a') : 'N/A'}</span>
                 </div>
               </CardContent>
             </Card>

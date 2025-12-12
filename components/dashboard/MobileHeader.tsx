@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Menu, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "./NotificationBell";
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -28,8 +29,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
         <span className="text-base font-bold text-white">GreenLine AI</span>
       </Link>
 
-      {/* Placeholder for balance */}
-      <div className="w-9" />
+      <NotificationBell className="text-white hover:bg-slate-800" />
     </div>
   );
 }

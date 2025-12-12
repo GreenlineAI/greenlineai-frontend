@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Zap, Mail, Lock, User, Building, ArrowRight, Check } from "lucide-react";
+import { Zap, Mail, Lock, User, Building, ArrowRight, Check, CheckCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,6 +14,7 @@ export default function SignupPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +27,7 @@ export default function SignupPage() {
       email: formData.email,
       password: formData.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           name: formData.name,
           company: formData.company,
@@ -41,8 +41,9 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    // Show confirmation message instead of redirecting
+    setShowConfirmation(true);
+    setIsLoading(false);
   };
 
   const benefits = [
@@ -88,14 +89,43 @@ export default function SignupPage() {
             <span className="text-xl font-bold text-slate-900">GreenLine AI</span>
           </Link>
 
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Create your account
-          </h1>
-          <p className="text-slate-600 mb-8">
-            Start generating leads in under 5 minutes
-          </p>
+          {showConfirmation ? (
+            <div className="text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-6">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">
+                Check your email
+              </h1>
+              <p className="text-slate-600 mb-6">
+                We sent a confirmation link to <strong>{formData.email}</strong>.
+                Click the link in the email to activate your account.
+              </p>
+              <div className="space-y-3">
+                <Link
+                  href="/login"
+                  className="block w-full h-12 flex items-center justify-center rounded-lg bg-primary-600 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  Go to Login
+                </Link>
+                <button
+                  onClick={() => setShowConfirmation(false)}
+                  className="block w-full text-sm text-slate-600 hover:text-slate-900"
+                >
+                  Use a different email
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">
+                Create your account
+              </h1>
+              <p className="text-slate-600 mb-8">
+                Start generating leads in under 5 minutes
+              </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-600">
                 {error}
@@ -217,6 +247,8 @@ export default function SignupPage() {
               Sign in
             </Link>
           </p>
+            </>
+          )}
         </div>
       </div>
     </div>

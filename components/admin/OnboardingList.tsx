@@ -98,7 +98,7 @@ function OnboardingCard({ onboarding }: { onboarding: BusinessOnboarding }) {
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span>{format(new Date(onboarding.created_at), 'MMM d, yyyy')}</span>
+                <span>{onboarding.created_at ? format(new Date(onboarding.created_at), 'MMM d, yyyy') : 'N/A'}</span>
               </div>
             </div>
 
@@ -117,7 +117,7 @@ function OnboardingCard({ onboarding }: { onboarding: BusinessOnboarding }) {
           </div>
 
           <div className="flex flex-col items-end gap-3">
-            <StatusBadge status={onboarding.status} />
+            <StatusBadge status={onboarding.status || 'pending'} />
             <Button variant="outline" size="sm" asChild>
               <Link href={`/admin/onboarding/${onboarding.id}`}>
                 <Eye className="h-4 w-4 mr-1" />

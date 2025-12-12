@@ -39,12 +39,4 @@ DELETE FROM profiles WHERE id IN (
   'c2f810e1-d126-43c1-b104-b531517944dc'
 );
 
--- Finally delete from auth.users (this requires admin privileges)
-DELETE FROM auth.users WHERE id IN (
-  '32b66f03-0e90-4d4b-9091-fd8b2f2404e6',
-  '0b627f19-6ea2-469b-a596-84cab72190c9',
-  'c2f810e1-d126-43c1-b104-b531517944dc'
-);
 
--- Verify deletion
-SELECT id, email FROM auth.users;

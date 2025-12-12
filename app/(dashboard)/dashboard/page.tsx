@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   PhoneIncoming,
@@ -7,23 +8,23 @@ import {
   Clock,
   TrendingUp,
   Settings,
-  PlayCircle,
   ArrowRight,
-  Phone,
   CheckCircle2,
-  Bot,
   Headphones,
-  Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { StatsCard } from '@/components/shared/StatsCard';
+import { EnhancedStatsCard } from '@/components/shared/EnhancedStatsCard';
 import { CallsLineChart } from '@/components/charts/CallsLineChart';
 import { CallOutcomesChart } from '@/components/charts/CallOutcomesChart';
 import { GettingStartedChecklist } from '@/components/dashboard/GettingStartedChecklist';
-import { WelcomeEmptyState } from '@/components/dashboard/WelcomeEmptyState';
+import { QuickActions } from '@/components/dashboard/QuickActions';
+import { LiveActivityFeed } from '@/components/dashboard/LiveActivityFeed';
+import { AIStatusCard } from '@/components/dashboard/AIStatusCard';
+import { NotificationBell } from '@/components/dashboard/NotificationBell';
+import { TimePeriodSelector, TimePeriod } from '@/components/dashboard/TimePeriodSelector';
 import { useUser } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -31,13 +32,17 @@ import { format, parseISO, isToday, startOfDay, startOfWeek, startOfMonth, subDa
 
 interface CallRecord {
   id: string;
-  phone_number: string;
+  lead_id: string;
   status: string;
   duration: number | null;
-  disposition: string | null;
+  meeting_booked: boolean | null;
   transcript: string | null;
   recording_url: string | null;
   created_at: string;
+  leads?: {
+    business_name: string;
+    phone: string;
+  };
 }
 
 interface MeetingRecord {
@@ -48,7 +53,7 @@ interface MeetingRecord {
   meeting_type: string | null;
 }
 
-// Hook for inbound dashboard stats
+// Hook for dashboard stats using outreach_calls table
 function useInboundStats() {
   return useQuery({
     queryKey: ['inbound-dashboard-stats'],
@@ -57,18 +62,29 @@ function useInboundStats() {
       const today = startOfDay(new Date());
       const weekStart = startOfWeek(today);
       const monthStart = startOfMonth(today);
+      const lastWeekStart = subDays(weekStart, 7);
 
-      // Get calls today - using 'calls' table for inbound
-      const { count: callsToday } = await supabase
-        .from('calls')
+      // Get calls today - using outreach_calls table
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: callsToday } = await (supabase as any)
+        .from('outreach_calls')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', today.toISOString());
 
       // Get calls this week
-      const { count: callsThisWeek } = await supabase
-        .from('calls')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: callsThisWeek } = await (supabase as any)
+        .from('outreach_calls')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', weekStart.toISOString());
+
+      // Get calls last week for comparison
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: callsLastWeek } = await (supabase as any)
+        .from('outreach_calls')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', lastWeekStart.toISOString())
+        .lt('created_at', weekStart.toISOString());
 
       // Get appointments booked this month from meetings table
       const { count: appointmentsBooked } = await supabase
@@ -77,31 +93,39 @@ function useInboundStats() {
         .gte('created_at', monthStart.toISOString());
 
       // Get average call duration
-      const { data: durationData } = await supabase
-        .from('calls')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: durationData } = await (supabase as any)
+        .from('outreach_calls')
         .select('duration')
         .not('duration', 'is', null)
         .gte('created_at', monthStart.toISOString());
 
       const durations = (durationData || []) as { duration: number | null }[];
       const avgDuration = durations.length > 0
-        ? Math.round(durations.reduce((acc, c) => acc + (c.duration || 0), 0) / durations.length)
+        ? Math.round(durations.reduce((acc: number, c: { duration: number | null }) => acc + (c.duration || 0), 0) / durations.length)
         : 0;
 
       // Get completed calls for answer rate
-      const { count: completedCalls } = await supabase
-        .from('calls')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: completedCalls } = await (supabase as any)
+        .from('outreach_calls')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed')
         .gte('created_at', monthStart.toISOString());
 
-      const { count: totalCalls } = await supabase
-        .from('calls')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count: totalCalls } = await (supabase as any)
+        .from('outreach_calls')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', monthStart.toISOString());
 
       const answerRate = totalCalls && completedCalls
         ? Math.round((completedCalls / totalCalls) * 100)
+        : 0;
+
+      // Calculate week-over-week change
+      const weeklyChange = callsLastWeek && callsLastWeek > 0
+        ? Math.round(((callsThisWeek || 0) - callsLastWeek) / callsLastWeek * 100)
         : 0;
 
       return {
@@ -110,12 +134,13 @@ function useInboundStats() {
         appointmentsBooked: appointmentsBooked || 0,
         avgDuration,
         answerRate,
+        weeklyChange,
       };
     },
   });
 }
 
-// Hook for daily inbound call stats
+// Hook for daily call stats (for sparklines)
 function useInboundDailyStats(days: number = 30) {
   return useQuery({
     queryKey: ['inbound-daily-stats', days],
@@ -123,16 +148,17 @@ function useInboundDailyStats(days: number = 30) {
       const supabase = createClient();
       const startDate = subDays(new Date(), days);
 
-      const { data } = await supabase
-        .from('calls')
-        .select('created_at, status, duration')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from('outreach_calls')
+        .select('created_at, status, duration, meeting_booked')
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: true });
 
       // Group by date
       const dailyStats: Record<string, { calls: number; connected: number; meetings: number }> = {};
 
-      const calls = (data || []) as { created_at: string; status: string; duration: number | null }[];
+      const calls = (data || []) as { created_at: string; status: string; duration: number | null; meeting_booked: boolean | null }[];
       calls.forEach((call) => {
         const date = format(new Date(call.created_at), 'yyyy-MM-dd');
         if (!dailyStats[date]) {
@@ -141,6 +167,9 @@ function useInboundDailyStats(days: number = 30) {
         dailyStats[date].calls++;
         if (call.status === 'completed') {
           dailyStats[date].connected++;
+        }
+        if (call.meeting_booked) {
+          dailyStats[date].meetings++;
         }
       });
 
@@ -161,7 +190,7 @@ function useInboundDailyStats(days: number = 30) {
   });
 }
 
-// Hook for inbound call outcomes
+// Hook for call outcomes
 function useInboundCallOutcomes() {
   return useQuery({
     queryKey: ['inbound-call-outcomes'],
@@ -169,9 +198,10 @@ function useInboundCallOutcomes() {
       const supabase = createClient();
       const monthStart = startOfMonth(new Date());
 
-      const { data } = await supabase
-        .from('calls')
-        .select('status, disposition')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any)
+        .from('outreach_calls')
+        .select('status, meeting_booked')
         .gte('created_at', monthStart.toISOString());
 
       const outcomes: Record<string, number> = {
@@ -181,10 +211,10 @@ function useInboundCallOutcomes() {
         appointment: 0,
       };
 
-      const calls = (data || []) as { status: string; disposition: string | null }[];
+      const calls = (data || []) as { status: string; meeting_booked: boolean | null }[];
       calls.forEach((call) => {
         if (call.status === 'completed') {
-          if (call.disposition === 'appointment_booked' || call.disposition === 'meeting_booked') {
+          if (call.meeting_booked) {
             outcomes.appointment++;
           } else {
             outcomes.answered++;
@@ -206,16 +236,27 @@ function useInboundCallOutcomes() {
   });
 }
 
-// Hook for recent inbound calls
+// Hook for recent calls
 function useRecentInboundCalls(limit: number = 10) {
   return useQuery({
     queryKey: ['recent-inbound-calls', limit],
     queryFn: async (): Promise<CallRecord[]> => {
       const supabase = createClient();
 
-      const { data, error } = await supabase
-        .from('calls')
-        .select('*')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('outreach_calls')
+        .select(`
+          id,
+          lead_id,
+          status,
+          duration,
+          meeting_booked,
+          transcript,
+          recording_url,
+          created_at,
+          leads (business_name, phone)
+        `)
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -275,6 +316,7 @@ function CallStatusBadge({ status }: { status: string }) {
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('30d');
   const { data: stats, isLoading: statsLoading } = useInboundStats();
   const { data: dailyStats, isLoading: dailyStatsLoading } = useInboundDailyStats(30);
   const { data: callOutcomes, isLoading: outcomesLoading } = useInboundCallOutcomes();
@@ -288,11 +330,35 @@ export default function DashboardPage() {
     (stats?.callsToday === 0 && stats?.callsThisWeek === 0 && stats?.appointmentsBooked === 0) &&
     (!recentCalls || recentCalls.length === 0);
 
-  // Check onboarding status (you can expand this with real checks)
+  // Check onboarding status
   const hasCompletedOnboarding = user?.user_metadata?.onboarding_complete || false;
   const hasConfiguredVoiceAI = user?.user_metadata?.voice_ai_configured || false;
   const hasConnectedCalendar = user?.user_metadata?.calendar_connected || false;
-  const hasMadeTestCall = !isNewUser; // If they have calls, they've tested
+  const hasMadeTestCall = !isNewUser;
+
+  // Transform recent calls to activity feed format
+  const activityItems = (recentCalls || []).slice(0, 5).map((call) => ({
+    id: call.id,
+    type: call.status === 'completed'
+      ? 'call_completed' as const
+      : call.status === 'voicemail'
+      ? 'call_voicemail' as const
+      : 'call_missed' as const,
+    title: call.leads?.business_name || call.leads?.phone || 'Unknown Caller',
+    description: call.status === 'completed'
+      ? `Call answered • ${formatDuration(call.duration)}`
+      : call.status === 'voicemail'
+      ? 'Left a voicemail'
+      : 'No answer',
+    timestamp: call.created_at,
+    metadata: {
+      duration: call.duration || undefined,
+      phoneNumber: call.leads?.phone,
+    },
+  }));
+
+  // Create sparkline data from last 7 days
+  const sparklineData = (dailyStats || []).slice(-7).map((d) => ({ value: d.calls }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -307,6 +373,10 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:block">
+              <TimePeriodSelector value={timePeriod} onChange={setTimePeriod} />
+            </div>
+            <NotificationBell className="hidden lg:flex" />
             <Button variant="outline" size="sm" className="flex-1 sm:flex-none" asChild>
               <Link href="/dashboard/calls">
                 <Headphones className="mr-2 h-4 w-4" />
@@ -323,7 +393,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <main className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <main className="p-4 sm:p-6 space-y-5">
         {/* Getting Started Checklist for New Users */}
         {isNewUser && (
           <GettingStartedChecklist
@@ -334,279 +404,198 @@ export default function DashboardPage() {
           />
         )}
 
+        {/* AI Status Card */}
+        <AIStatusCard
+          isActive={true}
+          todayCalls={stats?.callsToday || 0}
+          avgResponseTime={1.2}
+        />
+
+        {/* Quick Actions */}
+        <QuickActions />
+
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {statsLoading ? (
             <>
               {Array.from({ length: 4 }).map((_, i) => (
                 <Card key={i}>
-                  <CardContent className="p-6">
-                    <Skeleton className="h-16 w-full" />
+                  <CardContent className="p-5">
+                    <Skeleton className="h-20 w-full" />
                   </CardContent>
                 </Card>
               ))}
             </>
           ) : (
             <>
-              <StatsCard
+              <EnhancedStatsCard
                 title="Calls Today"
                 value={stats?.callsToday?.toString() || '0'}
                 icon={PhoneIncoming}
                 description={`${stats?.callsThisWeek || 0} this week`}
+                sparklineData={sparklineData}
+                accentColor="blue"
               />
-              <StatsCard
-                title="Appointments Booked"
+              <EnhancedStatsCard
+                title="Appointments"
                 value={stats?.appointmentsBooked?.toString() || '0'}
                 icon={Calendar}
                 trend={{ value: 15, isPositive: true }}
                 description="this month"
+                accentColor="green"
               />
-              <StatsCard
-                title="Avg Call Duration"
+              <EnhancedStatsCard
+                title="Avg Duration"
                 value={formatDuration(stats?.avgDuration || 0)}
                 icon={Clock}
                 description="this month"
+                accentColor="purple"
               />
-              <StatsCard
+              <EnhancedStatsCard
                 title="Answer Rate"
                 value={`${stats?.answerRate || 0}%`}
                 icon={TrendingUp}
-                trend={{ value: 5, isPositive: true }}
+                trend={{
+                  value: stats?.weeklyChange || 0,
+                  isPositive: (stats?.weeklyChange || 0) >= 0,
+                }}
                 description="AI performance"
+                accentColor="orange"
               />
             </>
           )}
         </div>
 
-        {/* AI Agent Status Card */}
-        <Card className="bg-gradient-to-r from-primary-50 to-primary-100 border-primary-200">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0">
-                  <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-base sm:text-lg">AI Receptionist</h3>
-                    <Badge className="bg-green-500 text-white text-xs">Active</Badge>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          {/* Charts Section - takes 2 columns on large screens */}
+          <div className="lg:col-span-2 space-y-5">
+            <CallsLineChart
+              data={dailyStats || []}
+              isLoading={dailyStatsLoading}
+              title="Inbound Calls (Last 30 Days)"
+            />
+            <CallOutcomesChart
+              data={callOutcomes || []}
+              isLoading={outcomesLoading}
+              title="Call Outcomes"
+            />
+          </div>
+
+          {/* Right Sidebar - Activity Feed */}
+          <div className="space-y-5">
+            <LiveActivityFeed
+              activities={activityItems}
+              isLoading={callsLoading}
+              maxItems={5}
+            />
+
+            {/* Upcoming Appointments */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base font-semibold">Upcoming Appointments</CardTitle>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/dashboard/meetings">
+                    View all
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {appointmentsLoading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-14 w-full" />
+                    ))}
                   </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Answering calls 24/7<span className="hidden sm:inline"> and booking appointments automatically</span>
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" asChild>
-                  <Link href="/dashboard/settings">
-                    <Settings className="mr-1.5 sm:mr-2 h-4 w-4" />
-                    Configure
-                  </Link>
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" asChild>
-                  <Link href="/#demo">
-                    <PlayCircle className="mr-1.5 sm:mr-2 h-4 w-4" />
-                    Test Call
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                ) : appointments && appointments.length > 0 ? (
+                  <div className="space-y-2">
+                    {appointments.map((apt) => {
+                      const scheduledDate = parseISO(apt.scheduled_at);
+                      const isToday_ = isToday(scheduledDate);
 
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <CallsLineChart
-            data={dailyStats || []}
-            isLoading={dailyStatsLoading}
-            title="Inbound Calls (Last 30 Days)"
-          />
-          <CallOutcomesChart
-            data={callOutcomes || []}
-            isLoading={outcomesLoading}
-            title="Call Outcomes"
-          />
-        </div>
-
-        {/* Bottom Section */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Recent Calls */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Recent Calls</CardTitle>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/dashboard/calls">
-                  View all
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {callsLoading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : recentCalls && recentCalls.length > 0 ? (
-                <div className="space-y-2 sm:space-y-3">
-                  {recentCalls.slice(0, 5).map((call) => (
-                    <div
-                      key={call.id}
-                      className="flex items-start sm:items-center justify-between rounded-lg border p-2.5 sm:p-3 hover:bg-muted/50 transition-colors gap-2"
-                    >
-                      <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                        <div className={`rounded-full p-1.5 sm:p-2 flex-shrink-0 ${
-                          call.status === 'completed' ? 'bg-green-100' :
-                          call.status === 'voicemail' ? 'bg-yellow-100' : 'bg-red-100'
-                        }`}>
-                          <Phone className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
-                            call.status === 'completed' ? 'text-green-600' :
-                            call.status === 'voicemail' ? 'text-yellow-600' : 'text-red-600'
-                          }`} />
+                      return (
+                        <div
+                          key={apt.id}
+                          className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="rounded-full p-2 bg-purple-100 flex-shrink-0">
+                              <Calendar className="h-4 w-4 text-purple-600" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">
+                                {apt.meeting_type || 'Appointment'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(scheduledDate, 'MMM d')} at {format(scheduledDate, 'h:mm a')}
+                              </p>
+                            </div>
+                          </div>
+                          {isToday_ && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs flex-shrink-0">
+                              Today
+                            </Badge>
+                          )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm sm:text-base truncate">{call.phone_number || 'Unknown Caller'}</p>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            {format(new Date(call.created_at), 'MMM d, h:mm a')}
-                            {call.duration && ` • ${formatDuration(call.duration)}`}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                        <CallStatusBadge status={call.status} />
-                        {call.recording_url && (
-                          <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
-                            <PlayCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2">
+                      <Calendar className="h-5 w-5 text-purple-600" />
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-3">
-                    <PhoneIncoming className="h-6 w-6 text-primary-600" />
+                    <p className="text-sm font-medium text-muted-foreground">No upcoming appointments</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Appointments booked by your AI will appear here
+                    </p>
                   </div>
-                  <p className="font-medium text-muted-foreground">No calls yet</p>
-                  <p className="text-sm text-muted-foreground mt-1 mb-4">
-                    Calls will appear here once your AI starts receiving them
-                  </p>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/#demo">
-                      <PlayCircle className="mr-2 h-4 w-4" />
-                      Try a Test Call
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Upcoming Appointments */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Upcoming Appointments</CardTitle>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/dashboard/meetings">
-                  View all
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {appointmentsLoading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : appointments && appointments.length > 0 ? (
-                <div className="space-y-2 sm:space-y-3">
-                  {appointments.map((apt) => {
-                    const scheduledDate = parseISO(apt.scheduled_at);
-                    const isToday_ = isToday(scheduledDate);
-
-                    return (
-                      <div
-                        key={apt.id}
-                        className="flex items-start sm:items-center justify-between rounded-lg border p-2.5 sm:p-3 hover:bg-muted/50 transition-colors gap-2"
-                      >
-                        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                          <div className="rounded-full p-1.5 sm:p-2 bg-primary-100 flex-shrink-0">
-                            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-600" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-sm sm:text-base truncate">
-                              {apt.meeting_type || 'Appointment'}
-                            </p>
-                            <p className="text-xs sm:text-sm text-muted-foreground">
-                              {format(scheduledDate, 'MMM d')} at {format(scheduledDate, 'h:mm a')}
-                              {' • '}{apt.duration} min
-                            </p>
-                          </div>
-                        </div>
-                        {isToday_ && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs flex-shrink-0">
-                            Today
-                          </Badge>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-3">
-                    <Calendar className="h-6 w-6 text-primary-600" />
-                  </div>
-                  <p className="font-medium text-muted-foreground">No upcoming appointments</p>
-                  <p className="text-sm text-muted-foreground mt-1 mb-4">
-                    Appointments booked by your AI will appear here
-                  </p>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href="/dashboard/settings?tab=integrations">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Connect Calendar
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Quick Tips Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Getting the Most from Your AI</CardTitle>
+        {/* Pro Tips Card */}
+        <Card className="bg-gradient-to-r from-slate-50 to-slate-100">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              Getting the Most from Your AI
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white border">
+                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <Settings className="h-4 w-4 text-blue-600" />
+                </div>
                 <div>
-                  <p className="font-medium">Update Your Services</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-sm">Update Your Services</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Keep your service list current so the AI can accurately answer questions
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white border">
+                <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <Headphones className="h-4 w-4 text-purple-600" />
+                </div>
                 <div>
-                  <p className="font-medium">Review Call Recordings</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-sm">Review Call Recordings</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Listen to calls to understand how the AI handles different scenarios
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white border">
+                <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                  <Clock className="h-4 w-4 text-orange-600" />
+                </div>
                 <div>
-                  <p className="font-medium">Set Your Hours</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-sm">Set Your Hours</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Make sure your business hours are accurate for booking appointments
                   </p>
                 </div>
