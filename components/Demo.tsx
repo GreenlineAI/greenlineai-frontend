@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function Demo() {
-  const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
+  const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://cal.com/greenlineai/30min";
 
   const handleBookDemo = () => {
     window.open(calendlyUrl, "_blank");

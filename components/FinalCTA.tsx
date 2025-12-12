@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function FinalCTA() {
   const handleBookDemo = () => {
-    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
+    const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://cal.com/greenlineai/30min";
     window.open(calendlyUrl, "_blank");
   };
 

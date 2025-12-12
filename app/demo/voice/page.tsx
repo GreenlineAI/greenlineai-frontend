@@ -8,7 +8,7 @@ import RetellDemo from "@/components/RetellDemo";
 
 export default function VoiceDemoPage() {
   const calendlyUrl =
-    process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
+    process.env.NEXT_PUBLIC_CALENDLY_URL || "https://cal.com/greenlineai/30min";
 
   const handleBookDemo = () => {
     window.open(calendlyUrl, "_blank");

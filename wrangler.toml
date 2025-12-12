@@ -7,7 +7,7 @@ pages_build_output_dir = ".open-next"
 
 [vars]
 NEXT_PUBLIC_DEMO_PHONE = "+14083654503"
-NEXT_PUBLIC_CALENDLY_URL = "https://calendly.com/greenlineai"
+NEXT_PUBLIC_CALENDLY_URL = "https://cal.com/greenlineai/30min"
 NEXT_PUBLIC_SUPABASE_URL = "https://nkyyikohtzabduzlurbl.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5reXlpa29odHphYmR1emx1cmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1MzUzMTIsImV4cCI6MjA4MDExMTMxMn0.2n47F60UVeRS2MNQf40i_ZfMpcFzCGsR9BTVKOn0CKc"
 

@@ -86,7 +86,7 @@ export default function Pricing() {
   const handleCheckout = async (plan: typeof plans[0]) => {
     // For Business plan, redirect to Calendly for sales call
     if (plan.key === "business") {
-      const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://calendly.com/greenlineai";
+      const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || "https://cal.com/greenlineai/30min";
       window.open(calendlyUrl, "_blank");
       return;
     }

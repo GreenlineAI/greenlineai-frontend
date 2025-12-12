@@ -82,7 +82,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
           leadId: leadId || '',
           campaignId: campaignId || '',
           source: 'greenline-dialer',
-          calendlyUrl: 'https://calendly.com/greenlineai',
+          calendlyUrl: 'https://cal.com/greenlineai/30min',
         },
       };
 
@@ -251,7 +251,7 @@ Your goal for this call:
 3. Verify you're speaking with the business owner or decision maker
 4. Ask about their current marketing and lead generation situation
 5. If they're interested in improving their lead flow, offer to book a brief 15-minute strategy call
-6. If interested, send them the Calendly link via text: https://calendly.com/greenlineai
+6. If interested, send them the Cal.com link via text: https://cal.com/greenlineai/30min
 7. If not interested now, politely offer to follow up in a few months
 
 Key points:
