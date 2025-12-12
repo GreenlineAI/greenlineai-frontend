@@ -37,8 +37,8 @@ export default function ContactPage() {
     {
       icon: Phone,
       label: "Phone",
-      value: "(408) 365-4503",
-      href: "tel:+14083654503",
+      value: "(626) 225-8141",
+      href: "tel:+16262258141",
     },
     {
       icon: Mail,
@@ -295,11 +295,11 @@ export default function ContactPage() {
                     size="lg"
                     className="w-full gap-2"
                     onClick={() =>
-                      (window.location.href = "tel:+14083654503")
+                      (window.location.href = "tel:+16262258141")
                     }
                   >
                     <Phone className="h-5 w-5" />
-                    Call (408) 365-4503
+                    Call (626) 225-8141
                   </Button>
                 </Card>
               </div>
