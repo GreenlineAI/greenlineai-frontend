@@ -396,13 +396,31 @@ Would you be interested in scheduling that? It's completely free, no obligation.
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Yes, interested in scheduling | → Node 6a: Check Availability |
+| Yes, interested in scheduling | → Node 6a: Scheduling Intro |
 | Not right now / needs to think | → Node 6d: Follow Up Option |
 | Has more questions first | → Node 2a: Continue Conversation |
 
 ---
 
-### Node 6a: Check Availability
+### Node 6a: Scheduling Intro
+**Type**: Conversation
+
+```
+Great! The strategy call takes about 15 minutes. We'll go over how the AI would sound for {{business_name}}, walk through pricing options, and show you the lead data we have for {{location}}.
+
+Do you have your calendar handy? I can check what times are available this week.
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Yes, ready to schedule | → Node 6b: Check Availability |
+| Needs a moment | → Node 6b: Check Availability (after brief pause) |
+| Changed mind / not ready | → Node 6d: Follow Up Option |
+
+---
+
+### Node 6b: Check Availability
 **Type**: Function Call (Cal.com get availability)
 
 **Function**: `get_cal_availability`
@@ -416,12 +434,12 @@ Let me check what times we have available...
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Availability retrieved | → Node 6b: Present Times |
-| Error getting availability | → Node 6c: Manual Scheduling |
+| Availability retrieved | → Node 6c: Present Times |
+| Error getting availability | → Node 6e: Manual Scheduling |
 
 ---
 
-### Node 6b: Present Times
+### Node 6c: Present Times
 **Type**: Conversation
 
 ```
@@ -435,13 +453,13 @@ Do any of those work for you? Or if you'd prefer a different day or time, just l
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Selects a time slot | → Node 6c: Confirm Booking |
-| Needs different time | → Node 6b: Present Times (offer more options) |
-| Changed mind / not ready | → Node 6d: Follow Up Option |
+| Selects a time slot | → Node 6d: Confirm Booking |
+| Needs different time | → Node 6c: Present Times (offer more options) |
+| Changed mind / not ready | → Node 6f: Follow Up Option |
 
 ---
 
-### Node 6c: Confirm Booking
+### Node 6d: Confirm Booking
 **Type**: Function Call (Cal.com create booking) + Conversation
 
 **Function**: `create_cal_booking`
@@ -463,13 +481,13 @@ On the call, we'll show you how the AI sounds, walk through the setup process, a
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Has specific request | → Node 6e: Note Request & Close |
-| No specific request | → Node 6e: Note Request & Close |
-| Booking failed | → Node 6c-fallback: Manual Scheduling |
+| Has specific request | → Node 6g: Note Request & Close |
+| No specific request | → Node 6g: Note Request & Close |
+| Booking failed | → Node 6e: Manual Scheduling |
 
 ---
 
-### Node 6c-fallback: Manual Scheduling
+### Node 6e: Manual Scheduling
 **Type**: Conversation
 
 ```
@@ -480,11 +498,11 @@ I'm having a little trouble with the calendar system. No worries though - you ca
 | Condition | Next Node |
 |-----------|-----------|
 | Will book online | → Node 9: Polite End |
-| Wants follow-up email | → Node 6e: Note Request & Close |
+| Wants follow-up email | → Node 6g: Note Request & Close |
 
 ---
 
-### Node 6d: Follow Up Option
+### Node 6f: Follow Up Option
 **Type**: Conversation
 
 ```
@@ -494,12 +512,12 @@ No problem at all! Would you like me to send some information to {{caller_email}
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Yes, send info | → Node 6e: Note Request & Close |
+| Yes, send info | → Node 6g: Note Request & Close |
 | No thanks | → Node 9: Polite End |
 
 ---
 
-### Node 6e: Note Request & Close
+### Node 6g: Note Request & Close
 **Type**: Conversation
 
 ```
