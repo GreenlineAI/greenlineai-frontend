@@ -384,23 +384,136 @@ Also curious - right now, who's handling your phones when you're out on jobs?
 
 ---
 
-### Node 6: Book Strategy Call
-**Type**: Conversation (+ Function for Cal.com booking)
+### Node 6: Offer Strategy Call
+**Type**: Conversation
 
 ```
-This sounds like a great fit. I'd love to set you up with a free 15-minute strategy call where we can show you exactly how this would work for [business_name] and how many leads are available in [location].
+This sounds like a great fit, {{caller_name}}. I'd love to set you up with a free 15-minute strategy call where we can show you exactly how this would work for {{business_name}} and how many leads are available in {{location}}.
 
-Does [suggest next available time] work for you, or is there a better time?
+Would you be interested in scheduling that? It's completely free, no obligation.
 ```
 
-**After booking**:
-```
-You're all set for [confirmed time]. You'll get a calendar invite and reminder.
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Yes, interested in scheduling | → Node 6a: Check Availability |
+| Not right now / needs to think | → Node 6d: Follow Up Option |
+| Has more questions first | → Node 2a: Continue Conversation |
 
-On the call, we'll show you how the AI sounds, walk through the setup process, and show you the lead data for your market. Is there anything specific you want us to cover?
+---
 
-Thanks for calling, [caller_name]! We're excited to help [business_name] never miss another call. Talk to you soon!
+### Node 6a: Check Availability
+**Type**: Function Call (Cal.com get availability)
+
+**Function**: `get_cal_availability`
+- Fetches available time slots from Cal.com API
+- Returns next 3-5 available slots
+
 ```
+Let me check what times we have available...
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Availability retrieved | → Node 6b: Present Times |
+| Error getting availability | → Node 6c: Manual Scheduling |
+
+---
+
+### Node 6b: Present Times
+**Type**: Conversation
+
+```
+I've got a few options for you:
+
+[List 2-3 available time slots from Cal.com]
+
+Do any of those work for you? Or if you'd prefer a different day or time, just let me know.
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Selects a time slot | → Node 6c: Confirm Booking |
+| Needs different time | → Node 6b: Present Times (offer more options) |
+| Changed mind / not ready | → Node 6d: Follow Up Option |
+
+---
+
+### Node 6c: Confirm Booking
+**Type**: Function Call (Cal.com create booking) + Conversation
+
+**Function**: `create_cal_booking`
+- Books the appointment on Cal.com
+- Sends calendar invite to `{{caller_email}}`
+
+**Variables needed**:
+- `caller_name`
+- `caller_email`
+- `business_name`
+- `selected_time`
+
+```
+You're all set for [confirmed time]! I'm sending a calendar invite to {{caller_email}} right now.
+
+On the call, we'll show you how the AI sounds, walk through the setup process, and show you the lead data for {{location}}. Is there anything specific you'd like us to cover on the call?
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Has specific request | → Node 6e: Note Request & Close |
+| No specific request | → Node 6e: Note Request & Close |
+| Booking failed | → Node 6c-fallback: Manual Scheduling |
+
+---
+
+### Node 6c-fallback: Manual Scheduling
+**Type**: Conversation
+
+```
+I'm having a little trouble with the calendar system. No worries though - you can book directly at cal.com/greenlineai, or I can have someone reach out to you at {{caller_email}} to get it scheduled. Which would you prefer?
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Will book online | → Node 9: Polite End |
+| Wants follow-up email | → Node 6e: Note Request & Close |
+
+---
+
+### Node 6d: Follow Up Option
+**Type**: Conversation
+
+```
+No problem at all! Would you like me to send some information to {{caller_email}} so you can look it over? We can always schedule a call later when you're ready.
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Yes, send info | → Node 6e: Note Request & Close |
+| No thanks | → Node 9: Polite End |
+
+---
+
+### Node 6e: Note Request & Close
+**Type**: Conversation
+
+```
+[If booking was made]
+Perfect! We'll make sure to cover that. Thanks so much for calling, {{caller_name}}! We're really excited to help {{business_name}} never miss another call. Talk to you on [confirmed date]!
+
+[If follow-up requested]
+Great, I'll make sure that gets sent over. Thanks for calling GreenLine AI, {{caller_name}}! We'll be in touch soon.
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| End of call | → Call End |
 
 ---
 
@@ -414,6 +527,12 @@ If that's not quite what you do, we might not be the best fit at the moment. But
 
 Is there anything else I can help you with?
 ```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Has another question | → Node 2a: Continue Conversation |
+| No, done | → Node 9: Polite End |
 
 ---
 
@@ -429,7 +548,7 @@ Or if you'd prefer to talk through everything first, I can set you up with a qui
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Wants strategy call instead | → Node 5: Qualification |
+| Wants strategy call instead | → Node 5: Business Info |
 | Will go to website | → Node 9: Polite End |
 
 ---
@@ -442,6 +561,11 @@ No problem at all! Thanks so much for calling GreenLine AI. If you ever have que
 
 Have a great day, and best of luck with your business!
 ```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| End of call | → Call End |
 
 ---
 
