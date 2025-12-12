@@ -63,37 +63,7 @@ const notificationColors = {
   },
 };
 
-// Sample notifications for demo
-const sampleNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'call',
-    title: 'Missed Call',
-    message: 'Call from +1 (555) 123-4567 went to voicemail',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-    read: false,
-    actionUrl: '/dashboard/calls',
-  },
-  {
-    id: '2',
-    type: 'appointment',
-    title: 'New Appointment',
-    message: 'Sarah Johnson booked a consultation for tomorrow at 2 PM',
-    timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    read: false,
-    actionUrl: '/dashboard/meetings',
-  },
-  {
-    id: '3',
-    type: 'success',
-    title: 'AI Updated',
-    message: 'Your voice AI settings have been saved successfully',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    read: true,
-  },
-];
-
-export function NotificationBell({ notifications = sampleNotifications, className }: NotificationBellProps) {
+export function NotificationBell({ notifications = [], className }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [localNotifications, setLocalNotifications] = useState(notifications);
 

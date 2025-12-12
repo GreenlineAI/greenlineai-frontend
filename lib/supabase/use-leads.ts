@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "./client";
-import { mockLeads } from "../mock-data";
 import { Lead } from "../types";
 
 // Re-export Lead for convenience
@@ -39,7 +38,6 @@ export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [usingMockData, setUsingMockData] = useState(false);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -54,22 +52,16 @@ export function useLeads() {
         .order("created_at", { ascending: false });
 
       if (fetchError) {
-        console.log("Supabase error, falling back to mock data:", fetchError.message);
-        setLeads(mockLeads);
-        setUsingMockData(true);
-      } else if (!data || data.length === 0) {
-        // No leads in database, use mock data for demo
-        console.log("No leads found, using mock data for demo");
-        setLeads(mockLeads);
-        setUsingMockData(true);
+        console.error("Error fetching leads:", fetchError.message);
+        setError(fetchError.message);
+        setLeads([]);
       } else {
-        setLeads(data.map(transformLead));
-        setUsingMockData(false);
+        setLeads(data ? data.map(transformLead) : []);
       }
     } catch (err) {
-      console.log("Error fetching leads, falling back to mock data:", err);
-      setLeads(mockLeads);
-      setUsingMockData(true);
+      console.error("Error fetching leads:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+      setLeads([]);
     } finally {
       setLoading(false);
     }
@@ -80,14 +72,6 @@ export function useLeads() {
   }, [fetchLeads]);
 
   const updateLead = async (id: string, updates: Partial<Lead>) => {
-    if (usingMockData) {
-      // Update in local state for mock data
-      setLeads((prev) =>
-        prev.map((lead) => (lead.id === id ? { ...lead, ...updates } : lead))
-      );
-      return { success: true };
-    }
-
     const supabase = createClient();
 
     // Transform camelCase to snake_case
@@ -117,11 +101,6 @@ export function useLeads() {
   };
 
   const deleteLead = async (id: string) => {
-    if (usingMockData) {
-      setLeads((prev) => prev.filter((lead) => lead.id !== id));
-      return { success: true };
-    }
-
     const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("leads") as any).delete().eq("id", id);
@@ -138,7 +117,6 @@ export function useLeads() {
     leads,
     loading,
     error,
-    usingMockData,
     refetch: fetchLeads,
     updateLead,
     deleteLead,
