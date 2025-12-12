@@ -280,8 +280,28 @@ Just to confirm - are you located in {{company_service_area}}?
 #### Transition
 | Condition | Next Node | Type |
 |-----------|-----------|------|
-| Yes, in service area | → Node 4: Check Availability (if booking_enabled) | Prompt |
+| Yes, in service area | → Node 3a: Scheduling Intro (if booking_enabled) | Prompt |
 | No, outside service area | → Node 5b: Outside Service Area | Prompt |
+
+---
+
+### Node 3a: Scheduling Intro
+**Node Type**: Conversation
+**Content Mode**: Prompt
+
+**Content**:
+```
+Perfect! I'd be happy to get you scheduled for a {{service_type}} appointment.
+
+Do you have a general idea of when works best for you - are you looking for something this week, or is it more flexible?
+```
+
+#### Transition
+| Condition | Next Node | Type |
+|-----------|-----------|------|
+| Provides timing preference | → Node 4: Check Availability | Prompt |
+| Wants to know more first | → Node 5: Answer Questions | Prompt |
+| Changed mind, wants callback | → Node 9: Take Message | Prompt |
 
 ---
 
@@ -724,6 +744,7 @@ flowchart TD
         N2a[Node 2a: Extract Service Info]
         N2b[Node 2b: Help Identify Issue]
         N3[Node 3: Confirm Service Area]
+        N3a[Node 3a: Scheduling Intro]
         N4[Node 4: Check Availability]
         N4a[Node 4a: Offer Times]
         N4a_alt[Node 4a-alt: Extract Preferred Time]
@@ -765,8 +786,11 @@ flowchart TD
     N2 -->|"Unsure"| N2b
     N2b --> N2a
     N2a --> N3
-    N3 -->|"In area"| N4
+    N3 -->|"In area"| N3a
     N3 -->|"Outside area"| N5b
+    N3a -->|"Ready to schedule"| N4
+    N3a -->|"Questions first"| N5
+    N3a -->|"Wants callback"| N9
     N4 -->|"Slots available"| N4a
     N4 -->|"No slots"| N9
     N4a -->|"Accepts"| N4b
