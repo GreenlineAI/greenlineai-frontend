@@ -184,7 +184,8 @@ Thanks for calling GreenLine AI! This is Jordan. How can I help you today?
 | Asking what GreenLine AI does | → Node 2: Explain Services |
 | Has specific pain point | → Node 3: Address Pain Point |
 | Asking about pricing | → Node 4: Pricing Info |
-| Wants to book/sign up | → Node 5: Qualification |
+| Wants to book/sign up | → Node 5: Business Info |
+| General question | → Node 2a: Continue Conversation |
 
 ---
 
@@ -203,8 +204,29 @@ What kind of business do you run?
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Caller describes their business | → Node 5: Qualification |
-| More questions | → Continue conversation |
+| Caller describes their business | → Node 5: Business Info |
+| Has more questions | → Node 2a: Continue Conversation |
+| Asks about pricing | → Node 4: Pricing Info |
+
+---
+
+### Node 2a: Continue Conversation
+**Type**: Conversation
+**Mode**: Prompt
+
+```
+[Answer the caller's question based on the GreenLine AI information provided in the global prompt]
+
+Was there anything else you'd like to know? Or if you'd like, I can tell you how this would work specifically for your business.
+```
+
+**Transitions**:
+| Condition | Next Node |
+|-----------|-----------|
+| Has another question | → Node 2a: Continue Conversation (loop) |
+| Ready to discuss their business | → Node 5: Business Info |
+| Asks about pricing | → Node 4: Pricing Info |
+| Wants to end call | → Node 9: Polite End |
 
 ---
 
@@ -223,7 +245,8 @@ Tell me a bit about your business - what type of services do you offer?
 **Transitions**:
 | Condition | Next Node |
 |-----------|-----------|
-| Describes business | → Node 5: Qualification |
+| Describes business | → Node 5: Business Info |
+| Has more questions | → Node 2a: Continue Conversation |
 
 ---
 
