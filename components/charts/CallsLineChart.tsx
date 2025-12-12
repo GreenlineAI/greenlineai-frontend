@@ -39,6 +39,21 @@ export function CallsLineChart({
     );
   }
 
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+            <p>No call data yet</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const formattedData = data.map((item) => ({
     ...item,
     formattedDate: format(parseISO(item.date), 'MMM d'),

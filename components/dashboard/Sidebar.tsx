@@ -61,12 +61,16 @@ export default function Sidebar({ onClose }: SidebarProps) {
       if (!user?.id) return false;
       const supabase = createClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('admin_users')
         .select('role')
         .eq('user_id', user.id)
         .eq('is_active', true)
         .single();
+
+      console.log('Admin check - user.id:', user.id);
+      console.log('Admin check - data:', data);
+      console.log('Admin check - error:', error);
 
       const adminData = data as { role: string } | null;
       return adminData && ['super_admin', 'admin'].includes(adminData.role);

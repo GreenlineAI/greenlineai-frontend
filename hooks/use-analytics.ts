@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import type { DashboardStats, DailyCallStats, CallOutcome, LeadStatusDistribution } from '@/lib/types';
 import type { Database } from '@/lib/supabase/types';
-import { startOfMonth, startOfWeek, startOfDay, format, subDays } from 'date-fns';
+import { startOfMonth, startOfWeek, startOfDay, subDays, format } from 'date-fns';
 
 type CallAnalyticsRow = Database['public']['Tables']['call_analytics']['Row'];
 type OutreachCallRow = Database['public']['Tables']['outreach_calls']['Row'];
@@ -91,13 +91,8 @@ export function useDailyCallStats(days: number = 30) {
         .gte('date', format(startDate, 'yyyy-MM-dd'))
         .order('date', { ascending: true });
 
-      if (error) {
-        // If table doesn't exist or no data, return mock data
-        return generateMockDailyStats(days);
-      }
-
-      if (!data || data.length === 0) {
-        return generateMockDailyStats(days);
+      if (error || !data || data.length === 0) {
+        return [];
       }
 
       return (data as CallAnalyticsRow[]).map(row => ({
@@ -119,12 +114,7 @@ export function useCallOutcomes() {
         .select('status, meeting_booked');
 
       if (error || !data || data.length === 0) {
-        return [
-          { name: 'Connected', value: 45, color: '#3B82F6' },
-          { name: 'No Answer', value: 30, color: '#F59E0B' },
-          { name: 'Voicemail', value: 15, color: '#6B7280' },
-          { name: 'Meeting Booked', value: 10, color: '#10B981' },
-        ];
+        return [];
       }
 
       const outcomes: Record<string, number> = {
@@ -168,13 +158,7 @@ export function useLeadStatusDistribution() {
         .select('status');
 
       if (error || !data || data.length === 0) {
-        return [
-          { status: 'new', count: 150, color: '#6B7280' },
-          { status: 'contacted', count: 80, color: '#3B82F6' },
-          { status: 'interested', count: 45, color: '#10B981' },
-          { status: 'meeting_scheduled', count: 25, color: '#8B5CF6' },
-          { status: 'not_interested', count: 30, color: '#EF4444' },
-        ];
+        return [];
       }
 
       const statusCounts: Record<string, number> = {};
@@ -201,17 +185,3 @@ export function useLeadStatusDistribution() {
   });
 }
 
-function generateMockDailyStats(days: number): DailyCallStats[] {
-  const stats: DailyCallStats[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const date = subDays(new Date(), i);
-    const calls = Math.floor(Math.random() * 50) + 10;
-    stats.push({
-      date: format(date, 'yyyy-MM-dd'),
-      calls,
-      connected: Math.floor(calls * 0.6),
-      meetings: Math.floor(calls * 0.1),
-    });
-  }
-  return stats;
-}
