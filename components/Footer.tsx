@@ -1,17 +1,8 @@
-"use client";
-
 import { Sprout, Mail, Phone, MapPin, LinkedinIcon, TwitterIcon, FacebookIcon, Headphones } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   return (
     <footer id="contact" className="bg-slate-900 text-slate-300">
@@ -39,28 +30,28 @@ export default function Footer() {
             <h3 className="text-white font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-3">
               <li>
-                <button
-                  onClick={() => scrollToSection("features")}
+                <Link
+                  href="/#features"
                   className="text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   Features
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  onClick={() => scrollToSection("pricing")}
+                <Link
+                  href="/#pricing"
                   className="text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   Pricing
-                </button>
+                </Link>
               </li>
               <li>
-                <button
-                  onClick={() => scrollToSection("demo")}
+                <Link
+                  href="/#demo"
                   className="text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   Demo
-                </button>
+                </Link>
               </li>
               <li>
                 <Link
