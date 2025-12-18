@@ -78,12 +78,12 @@ export default function Footer() {
             <h3 className="text-white font-semibold mb-4">Resources</h3>
             <ul className="space-y-3">
               <li>
-                <a
-                  href="#faq"
+                <Link
+                  href="/faq"
                   className="text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
                 <Link
@@ -95,20 +95,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a
-                  href="#blog"
-                  className="text-slate-400 hover:text-primary-400 transition-colors"
-                >
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#support"
+                <Link
+                  href="/contact"
                   className="text-slate-400 hover:text-primary-400 transition-colors"
                 >
                   Support
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -183,24 +175,24 @@ export default function Footer() {
               © {currentYear} GreenLine AI. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <a
-                href="#privacy"
+              <Link
+                href="/privacy"
                 className="text-slate-500 hover:text-primary-400 transition-colors"
               >
                 Privacy Policy
-              </a>
-              <a
-                href="#terms"
+              </Link>
+              <Link
+                href="/terms"
                 className="text-slate-500 hover:text-primary-400 transition-colors"
               >
                 Terms of Service
-              </a>
-              <a
-                href="#cookies"
+              </Link>
+              <Link
+                href="/cookies"
                 className="text-slate-500 hover:text-primary-400 transition-colors"
               >
                 Cookie Policy
-              </a>
+              </Link>
             </div>
           </div>
         </div>

@@ -307,7 +307,7 @@ export default function ContactPage() {
           </div>
         </section>
 
-        {/* Map Section (placeholder) */}
+        {/* Map Section */}
         <section className="py-16 bg-slate-50">
           <div className="container mx-auto px-4 max-w-7xl">
             <div className="text-center mb-12">
@@ -319,14 +319,22 @@ export default function ContactPage() {
                 nationwide.
               </p>
             </div>
-            <div className="bg-slate-200 rounded-2xl h-96 flex items-center justify-center">
-              <div className="text-center">
-                <MapPin className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-500 font-medium">
-                  3129 S. Hacienda Blvd #524
-                </p>
-                <p className="text-slate-500">Hacienda Heights, CA 91745</p>
-              </div>
+            <div className="rounded-2xl overflow-hidden shadow-lg h-96 relative">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3305.8973!2d-117.9689!3d33.9925!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c2d4d5c9e7e8e9%3A0x0!2s3129+S+Hacienda+Blvd%2C+Hacienda+Heights%2C+CA+91745!5e0!3m2!1sen!2sus!4v1"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="GreenLine AI Office Location"
+                className="absolute inset-0"
+              />
+            </div>
+            <div className="mt-6 flex items-center justify-center gap-2 text-slate-600">
+              <MapPin className="h-5 w-5 text-primary-600" />
+              <span className="font-medium">3129 S. Hacienda Blvd #524, Hacienda Heights, CA 91745</span>
             </div>
           </div>
         </section>

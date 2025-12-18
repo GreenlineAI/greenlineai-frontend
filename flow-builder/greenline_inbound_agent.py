@@ -137,11 +137,20 @@ def build_nodes() -> list:
                 },
                 {
                     "id": "edge_greeting_to_qualify",
-                    "description": "Wants to book or sign up",
+                    "description": "Wants to book a call or demo",
                     "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
-                        "prompt": "Caller wants to sign up, get started, book a call, or schedule a demo"
+                        "prompt": "Caller wants to book a call, schedule a demo, or learn more about how it works for their business"
+                    }
+                },
+                {
+                    "id": "edge_greeting_to_website",
+                    "description": "Wants to sign up immediately",
+                    "destination_node_id": "direct_to_website",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller wants to sign up right now, get started immediately, or create an account"
                     }
                 },
                 {
@@ -213,9 +222,9 @@ Was there anything else you'd like to know? Or if you'd like, I can tell you how
             },
             "edges": [
                 {
-                    "id": "edge_continue_loop",
+                    "id": "edge_continue_to_answer",
                     "description": "Has another question",
-                    "destination_node_id": "continue_conversation",
+                    "destination_node_id": "answer_question",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller has another question about GreenLine AI"
@@ -246,6 +255,48 @@ Was there anything else you'd like to know? Or if you'd like, I can tell you how
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller wants to end the call, says goodbye, or isn't interested"
+                    }
+                }
+            ]
+        },
+
+        # ============ NODE 2b: ANSWER QUESTION ============
+        {
+            "id": "answer_question",
+            "type": "conversation",
+            "name": "Node 2b: Answer Question",
+            "instruction": {
+                "type": "prompt",
+                "text": """[Answer the caller's specific question about GreenLine AI - be helpful and thorough]
+
+Is there anything else you'd like to know?"""
+            },
+            "edges": [
+                {
+                    "id": "edge_answer_to_continue",
+                    "description": "Back to continue conversation",
+                    "destination_node_id": "continue_conversation",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller responds to the answer or has follow-up"
+                    }
+                },
+                {
+                    "id": "edge_answer_to_qualify",
+                    "description": "Ready to discuss their business",
+                    "destination_node_id": "ask_business_info",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller is ready to discuss their business or wants to learn how it would work for them"
+                    }
+                },
+                {
+                    "id": "edge_answer_to_end",
+                    "description": "Wants to end call",
+                    "destination_node_id": "polite_end",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller wants to end the call or says goodbye"
                     }
                 }
             ]
@@ -634,6 +685,15 @@ Would you be interested in scheduling that? It's completely free, no obligation.
                         "type": "prompt",
                         "prompt": "Caller has more questions before deciding"
                     }
+                },
+                {
+                    "id": "edge_offer_to_website",
+                    "description": "Wants to sign up directly",
+                    "destination_node_id": "direct_to_website",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller wants to skip the call and sign up directly on the website"
+                    }
                 }
             ]
         },
@@ -667,6 +727,15 @@ Do you have your calendar handy? What day this week works best for you?"""
                         "type": "prompt",
                         "prompt": "Caller isn't ready to schedule right now"
                     }
+                },
+                {
+                    "id": "edge_schedule_to_manual",
+                    "description": "Prefers to book online",
+                    "destination_node_id": "manual_scheduling",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller prefers to book online themselves or will schedule later on the website"
+                    }
                 }
             ]
         },
@@ -695,7 +764,7 @@ Does that time work for you? Or if you'd prefer a different day or time, just le
                 {
                     "id": "edge_times_different",
                     "description": "Needs different time",
-                    "destination_node_id": "present_times",
+                    "destination_node_id": "offer_alternate_times",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller needs a different time"
@@ -708,6 +777,46 @@ Does that time work for you? Or if you'd prefer a different day or time, just le
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller changed their mind or isn't ready"
+                    }
+                }
+            ]
+        },
+
+        # ============ NODE 6c2: OFFER ALTERNATE TIMES ============
+        {
+            "id": "offer_alternate_times",
+            "type": "conversation",
+            "name": "Node 6c2: Offer Alternate Times",
+            "instruction": {
+                "type": "prompt",
+                "text": """No problem! What day or time would work better for you? We have pretty flexible availability throughout the week - mornings, afternoons, or evenings."""
+            },
+            "edges": [
+                {
+                    "id": "edge_alt_to_present",
+                    "description": "Caller suggests a time",
+                    "destination_node_id": "present_times",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller mentions a day or time that works for them"
+                    }
+                },
+                {
+                    "id": "edge_alt_to_followup",
+                    "description": "Can't find a time",
+                    "destination_node_id": "follow_up_option",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller can't find a time or wants to schedule later"
+                    }
+                },
+                {
+                    "id": "edge_alt_to_manual",
+                    "description": "Wants to book online themselves",
+                    "destination_node_id": "manual_scheduling",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller wants to book online themselves or prefers to schedule on their own"
                     }
                 }
             ]
