@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
 async function handleCallEnded(
   webhook: RetellInboundWebhook,
-  supabase: ReturnType<typeof createClient>
+  supabase: ReturnType<typeof getSupabaseClient>
 ) {
   const vars = webhook.dynamic_variables || {};
   const metadata = webhook.metadata || {};
@@ -225,7 +225,7 @@ async function handleCallEnded(
 }
 
 async function getUserIdFromAgentId(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getSupabaseClient>,
   agentId: string
 ): Promise<string | undefined> {
   const { data, error } = await supabase
@@ -244,7 +244,7 @@ async function getUserIdFromAgentId(
 }
 
 async function findLeadByPhone(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getSupabaseClient>,
   userId: string,
   phone: string
 ): Promise<{ id: string; notes: string } | null> {
@@ -350,7 +350,7 @@ function buildLeadNotes(
 }
 
 async function updateCallAnalytics(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getSupabaseClient>,
   userId: string,
   metrics: {
     calls_made: number;

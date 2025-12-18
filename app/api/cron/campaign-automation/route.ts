@@ -106,10 +106,10 @@ export async function GET(request: NextRequest) {
         // Filter to new/no_answer leads
         const unleadedLeads = campaignLeads
           .filter(cl => {
-            const lead = cl.lead as Lead | null;
+            const lead = cl.lead as unknown as Lead | null;
             return lead && (lead.status === 'new' || lead.status === 'no_answer');
           })
-          .map(cl => cl.lead as Lead);
+          .map(cl => cl.lead as unknown as Lead);
 
         // Limit to 5 calls per campaign per run
         const leadsToCall = unleadedLeads.slice(0, 5);
