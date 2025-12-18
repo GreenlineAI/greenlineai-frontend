@@ -569,7 +569,15 @@ Do you have a general idea of when works best for you - are you looking for some
             },
 
             # ============ NODE 4: CHECK AVAILABILITY ============
-            # Note: In production, this would connect to Cal.com via tools configured in Retell dashboard
+            # Cal.com Integration:
+            # This node can be enhanced with a custom tool in Retell dashboard that calls:
+            # POST https://www.greenline-ai.com/api/calendar/check-availability
+            # The webhook will look up Cal.com credentials by agent_id and return available slots.
+            #
+            # To enable: In Retell dashboard, add a custom tool with:
+            # - Name: check_calendar_availability
+            # - URL: https://www.greenline-ai.com/api/inbound/webhook (routed to calendar endpoint)
+            # - Parameters: date_range (optional), preferred_date (optional)
             {
                 "id": "check_availability",
                 "type": "conversation",
@@ -578,8 +586,10 @@ Do you have a general idea of when works best for you - are you looking for some
                     "type": "prompt",
                     "text": """Let me check our availability for you.
 
-Based on your preference, we typically have openings throughout the week.
-Would a morning or afternoon appointment work better for you?"""
+When would work best for you? I can check for available times today, tomorrow, or later this week.
+Would a morning or afternoon appointment work better for you?
+
+[If Cal.com is connected, the system will automatically check real availability and provide actual time slots.]"""
                 },
                 "edges": [
                     {
@@ -679,7 +689,15 @@ I'll see if we have availability then."""
             },
 
             # ============ NODE 4b: CREATE BOOKING ============
-            # Note: In production, this would create a booking via Cal.com tools in Retell dashboard
+            # Cal.com Integration:
+            # This node can be enhanced with a custom tool in Retell dashboard that calls:
+            # POST https://www.greenline-ai.com/api/calendar/create-booking
+            # The webhook will create an actual booking in Cal.com.
+            #
+            # To enable: In Retell dashboard, add a custom tool with:
+            # - Name: create_calendar_booking
+            # - URL: https://www.greenline-ai.com/api/inbound/webhook (routed to booking endpoint)
+            # - Parameters: attendee_name, attendee_phone, start_time, service_type (optional)
             {
                 "id": "create_booking",
                 "type": "conversation",
@@ -693,7 +711,9 @@ So I have:
 - The service you need
 - Your preferred appointment time
 
-I'm scheduling that for you now. One moment please..."""
+I'm scheduling that for you now. One moment please...
+
+[If Cal.com is connected, this will create an actual booking and the caller will receive a confirmation email.]"""
                 },
                 "edges": [
                     {

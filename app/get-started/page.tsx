@@ -15,13 +15,17 @@ import {
   CheckCircle2,
   Zap,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Key,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/database.types";
+import { CalComInstructions } from "@/components/CalComInstructions";
 
 type BusinessOnboardingInsert = Database['public']['Tables']['business_onboarding']['Insert'];
 
@@ -65,11 +69,25 @@ const defaultServices: Record<string, string[]> = {
   other: [],
 };
 
+// Cal.com event type interface
+interface CalComEventType {
+  id: string;
+  title: string;
+  slug: string;
+  length: number;
+}
+
 export default function GetStartedPage() {
   const [step, setStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Cal.com integration state
+  const [isValidatingCalCom, setIsValidatingCalCom] = useState(false);
+  const [calComError, setCalComError] = useState<string | null>(null);
+  const [calComValidated, setCalComValidated] = useState(false);
+  const [calComEventTypes, setCalComEventTypes] = useState<CalComEventType[]>([]);
 
   const [formData, setFormData] = useState({
     // Step 1: Business Info
@@ -105,6 +123,10 @@ export default function GetStartedPage() {
     pricingInfo: "",
     specialInstructions: "",
 
+    // Cal.com Integration
+    calComApiKey: "",
+    calComEventTypeId: "",
+
     // Phone Number Preference
     phonePreference: "new", // "new", "forward", or "port"
     existingPhoneNumber: "",
@@ -132,6 +154,71 @@ export default function GetStartedPage() {
         customService: ""
       }));
     }
+  };
+
+  // Cal.com API key validation
+  const validateCalComApiKey = async () => {
+    if (!formData.calComApiKey.trim()) {
+      setCalComError("Please enter an API key");
+      return;
+    }
+
+    setIsValidatingCalCom(true);
+    setCalComError(null);
+
+    try {
+      // Validate the API key
+      const validateResponse = await fetch("/api/calendar/validate-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: formData.calComApiKey }),
+      });
+
+      const validateData = await validateResponse.json();
+
+      if (!validateData.valid) {
+        setCalComError(validateData.error || "Invalid API key");
+        setCalComValidated(false);
+        return;
+      }
+
+      // If valid, fetch event types
+      const eventTypesResponse = await fetch(
+        `/api/calendar/event-types?apiKey=${encodeURIComponent(formData.calComApiKey)}`
+      );
+
+      const eventTypesData = await eventTypesResponse.json();
+
+      if (eventTypesData.error) {
+        setCalComError(eventTypesData.error);
+        setCalComValidated(false);
+        return;
+      }
+
+      setCalComEventTypes(eventTypesData.eventTypes || []);
+      setCalComValidated(true);
+
+      // Auto-select first event type if available
+      if (eventTypesData.eventTypes?.length > 0 && !formData.calComEventTypeId) {
+        updateFormData("calComEventTypeId", eventTypesData.eventTypes[0].id);
+      }
+    } catch (err) {
+      setCalComError("Failed to validate API key. Please try again.");
+      setCalComValidated(false);
+    } finally {
+      setIsValidatingCalCom(false);
+    }
+  };
+
+  // Clear Cal.com validation when API key changes
+  const handleCalComApiKeyChange = (value: string) => {
+    updateFormData("calComApiKey", value);
+    if (calComValidated) {
+      setCalComValidated(false);
+      setCalComEventTypes([]);
+      updateFormData("calComEventTypeId", "");
+    }
+    setCalComError(null);
   };
 
   const handleSubmit = async () => {
@@ -169,6 +256,10 @@ export default function GetStartedPage() {
         phone_preference: formData.phonePreference as BusinessOnboardingInsert['phone_preference'],
         existing_phone_number: formData.existingPhoneNumber || null,
         current_phone_provider: formData.currentProvider || null,
+        // Cal.com integration - key will be encrypted server-side when agent is created
+        cal_com_api_key_encrypted: calComValidated ? formData.calComApiKey : null,
+        cal_com_event_type_id: calComValidated ? formData.calComEventTypeId : null,
+        cal_com_validated: calComValidated,
         status: "pending",
       };
 
@@ -865,17 +956,118 @@ export default function GetStartedPage() {
                   </select>
                 </div>
 
+                {/* Cal.com Integration Section */}
+                <div className="border border-slate-200 rounded-lg p-5 space-y-4 bg-slate-50/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-5 w-5 text-primary-600" />
+                    <h3 className="font-semibold text-slate-900">Calendar Integration (Optional)</h3>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    Connect Cal.com to let your AI agent check real availability and book appointments automatically during calls.
+                  </p>
+
+                  {/* Instructions */}
+                  <CalComInstructions />
+
+                  {/* API Key Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      <Key className="inline h-4 w-4 mr-1" />
+                      Cal.com API Key
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        value={formData.calComApiKey}
+                        onChange={(e) => handleCalComApiKeyChange(e.target.value)}
+                        placeholder="cal_live_..."
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant={calComValidated ? "outline" : "default"}
+                        onClick={validateCalComApiKey}
+                        disabled={isValidatingCalCom || !formData.calComApiKey.trim()}
+                        className="min-w-[100px]"
+                      >
+                        {isValidatingCalCom ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : calComValidated ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 mr-1 text-green-600" />
+                            Valid
+                          </>
+                        ) : (
+                          "Validate"
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Error message */}
+                    {calComError && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        {calComError}
+                      </div>
+                    )}
+
+                    {/* Success message */}
+                    {calComValidated && (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle2 className="h-4 w-4" />
+                        API key validated successfully!
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Event Type Dropdown - shown after validation */}
+                  {calComValidated && calComEventTypes.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Event Type for Appointments
+                      </label>
+                      <select
+                        value={formData.calComEventTypeId}
+                        onChange={(e) => updateFormData("calComEventTypeId", e.target.value)}
+                        className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      >
+                        {calComEventTypes.map((et) => (
+                          <option key={et.id} value={et.id}>
+                            {et.title} ({et.length} min)
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-sm text-slate-500">
+                        This is the appointment type your AI will book for callers.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* No event types warning */}
+                  {calComValidated && calComEventTypes.length === 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                      <p className="text-sm text-amber-800">
+                        No event types found in your Cal.com account. Please create an event type in Cal.com first, then validate again.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Alternative: Manual calendar link */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Calendar Link (optional)
+                    Or paste a calendar link (if not using Cal.com)
                   </label>
                   <Input
                     value={formData.calendarLink}
                     onChange={(e) => updateFormData("calendarLink", e.target.value)}
                     placeholder="https://calendly.com/your-business"
+                    disabled={calComValidated}
                   />
                   <p className="mt-2 text-sm text-slate-500">
-                    If you use Calendly or Google Calendar, paste the booking link here.
+                    {calComValidated
+                      ? "Cal.com is connected. This field is disabled."
+                      : "If you use Calendly or another tool, paste the booking link here."}
                   </p>
                 </div>
 

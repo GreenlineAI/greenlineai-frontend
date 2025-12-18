@@ -39,6 +39,10 @@ interface RetellInboundWebhook {
   recording_url?: string;
   public_log_url?: string;
 
+  // Function call data (for function_call events)
+  function_name?: string;
+  function_args?: Record<string, unknown>;
+
   // Dynamic variables extracted during call
   call_analysis?: {
     call_summary?: string;
@@ -119,10 +123,7 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'function_call':
-        return NextResponse.json({
-          success: true,
-          message: 'Function call received',
-        });
+        return await handleFunctionCall(webhook);
     }
 
     return NextResponse.json({ success: true, event: webhook.event });
@@ -133,6 +134,70 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to process webhook', details: String(error) },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Handle function calls from Retell AI agent.
+ * Routes calendar-related functions to the appropriate endpoints.
+ */
+async function handleFunctionCall(webhook: RetellInboundWebhook): Promise<NextResponse> {
+  const functionName = webhook.function_name;
+  const functionArgs = webhook.function_args || {};
+  const agentId = webhook.agent_id;
+
+  console.log(`[Function Call] Function: ${functionName}, Agent: ${agentId}`, functionArgs);
+
+  // Add agent_id to args so calendar endpoints can look up the business
+  const argsWithAgent = {
+    ...functionArgs,
+    agent_id: agentId,
+  };
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.greenline-ai.com';
+
+  try {
+    switch (functionName) {
+      case 'check_calendar_availability':
+      case 'check_availability': {
+        const response = await fetch(`${baseUrl}/api/calendar/check-availability`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(argsWithAgent),
+        });
+        const data = await response.json();
+        console.log('[Function Call] Check availability result:', data);
+        return NextResponse.json(data);
+      }
+
+      case 'create_calendar_booking':
+      case 'create_booking':
+      case 'book_appointment': {
+        const response = await fetch(`${baseUrl}/api/calendar/create-booking`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(argsWithAgent),
+        });
+        const data = await response.json();
+        console.log('[Function Call] Create booking result:', data);
+        return NextResponse.json(data);
+      }
+
+      default:
+        console.log(`[Function Call] Unknown function: ${functionName}`);
+        return NextResponse.json({
+          success: false,
+          error: `Unknown function: ${functionName}`,
+          message: "I'm sorry, I wasn't able to complete that action. Can I help you with something else?",
+        });
+    }
+  } catch (error) {
+    console.error(`[Function Call] Error executing ${functionName}:`, error);
+    return NextResponse.json({
+      success: false,
+      error: String(error),
+      fallback_message: "I'm having trouble with our system right now. Let me take your information and have someone call you back.",
+    });
   }
 }
 

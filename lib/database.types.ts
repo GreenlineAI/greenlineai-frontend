@@ -145,6 +145,9 @@ export type Database = {
           business_name: string
           business_type: Database["public"]["Enums"]["business_type"]
           business_type_other: string | null
+          cal_com_api_key_encrypted: string | null
+          cal_com_event_type_id: string | null
+          cal_com_validated: boolean | null
           calendar_link: string | null
           city: string
           created_at: string | null
@@ -185,6 +188,9 @@ export type Database = {
           business_name: string
           business_type: Database["public"]["Enums"]["business_type"]
           business_type_other?: string | null
+          cal_com_api_key_encrypted?: string | null
+          cal_com_event_type_id?: string | null
+          cal_com_validated?: boolean | null
           calendar_link?: string | null
           city: string
           created_at?: string | null
@@ -225,6 +231,9 @@ export type Database = {
           business_name?: string
           business_type?: Database["public"]["Enums"]["business_type"]
           business_type_other?: string | null
+          cal_com_api_key_encrypted?: string | null
+          cal_com_event_type_id?: string | null
+          cal_com_validated?: boolean | null
           calendar_link?: string | null
           city?: string
           created_at?: string | null
