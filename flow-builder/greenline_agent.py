@@ -176,18 +176,92 @@ class GreenLineAgentBuilder:
         # Build the nodes
         nodes = self._build_nodes(config)
 
-        # Create the flow
+        # Build custom tools for Cal.com calendar integration
+        tools = self._build_calendar_tools(config)
+
+        # Create the flow with tools
         return self.client.conversation_flow.create(
             model_choice={
                 "type": "cascading",
                 "model": config.model
             },
             nodes=nodes,
+            tools=tools,
             start_speaker="agent",
             global_prompt=self._build_global_prompt(config),
             start_node_id="greeting",
             model_temperature=0.3
         )
+
+    def _build_calendar_tools(self, config: GreenLineConfig) -> list:
+        """
+        Build custom tools for Cal.com calendar integration.
+
+        These tools are called by function nodes to:
+        1. Check calendar availability via Cal.com API
+        2. Create bookings in Cal.com
+
+        The webhook at config.webhook_url routes these to the appropriate
+        calendar endpoints which look up the business's Cal.com credentials
+        by agent_id and make the actual Cal.com API calls.
+        """
+        return [
+            {
+                "type": "custom",
+                "tool_id": "check_calendar_availability",
+                "name": "check_calendar_availability",
+                "description": "Check available appointment times on the business calendar. Returns available time slots for scheduling appointments. Use this when a customer wants to book an appointment.",
+                "url": config.webhook_url,
+                "method": "POST",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "date_range": {
+                            "type": "string",
+                            "description": "Time range to check availability: 'today', 'tomorrow', 'this_week', 'next_week', or 'next_7_days' (default)"
+                        }
+                    }
+                }
+            },
+            {
+                "type": "custom",
+                "tool_id": "create_calendar_booking",
+                "name": "create_calendar_booking",
+                "description": "Book an appointment on the business calendar. Creates a confirmed booking and sends confirmation to the customer. Use this after the customer has selected an available time slot.",
+                "url": config.webhook_url,
+                "method": "POST",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "attendee_name": {
+                            "type": "string",
+                            "description": "Customer's full name for the booking"
+                        },
+                        "attendee_phone": {
+                            "type": "string",
+                            "description": "Customer's phone number"
+                        },
+                        "attendee_email": {
+                            "type": "string",
+                            "description": "Customer's email address (optional, for confirmation)"
+                        },
+                        "start_time": {
+                            "type": "string",
+                            "description": "ISO datetime string for the appointment start time"
+                        },
+                        "service_type": {
+                            "type": "string",
+                            "description": "Type of service requested (e.g., 'Lawn Mowing', 'Tree Trimming')"
+                        },
+                        "notes": {
+                            "type": "string",
+                            "description": "Additional notes about the appointment or service needed"
+                        }
+                    },
+                    "required": ["attendee_name", "attendee_phone", "start_time"]
+                }
+            }
+        ]
 
     def _build_global_prompt(self, config: GreenLineConfig) -> str:
         """Build the global system prompt for the agent."""
@@ -568,46 +642,72 @@ Do you have a general idea of when works best for you - are you looking for some
                 ]
             },
 
-            # ============ NODE 4: CHECK AVAILABILITY ============
-            # Cal.com Integration:
-            # This node can be enhanced with a custom tool in Retell dashboard that calls:
-            # POST https://www.greenline-ai.com/api/calendar/check-availability
-            # The webhook will look up Cal.com credentials by agent_id and return available slots.
-            #
-            # To enable: In Retell dashboard, add a custom tool with:
-            # - Name: check_calendar_availability
-            # - URL: https://www.greenline-ai.com/api/inbound/webhook (routed to calendar endpoint)
-            # - Parameters: date_range (optional), preferred_date (optional)
+            # ============ NODE 4: CHECK AVAILABILITY (Function Node) ============
+            # This function node calls the check_calendar_availability tool
+            # which hits the webhook and checks Cal.com for available slots
             {
                 "id": "check_availability",
-                "type": "conversation",
-                "name": "Node 4: Check Availability",
+                "type": "function",
+                "name": "Node 4: Check Calendar Availability",
+                "tool_id": "check_calendar_availability",
+                "tool_type": "local",
+                "wait_for_result": True,
+                "speak_during_execution": True,
                 "instruction": {
                     "type": "prompt",
-                    "text": """Let me check our availability for you.
-
-When would work best for you? I can check for available times today, tomorrow, or later this week.
-Would a morning or afternoon appointment work better for you?
-
-[If Cal.com is connected, the system will automatically check real availability and provide actual time slots.]"""
+                    "text": "Let me check our availability for you. One moment please..."
                 },
                 "edges": [
                     {
                         "id": "edge_availability_to_offer",
-                        "description": "Caller provides preference",
+                        "description": "Availability retrieved successfully",
                         "destination_node_id": "offer_times",
                         "transition_condition": {
                             "type": "prompt",
-                            "prompt": "Caller has indicated a time preference (morning, afternoon, specific day)"
+                            "prompt": "Calendar availability was retrieved successfully"
                         }
                     },
                     {
-                        "id": "edge_availability_to_message",
-                        "description": "Caller wants callback instead",
+                        "id": "edge_availability_to_fallback",
+                        "description": "Calendar not configured or error",
+                        "destination_node_id": "availability_fallback",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "Calendar is not configured or there was an error checking availability"
+                        }
+                    }
+                ]
+            },
+
+            # ============ NODE 4-fallback: AVAILABILITY FALLBACK ============
+            # Fallback when Cal.com is not configured for the business
+            {
+                "id": "availability_fallback",
+                "type": "conversation",
+                "name": "Node 4-fallback: Availability Fallback",
+                "instruction": {
+                    "type": "prompt",
+                    "text": """I don't have direct access to the calendar right now, but I can take your information and have someone call you back to schedule.
+
+Would that work for you? I just need your name, phone number, and a general idea of when works best for you."""
+                },
+                "edges": [
+                    {
+                        "id": "edge_fallback_to_message",
+                        "description": "Caller agrees to callback",
                         "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
-                            "prompt": "Caller prefers a callback to schedule or is unsure about timing"
+                            "prompt": "Caller agrees to receive a callback to schedule"
+                        }
+                    },
+                    {
+                        "id": "edge_fallback_to_end",
+                        "description": "Caller declines",
+                        "destination_node_id": "end_info_provided",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "Caller declines or wants to call back later"
                         }
                     }
                 ]
@@ -688,41 +788,74 @@ I'll see if we have availability then."""
                 ]
             },
 
-            # ============ NODE 4b: CREATE BOOKING ============
-            # Cal.com Integration:
-            # This node can be enhanced with a custom tool in Retell dashboard that calls:
-            # POST https://www.greenline-ai.com/api/calendar/create-booking
-            # The webhook will create an actual booking in Cal.com.
-            #
-            # To enable: In Retell dashboard, add a custom tool with:
-            # - Name: create_calendar_booking
-            # - URL: https://www.greenline-ai.com/api/inbound/webhook (routed to booking endpoint)
-            # - Parameters: attendee_name, attendee_phone, start_time, service_type (optional)
+            # ============ NODE 4b: CREATE BOOKING (Function Node) ============
+            # This function node calls the create_calendar_booking tool
+            # which hits the webhook and creates a booking in Cal.com
             {
                 "id": "create_booking",
-                "type": "conversation",
-                "name": "Node 4b: Create Booking",
+                "type": "function",
+                "name": "Node 4b: Create Calendar Booking",
+                "tool_id": "create_calendar_booking",
+                "tool_type": "local",
+                "wait_for_result": True,
+                "speak_during_execution": True,
                 "instruction": {
                     "type": "prompt",
-                    "text": """Let me confirm those details and get you scheduled.
-
-So I have:
-- Your name and contact info
-- The service you need
-- Your preferred appointment time
-
-I'm scheduling that for you now. One moment please...
-
-[If Cal.com is connected, this will create an actual booking and the caller will receive a confirmation email.]"""
+                    "text": "Let me book that appointment for you now. One moment please..."
                 },
                 "edges": [
                     {
                         "id": "edge_booking_to_confirm",
-                        "description": "Proceed to confirmation",
+                        "description": "Booking created successfully",
                         "destination_node_id": "booking_confirmation",
                         "transition_condition": {
                             "type": "prompt",
-                            "prompt": "Ready to confirm the booking details with the caller"
+                            "prompt": "Booking was created successfully"
+                        }
+                    },
+                    {
+                        "id": "edge_booking_to_fallback",
+                        "description": "Booking failed or calendar not configured",
+                        "destination_node_id": "booking_fallback",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "Booking failed or calendar is not configured"
+                        }
+                    }
+                ]
+            },
+
+            # ============ NODE 4b-fallback: BOOKING FALLBACK ============
+            # Fallback when booking fails or Cal.com is not configured
+            {
+                "id": "booking_fallback",
+                "type": "conversation",
+                "name": "Node 4b-fallback: Booking Fallback",
+                "instruction": {
+                    "type": "prompt",
+                    "text": """I wasn't able to complete the booking in our system right now, but don't worry - I have all your information.
+
+I'll make sure someone calls you back shortly to confirm your appointment. You should hear from us within the hour.
+
+Is there anything else I can help you with?"""
+                },
+                "edges": [
+                    {
+                        "id": "edge_booking_fallback_to_end",
+                        "description": "Caller is satisfied",
+                        "destination_node_id": "end_message_taken",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "Caller acknowledges and is satisfied"
+                        }
+                    },
+                    {
+                        "id": "edge_booking_fallback_to_questions",
+                        "description": "Caller has questions",
+                        "destination_node_id": "answer_questions",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "Caller has additional questions"
                         }
                     }
                 ]

@@ -23,11 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/client";
-import type { Database } from "@/lib/database.types";
 import { CalComInstructions } from "@/components/CalComInstructions";
-
-type BusinessOnboardingInsert = Database['public']['Tables']['business_onboarding']['Insert'];
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -226,94 +222,52 @@ export default function GetStartedPage() {
     setError(null);
 
     try {
-      const supabase = createClient();
+      // Submit to secure API endpoint (encrypts Cal.com key server-side)
+      const response = await fetch('/api/onboarding/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business_name: formData.businessName,
+          business_type: formData.businessType,
+          business_type_other: formData.businessTypeOther || undefined,
+          owner_name: formData.ownerName,
+          email: formData.email,
+          phone: formData.phone,
+          website: formData.website || undefined,
+          city: formData.city,
+          state: formData.state,
+          zip: formData.zip || undefined,
+          service_radius_miles: parseInt(formData.serviceRadius),
+          phone_preference: formData.phonePreference,
+          existing_phone_number: formData.existingPhoneNumber || undefined,
+          current_phone_provider: formData.currentProvider || undefined,
+          services: formData.services,
+          hours_monday: formData.hoursMonday,
+          hours_tuesday: formData.hoursTuesday,
+          hours_wednesday: formData.hoursWednesday,
+          hours_thursday: formData.hoursThursday,
+          hours_friday: formData.hoursFriday,
+          hours_saturday: formData.hoursSaturday,
+          hours_sunday: formData.hoursSunday,
+          greeting_name: formData.greetingName || formData.businessName,
+          appointment_duration: parseInt(formData.appointmentDuration),
+          calendar_link: formData.calendarLink || undefined,
+          pricing_info: formData.pricingInfo || undefined,
+          special_instructions: formData.specialInstructions || undefined,
+          // Cal.com integration - key will be encrypted server-side
+          cal_com_api_key: calComValidated ? formData.calComApiKey : undefined,
+          cal_com_event_type_id: calComValidated ? formData.calComEventTypeId : undefined,
+          cal_com_validated: calComValidated,
+        }),
+      });
 
-      const insertData: BusinessOnboardingInsert = {
-        business_name: formData.businessName,
-        business_type: formData.businessType as BusinessOnboardingInsert['business_type'],
-        business_type_other: formData.businessTypeOther || null,
-        owner_name: formData.ownerName,
-        email: formData.email,
-        phone: formData.phone,
-        website: formData.website || null,
-        city: formData.city,
-        state: formData.state,
-        zip: formData.zip || null,
-        service_radius_miles: parseInt(formData.serviceRadius),
-        services: formData.services,
-        hours_monday: formData.hoursMonday,
-        hours_tuesday: formData.hoursTuesday,
-        hours_wednesday: formData.hoursWednesday,
-        hours_thursday: formData.hoursThursday,
-        hours_friday: formData.hoursFriday,
-        hours_saturday: formData.hoursSaturday,
-        hours_sunday: formData.hoursSunday,
-        greeting_name: formData.greetingName || formData.businessName,
-        appointment_duration: parseInt(formData.appointmentDuration),
-        calendar_link: formData.calendarLink || null,
-        pricing_info: formData.pricingInfo || null,
-        special_instructions: formData.specialInstructions || null,
-        phone_preference: formData.phonePreference as BusinessOnboardingInsert['phone_preference'],
-        existing_phone_number: formData.existingPhoneNumber || null,
-        current_phone_provider: formData.currentProvider || null,
-        // Cal.com integration - key will be encrypted server-side when agent is created
-        cal_com_api_key_encrypted: calComValidated ? formData.calComApiKey : null,
-        cal_com_event_type_id: calComValidated ? formData.calComEventTypeId : null,
-        cal_com_validated: calComValidated,
-        status: "pending",
-      };
+      const result = await response.json();
 
-      const { data: insertedData, error: insertError } = await supabase
-        .from("business_onboarding")
-        .insert(insertData as never)
-        .select()
-        .single<Database['public']['Tables']['business_onboarding']['Row']>();
-
-      if (insertError) {
-        throw insertError;
+      if (!response.ok) {
+        throw new Error(result.error || 'Submission failed');
       }
 
-      // Send notification email (don't block on failure)
-      try {
-        await fetch('/api/onboarding/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: insertedData?.id,
-            business_name: formData.businessName,
-            business_type: formData.businessType,
-            business_type_other: formData.businessTypeOther,
-            owner_name: formData.ownerName,
-            email: formData.email,
-            phone: formData.phone,
-            website: formData.website,
-            city: formData.city,
-            state: formData.state,
-            zip: formData.zip,
-            service_radius_miles: parseInt(formData.serviceRadius),
-            services: formData.services,
-            hours_monday: formData.hoursMonday,
-            hours_tuesday: formData.hoursTuesday,
-            hours_wednesday: formData.hoursWednesday,
-            hours_thursday: formData.hoursThursday,
-            hours_friday: formData.hoursFriday,
-            hours_saturday: formData.hoursSaturday,
-            hours_sunday: formData.hoursSunday,
-            greeting_name: formData.greetingName || formData.businessName,
-            appointment_duration: parseInt(formData.appointmentDuration),
-            calendar_link: formData.calendarLink,
-            pricing_info: formData.pricingInfo,
-            special_instructions: formData.specialInstructions,
-            phone_preference: formData.phonePreference,
-            existing_phone_number: formData.existingPhoneNumber,
-            current_phone_provider: formData.currentProvider,
-          }),
-        });
-      } catch (notifyError) {
-        // Don't fail the submission if notification fails
-        console.error('Notification error (non-blocking):', notifyError);
-      }
-
+      console.log('Onboarding submitted:', result);
       setIsComplete(true);
     } catch (err) {
       console.error("Submission error:", err);
