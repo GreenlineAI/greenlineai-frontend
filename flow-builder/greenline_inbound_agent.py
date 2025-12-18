@@ -138,7 +138,7 @@ def build_nodes() -> list:
                 {
                     "id": "edge_greeting_to_qualify",
                     "description": "Wants to book or sign up",
-                    "destination_node_id": "qualify_business",
+                    "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller wants to sign up, get started, book a call, or schedule a demo"
@@ -173,7 +173,7 @@ What kind of business do you run?"""
                 {
                     "id": "edge_explain_to_qualify",
                     "description": "Caller describes their business",
-                    "destination_node_id": "qualify_business",
+                    "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller describes what type of business they have or what services they offer"
@@ -224,7 +224,7 @@ Was there anything else you'd like to know? Or if you'd like, I can tell you how
                 {
                     "id": "edge_continue_to_qualify",
                     "description": "Ready to discuss their business",
-                    "destination_node_id": "qualify_business",
+                    "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller is ready to discuss their business or wants to learn how it would work for them"
@@ -268,7 +268,7 @@ Tell me a bit about your business - what type of services do you offer?"""
                 {
                     "id": "edge_pain_to_qualify",
                     "description": "Describes their business",
-                    "destination_node_id": "qualify_business",
+                    "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller describes their business or services"
@@ -309,7 +309,7 @@ What type of business are you looking at this for?"""
                 {
                     "id": "edge_pricing_to_qualify",
                     "description": "Describes their business",
-                    "destination_node_id": "qualify_business",
+                    "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller describes their business or what they do"
@@ -344,7 +344,7 @@ Would it help if I showed you exactly how this would work for your business? We 
                 {
                     "id": "edge_objection_to_qualify",
                     "description": "Interested in strategy call or describes business",
-                    "destination_node_id": "qualify_business",
+                    "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller is interested in learning more, wants a strategy call, or describes their business"
@@ -379,7 +379,7 @@ Would you at least want to see that before you decide? It only takes about 15 mi
                 {
                     "id": "edge_soft_to_qualify",
                     "description": "Agrees to strategy call",
-                    "destination_node_id": "qualify_business",
+                    "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller agrees to a strategy call or is interested"
@@ -397,11 +397,35 @@ Would you at least want to see that before you decide? It only takes about 15 mi
             ]
         },
 
-        # ============ NODE 5: QUALIFY BUSINESS ============
+        # ============ NODE 5: ASK BUSINESS INFO ============
+        {
+            "id": "ask_business_info",
+            "type": "conversation",
+            "name": "Node 5: Ask Business Info",
+            "instruction": {
+                "type": "prompt",
+                "text": """That's great! So I can help you better, can you tell me a bit about your business?
+
+What type of services do you offer - like plumbing, HVAC, landscaping, electrical? And what's the name of your company?"""
+            },
+            "edges": [
+                {
+                    "id": "edge_ask_biz_to_extract",
+                    "description": "Caller provides business info",
+                    "destination_node_id": "qualify_business",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller has described their business type and/or company name"
+                    }
+                }
+            ]
+        },
+
+        # ============ NODE 5a: EXTRACT BUSINESS INFO ============
         {
             "id": "qualify_business",
             "type": "extract_dynamic_variables",
-            "name": "Node 5: Qualify - Business Info",
+            "name": "Node 5a: Extract Business Info",
             "variables": [
                 {
                     "name": "business_type",
@@ -414,18 +438,46 @@ Would you at least want to see that before you decide? It only takes about 15 mi
                     "description": "Name of the caller's company"
                 }
             ],
-            "success_edge": {
-                "id": "edge_qualify_to_contact",
-                "description": "Got business info, need contact details",
-                "destination_node_id": "collect_contact_info"
-            }
+            "edges": [
+                {
+                    "id": "edge_qualify_to_contact",
+                    "description": "Got business info, need contact details",
+                    "destination_node_id": "ask_contact_info",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Business information has been collected"
+                    }
+                }
+            ]
         },
 
-        # ============ NODE 5a: COLLECT CONTACT INFO ============
+        # ============ NODE 5b: ASK CONTACT INFO ============
+        {
+            "id": "ask_contact_info",
+            "type": "conversation",
+            "name": "Node 5b: Ask Contact Info",
+            "instruction": {
+                "type": "prompt",
+                "text": """Perfect! And so I can get you on our calendar, what's your name and email address?"""
+            },
+            "edges": [
+                {
+                    "id": "edge_ask_contact_to_extract",
+                    "description": "Caller provides contact info",
+                    "destination_node_id": "collect_contact_info",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller has provided their name and/or email"
+                    }
+                }
+            ]
+        },
+
+        # ============ NODE 5c: EXTRACT CONTACT INFO ============
         {
             "id": "collect_contact_info",
             "type": "extract_dynamic_variables",
-            "name": "Node 5a: Contact Info",
+            "name": "Node 5c: Extract Contact Info",
             "variables": [
                 {
                     "name": "caller_name",
@@ -438,18 +490,48 @@ Would you at least want to see that before you decide? It only takes about 15 mi
                     "description": "The caller's email address for calendar invite"
                 }
             ],
-            "success_edge": {
-                "id": "edge_contact_to_location",
-                "description": "Got contact info, need location",
-                "destination_node_id": "collect_location"
-            }
+            "edges": [
+                {
+                    "id": "edge_contact_to_location",
+                    "description": "Got contact info, need location",
+                    "destination_node_id": "ask_location",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Contact information has been collected"
+                    }
+                }
+            ]
         },
 
-        # ============ NODE 5b: COLLECT LOCATION & SITUATION ============
+        # ============ NODE 5d: ASK LOCATION & SITUATION ============
+        {
+            "id": "ask_location",
+            "type": "conversation",
+            "name": "Node 5d: Ask Location & Situation",
+            "instruction": {
+                "type": "prompt",
+                "text": """Great! And just a couple more quick questions - what area do you serve? And roughly how many calls do you get per day or week?
+
+Also, how do you currently handle your phone calls - do you answer them yourself, have someone else, or do a lot go to voicemail?"""
+            },
+            "edges": [
+                {
+                    "id": "edge_ask_location_to_extract",
+                    "description": "Caller provides location info",
+                    "destination_node_id": "collect_location",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Caller has provided information about their location, call volume, or current phone handling"
+                    }
+                }
+            ]
+        },
+
+        # ============ NODE 5e: EXTRACT LOCATION & SITUATION ============
         {
             "id": "collect_location",
             "type": "extract_dynamic_variables",
-            "name": "Node 5b: Location & Situation",
+            "name": "Node 5e: Extract Location & Situation",
             "variables": [
                 {
                     "name": "location",
@@ -467,11 +549,17 @@ Would you at least want to see that before you decide? It only takes about 15 mi
                     "description": "How they currently handle phone calls"
                 }
             ],
-            "success_edge": {
-                "id": "edge_location_to_offer",
-                "description": "Got all info, offer strategy call",
-                "destination_node_id": "check_fit"
-            }
+            "edges": [
+                {
+                    "id": "edge_location_to_offer",
+                    "description": "Got all info, offer strategy call",
+                    "destination_node_id": "check_fit",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Location and situation information has been collected"
+                    }
+                }
+            ]
         },
 
         # ============ CHECK FIT ============
@@ -785,7 +873,7 @@ Or if you'd prefer to talk through everything first, I can set you up with a qui
                 {
                     "id": "edge_website_to_qualify",
                     "description": "Wants strategy call instead",
-                    "destination_node_id": "qualify_business",
+                    "destination_node_id": "ask_business_info",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller wants a strategy call first"

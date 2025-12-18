@@ -167,22 +167,25 @@ The agent follows the comprehensive flow defined in `docs/RETELL-INCOMING-FLOW.m
 |------|------|------|---------|
 | 1 | Greeting | conversation | Initial greeting and intent detection |
 | 2 | Collect Service Details | conversation | Ask what service is needed |
-| 2a | Extract Service Info | conversation | Collect name, phone, address |
+| 2a | Extract Service Info | extract_dynamic_variables | Collect name, phone, address |
 | 2b | Help Identify Issue | conversation | Help unclear callers |
 | 3 | Confirm Service Area | conversation | Verify location |
 | 3a | Scheduling Intro | conversation | Ask about timing preference |
-| 4 | Check Availability | function | Cal.com API check |
+| 4 | Check Availability | conversation | Cal.com API check (placeholder) |
 | 4a | Offer Times | conversation | Present available slots |
-| 4b | Create Booking | function | Cal.com API booking |
+| 4b | Create Booking | conversation | Cal.com API booking (placeholder) |
 | 4c | Booking Confirmation | conversation | Confirm the booking |
+| 4d | Send Confirmation SMS | **sms** | Text appointment details to caller |
 | 5 | Answer Questions | conversation | Handle FAQs |
 | 5a | Service Not Offered | conversation | Politely decline |
 | 5b | Outside Service Area | conversation | Location not served |
 | 5c | Pricing Response | conversation | Handle pricing questions |
 | 8 | Check Urgency | conversation | Emergency or callback? |
-| 8a | Transfer Call | call_transfer | Transfer to owner |
-| 9 | Take Message | conversation | Collect message details |
+| 8a | Transfer to Owner | **transfer_call** | Warm transfer to owner |
+| 8b | Transfer Failed | conversation | Fallback if transfer fails |
+| 9 | Take Message | extract_dynamic_variables | Collect message details |
 | 9a | Confirm Message | conversation | Read back message |
+| 9b | Message Confirmation SMS | **sms** | Text confirmation message received |
 | 10-13 | End Nodes | end | Various call dispositions |
 
 ### Call Dispositions
@@ -307,14 +310,113 @@ PORT=8000
 
 ## 📊 Node Types Reference
 
-|Node Type      |Purpose              |API Type          |
-|---------------|---------------------|------------------|
-|`conversation` |Handle dialogue      |Main prompts      |
-|`function`     |Call external APIs   |Custom functions  |
-|`call_transfer`|Transfer to human    |Warm/cold transfer|
-|`end`          |End the call         |Terminal node     |
-|`logic_split`  |Conditional branching|Coming soon       |
-|`sms`          |Send SMS             |Coming soon       |
+|Node Type                    |Purpose                    |API Type          |
+|-----------------------------|---------------------------|------------------|
+|`conversation`               |Handle dialogue            |Main prompts      |
+|`extract_dynamic_variables`  |Extract caller info        |Variable capture  |
+|`function`                   |Call external APIs         |Custom functions  |
+|`transfer_call`              |Transfer to human          |Warm/cold transfer|
+|`sms`                        |Send SMS to caller         |SMS messaging     |
+|`end`                        |End the call               |Terminal node     |
+|`logic_split`                |Conditional branching      |Coming soon       |
+
+### Extract Dynamic Variables Node Schema
+
+```python
+{
+    "id": "extract_info",
+    "type": "extract_dynamic_variables",
+    "name": "Extract Caller Info",
+    "variables": [
+        {
+            "name": "caller_name",
+            "type": "string",
+            "description": "The caller's full name"
+        }
+    ],
+    "edges": [  # NOTE: Uses 'edges' array, NOT 'success_edge'
+        {
+            "id": "edge_to_next",
+            "description": "Info collected",
+            "destination_node_id": "next_node",
+            "transition_condition": {
+                "type": "prompt",
+                "prompt": "All required information has been collected"
+            }
+        }
+    ]
+}
+```
+
+**Important:** Always add a conversation node BEFORE extract nodes to ask the questions first.
+
+### Call Transfer Node Schema
+
+```python
+{
+    "id": "transfer_call",
+    "type": "transfer_call",
+    "name": "Transfer to Owner",
+    "transfer_destination": {
+        "type": "predefined",  # or "inferred" for AI-determined
+        "number": "+15551234567",
+        "ignore_e164_validation": False
+    },
+    "transfer_option": {
+        "type": "warm_transfer",  # or "cold_transfer"
+        "show_transferee_as_caller": True
+    },
+    "instruction": {
+        "type": "prompt",
+        "text": "Transferring you now..."
+    },
+    "speak_during_execution": True,
+    "edge": {
+        "id": "edge_transfer_failed",
+        "description": "Transfer failed",
+        "destination_node_id": "fallback_node"
+    }
+}
+```
+
+### SMS Node Schema
+
+```python
+{
+    "id": "send_sms",
+    "type": "sms",
+    "name": "Send Confirmation SMS",
+    "instruction": {
+        "type": "prompt",  # or "static_text"
+        "text": "Send confirmation with appointment details"
+    },
+    "success_edge": {
+        "id": "edge_sms_success",
+        "description": "SMS sent successfully",
+        "destination_node_id": "next_node",
+        "transition_condition": {
+            "type": "prompt",
+            "prompt": "Sent successfully"  # MUST be exactly this value
+        }
+    },
+    "failed_edge": {
+        "id": "edge_sms_failed",
+        "description": "SMS failed to send",
+        "destination_node_id": "fallback_node",
+        "transition_condition": {
+            "type": "prompt",
+            "prompt": "Failed to send"  # MUST be exactly this value
+        }
+    }
+}
+```
+
+### Call Transfer Edge Values
+
+For `transfer_call` nodes, the edge transition_condition prompt must be exactly:
+- `"Transfer failed"` - for the failure edge
+
+**Note:** SMS requires an SMS-enabled Retell Twilio number. Call transfer only works for phone calls (not web calls).
 
 ## 🐛 Debugging
 

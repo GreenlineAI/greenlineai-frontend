@@ -4,6 +4,16 @@ from typing import Optional
 from dataclasses import dataclass, field
 from retell import Retell
 
+# Optional Supabase import for CRM integration
+try:
+    from supabase import create_client, Client
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
+
+# Default webhook URL for GreenLine AI CRM integration
+DEFAULT_WEBHOOK_URL = "https://www.greenline-ai.com/api/inbound/webhook"
+
 
 @dataclass
 class GreenLineConfig:
@@ -14,7 +24,7 @@ class GreenLineConfig:
     business_hours: str = "8 AM to 6 PM, Monday through Saturday"
     services: list = field(default_factory=list)
     service_areas: list = field(default_factory=list)
-    webhook_base_url: str = ""
+    webhook_url: str = DEFAULT_WEBHOOK_URL  # Webhook URL for lead/call data
     calendly_url: str = ""
     transfer_number: str = ""  # For warm transfers to human
     owner_name: str = ""  # Business owner name for transfers/messages
@@ -29,15 +39,28 @@ class GreenLineAgentBuilder:
     programmatically for GreenLine AI clients.
     """
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, supabase_url: str = None, supabase_key: str = None):
         self.client = Retell(api_key=api_key)
 
-    def create_agent(self, config: GreenLineConfig) -> dict:
+        # Initialize Supabase client for CRM integration
+        self.supabase: Optional[Client] = None
+        if SUPABASE_AVAILABLE:
+            sb_url = supabase_url or os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+            sb_key = supabase_key or os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+            if sb_url and sb_key:
+                self.supabase = create_client(sb_url, sb_key)
+                print("Supabase client initialized for CRM integration")
+
+    def create_agent(self, config: GreenLineConfig, onboarding_id: str = None) -> dict:
         """
         Create a complete conversation flow agent for a GreenLine client.
 
+        Args:
+            config: GreenLineConfig with business details
+            onboarding_id: Optional business_onboarding UUID to link agent to CRM
+
         Returns:
-            dict with conversation_flow_id and agent_id
+            dict with conversation_flow_id, agent_id, and onboarding_updated status
         """
         # Step 1: Create the conversation flow
         conversation_flow = self._create_conversation_flow(config)
@@ -49,11 +72,103 @@ class GreenLineAgentBuilder:
         agent_id = agent.agent_id
         print(f"Created voice agent: {agent_id}")
 
+        # Step 3: Link agent to business_onboarding for CRM integration
+        onboarding_updated = False
+        if onboarding_id:
+            onboarding_updated = self.link_agent_to_onboarding(
+                onboarding_id=onboarding_id,
+                agent_id=agent_id,
+                flow_id=flow_id
+            )
+
         return {
             "conversation_flow_id": flow_id,
             "agent_id": agent_id,
-            "config": config
+            "config": config,
+            "onboarding_updated": onboarding_updated
         }
+
+    def link_agent_to_onboarding(
+        self,
+        onboarding_id: str,
+        agent_id: str,
+        flow_id: str = None,
+        phone_number: str = None
+    ) -> bool:
+        """
+        Link a Retell agent to a business_onboarding record for CRM integration.
+
+        This enables the webhook at /api/inbound/webhook to:
+        1. Identify which user owns the agent
+        2. Create leads in the correct user's CRM
+        3. Track call analytics per user
+
+        Args:
+            onboarding_id: UUID of the business_onboarding record
+            agent_id: Retell agent ID
+            flow_id: Optional conversation flow ID
+            phone_number: Optional Retell phone number assigned to agent
+
+        Returns:
+            True if successfully updated, False otherwise
+        """
+        if not self.supabase:
+            print("Warning: Supabase not configured. Cannot link agent to onboarding.")
+            print("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.")
+            return False
+
+        try:
+            update_data = {
+                "retell_agent_id": agent_id,
+                "status": "agent_created",
+            }
+
+            if phone_number:
+                update_data["retell_phone_number"] = phone_number
+
+            result = self.supabase.table("business_onboarding").update(
+                update_data
+            ).eq("id", onboarding_id).execute()
+
+            if result.data:
+                print(f"Linked agent {agent_id} to onboarding {onboarding_id}")
+                print("CRM integration active: leads will be created from inbound calls")
+                return True
+            else:
+                print(f"Warning: No onboarding record found with id {onboarding_id}")
+                return False
+
+        except Exception as e:
+            print(f"Error linking agent to onboarding: {e}")
+            return False
+
+    def activate_onboarding(self, onboarding_id: str) -> bool:
+        """
+        Mark an onboarding as active (ready for calls).
+
+        Args:
+            onboarding_id: UUID of the business_onboarding record
+
+        Returns:
+            True if successfully updated
+        """
+        if not self.supabase:
+            print("Warning: Supabase not configured.")
+            return False
+
+        try:
+            result = self.supabase.table("business_onboarding").update({
+                "status": "active"
+            }).eq("id", onboarding_id).execute()
+
+            if result.data:
+                print(f"Onboarding {onboarding_id} is now active")
+                return True
+            return False
+
+        except Exception as e:
+            print(f"Error activating onboarding: {e}")
+            return False
 
     def _create_conversation_flow(self, config: GreenLineConfig):
         """Create the conversation flow with all nodes and transitions."""
@@ -235,9 +350,9 @@ First, can you tell me what type of service you need? We offer {services_list}."
                 },
                 "edges": [
                     {
-                        "id": "edge_service_to_extract",
+                        "id": "edge_service_to_ask",
                         "description": "Caller describes service needed",
-                        "destination_node_id": "extract_service_info",
+                        "destination_node_id": "ask_service_info",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller has described what service or help they need"
@@ -264,11 +379,46 @@ First, can you tell me what type of service you need? We offer {services_list}."
                 ]
             },
 
-            # ============ NODE 2a: EXTRACT SERVICE INFO ============
+            # ============ NODE 2a: ASK FOR SERVICE INFO ============
+            {
+                "id": "ask_service_info",
+                "type": "conversation",
+                "name": "Node 2a: Ask for Service Info",
+                "instruction": {
+                    "type": "prompt",
+                    "text": f"""Great! To get you scheduled, I'll need a few details.
+
+Can I get your name, a phone number where we can reach you, and the address where you need the service?
+
+Also, is this urgent - do you need someone today or this week, or is your schedule flexible?"""
+                },
+                "edges": [
+                    {
+                        "id": "edge_ask_to_extract",
+                        "description": "Caller provides their info",
+                        "destination_node_id": "extract_service_info",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "Caller has provided their contact information and service details"
+                        }
+                    },
+                    {
+                        "id": "edge_ask_to_message",
+                        "description": "Caller prefers callback",
+                        "destination_node_id": "take_message_intro",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "Caller would rather receive a callback than provide all details now"
+                        }
+                    }
+                ]
+            },
+
+            # ============ NODE 2b: EXTRACT SERVICE INFO ============
             {
                 "id": "extract_service_info",
                 "type": "extract_dynamic_variables",
-                "name": "Node 2a: Extract Service Info",
+                "name": "Node 2b: Extract Service Info",
                 "variables": [
                     {
                         "name": "caller_name",
@@ -296,18 +446,24 @@ First, can you tell me what type of service you need? We offer {services_list}."
                         "description": "How urgent - today, this week, or flexible"
                     }
                 ],
-                "success_edge": {
-                    "id": "edge_extract_to_area",
-                    "description": "Got caller details",
-                    "destination_node_id": "confirm_service_area"
-                }
+                "edges": [
+                    {
+                        "id": "edge_extract_to_area",
+                        "description": "Got caller details",
+                        "destination_node_id": "confirm_service_area",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "All required information has been collected"
+                        }
+                    }
+                ]
             },
 
-            # ============ NODE 2b: HELP IDENTIFY ISSUE ============
+            # ============ NODE 2c: HELP IDENTIFY ISSUE ============
             {
                 "id": "help_identify_issue",
                 "type": "conversation",
-                "name": "Node 2b: Help Identify Issue",
+                "name": "Node 2c: Help Identify Issue",
                 "instruction": {
                     "type": "prompt",
                     "text": """No problem! Let me help you figure out what you need.
@@ -317,9 +473,9 @@ or are you looking for maintenance, installation, or an upgrade?"""
                 },
                 "edges": [
                     {
-                        "id": "edge_help_to_extract",
+                        "id": "edge_help_to_ask",
                         "description": "Caller describes issue",
-                        "destination_node_id": "extract_service_info",
+                        "destination_node_id": "ask_service_info",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller has described their issue or problem"
@@ -328,7 +484,7 @@ or are you looking for maintenance, installation, or an upgrade?"""
                     {
                         "id": "edge_help_to_message",
                         "description": "Still unclear, take message",
-                        "destination_node_id": "take_message",
+                        "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller's needs are still unclear after trying to help - should take a message for callback"
@@ -403,7 +559,7 @@ Do you have a general idea of when works best for you - are you looking for some
                     {
                         "id": "edge_scheduling_to_message",
                         "description": "Changed mind, wants callback",
-                        "destination_node_id": "take_message",
+                        "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller changed their mind and prefers a callback instead of scheduling now"
@@ -438,7 +594,7 @@ Would a morning or afternoon appointment work better for you?"""
                     {
                         "id": "edge_availability_to_message",
                         "description": "Caller wants callback instead",
-                        "destination_node_id": "take_message",
+                        "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller prefers a callback to schedule or is unsure about timing"
@@ -513,7 +669,7 @@ I'll see if we have availability then."""
                     {
                         "id": "edge_preferred_to_message",
                         "description": "Unable to find matching time",
-                        "destination_node_id": "take_message",
+                        "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Unable to find an available time that matches caller's preference"
@@ -558,19 +714,19 @@ I'm scheduling that for you now. One moment please..."""
                 "type": "conversation",
                 "name": "Node 4c: Booking Confirmation",
                 "instruction": {
-                    "type": "static_text",
-                    "text": """Your appointment is confirmed! You should receive a confirmation with all the details.
+                    "type": "prompt",
+                    "text": """Your appointment is confirmed! I'll send you a text message with all the details right now.
 
 Is there anything else I can help you with today?"""
                 },
                 "edges": [
                     {
-                        "id": "edge_confirm_to_end_booked",
-                        "description": "No, all set",
-                        "destination_node_id": "end_appointment_booked",
+                        "id": "edge_confirm_to_sms",
+                        "description": "Send confirmation SMS",
+                        "destination_node_id": "send_confirmation_sms",
                         "transition_condition": {
                             "type": "prompt",
-                            "prompt": "Caller is satisfied and has no more questions"
+                            "prompt": "Caller acknowledges the booking or says they're all set"
                         }
                     },
                     {
@@ -579,10 +735,46 @@ Is there anything else I can help you with today?"""
                         "destination_node_id": "answer_questions",
                         "transition_condition": {
                             "type": "prompt",
-                            "prompt": "Caller has additional questions"
+                            "prompt": "Caller has additional questions before ending"
                         }
                     }
                 ]
+            },
+
+            # ============ NODE 4d: SEND CONFIRMATION SMS ============
+            {
+                "id": "send_confirmation_sms",
+                "type": "sms",
+                "name": "Node 4d: Send Confirmation SMS",
+                "instruction": {
+                    "type": "prompt",
+                    "text": f"""Send an SMS confirmation to the caller with the following information:
+- Company name: {config.company_name}
+- Service type they requested
+- Their appointment date and time
+- A friendly reminder to call if they need to reschedule
+- The business phone number: {config.phone_number}
+
+Keep the message concise and professional."""
+                },
+                "success_edge": {
+                    "id": "edge_sms_success",
+                    "description": "SMS sent successfully",
+                    "destination_node_id": "end_appointment_booked",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Sent successfully"
+                    }
+                },
+                "failed_edge": {
+                    "id": "edge_sms_failed",
+                    "description": "SMS failed to send",
+                    "destination_node_id": "end_appointment_booked",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Failed to send"
+                    }
+                }
             },
 
             # ============ NODE 5: ANSWER QUESTIONS ============
@@ -739,7 +931,7 @@ Which would work better for you?"""
                     {
                         "id": "edge_pricing_to_message",
                         "description": "Wants callback",
-                        "destination_node_id": "take_message",
+                        "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller prefers a callback to discuss pricing"
@@ -782,7 +974,7 @@ or would you prefer a callback when {owner_name} is available?"""
                     {
                         "id": "edge_urgency_to_message",
                         "description": "Not urgent - callback is fine",
-                        "destination_node_id": "take_message",
+                        "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller says it's not urgent and a callback would be fine"
@@ -800,38 +992,94 @@ or would you prefer a callback when {owner_name} is available?"""
                 ]
             },
 
-            # ============ NODE 8a: TRANSFER/URGENT HANDLING ============
-            # Note: For actual call transfer, configure in Retell dashboard
+            # ============ NODE 8a: CALL TRANSFER ============
+            # Actual call transfer node - transfers to owner/manager
             {
                 "id": "transfer_call",
-                "type": "conversation",
-                "name": "Node 8a: Urgent Call Handling",
+                "type": "transfer_call",
+                "name": "Node 8a: Transfer to Owner",
+                "transfer_destination": {
+                    "type": "predefined",
+                    "number": config.transfer_number if config.transfer_number else "+15551234567",
+                    "ignore_e164_validation": False
+                },
+                "transfer_option": {
+                    "type": "warm_transfer",
+                    "show_transferee_as_caller": True
+                },
                 "instruction": {
                     "type": "prompt",
-                    "text": f"""I understand this is urgent and you need to speak with {owner_name} right away.
+                    "text": f"I'm transferring you to {owner_name} now. Please hold for just a moment."
+                },
+                "speak_during_execution": True,
+                "edge": {
+                    "id": "edge_transfer_failed",
+                    "description": "Transfer failed - take message instead",
+                    "destination_node_id": "transfer_failed_message",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Transfer failed"
+                    }
+                }
+            },
 
-Let me take down your information so {owner_name} can call you back immediately - this will be treated as a priority callback.
+            # ============ NODE 8b: TRANSFER FAILED - TAKE MESSAGE ============
+            {
+                "id": "transfer_failed_message",
+                "type": "conversation",
+                "name": "Node 8b: Transfer Failed",
+                "instruction": {
+                    "type": "prompt",
+                    "text": f"""I apologize, but I wasn't able to connect you with {owner_name} right now.
+
+Let me take down your information so {owner_name} can call you back as soon as possible - this will be marked as urgent.
 
 Can I get your name and the best number to reach you at?"""
                 },
                 "edges": [
                     {
-                        "id": "edge_urgent_to_message",
-                        "description": "Collect urgent message details",
-                        "destination_node_id": "take_message",
+                        "id": "edge_transfer_failed_to_message",
+                        "description": "Collect caller info for urgent callback",
+                        "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
-                            "prompt": "Caller provides their information or agrees to leave a message"
+                            "prompt": "Caller provides their information"
                         }
                     }
                 ]
             },
 
-            # ============ NODE 9: TAKE MESSAGE ============
+            # ============ NODE 9: ASK FOR MESSAGE INFO ============
+            {
+                "id": "take_message_intro",
+                "type": "conversation",
+                "name": "Node 9: Ask for Message Info",
+                "instruction": {
+                    "type": "prompt",
+                    "text": f"""I'd be happy to take a message for {owner_name}.
+
+Can I get your name, a phone number where you can be reached, and briefly what you're calling about?
+
+Also, when is the best time for a callback - morning, afternoon, or evening?"""
+                },
+                "edges": [
+                    {
+                        "id": "edge_intro_to_extract",
+                        "description": "Caller provides message info",
+                        "destination_node_id": "take_message",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "Caller has provided their name, phone number, and reason for calling"
+                        }
+                    }
+                ]
+            },
+
+            # ============ NODE 9a: EXTRACT MESSAGE INFO ============
             {
                 "id": "take_message",
                 "type": "extract_dynamic_variables",
-                "name": "Node 9: Take Message",
+                "name": "Node 9a: Extract Message Info",
                 "variables": [
                     {
                         "name": "message_name",
@@ -854,18 +1102,24 @@ Can I get your name and the best number to reach you at?"""
                         "description": "Best time to call back (morning, afternoon, evening, anytime)"
                     }
                 ],
-                "success_edge": {
-                    "id": "edge_message_to_confirm",
-                    "description": "Message captured",
-                    "destination_node_id": "confirm_message"
-                }
+                "edges": [
+                    {
+                        "id": "edge_message_to_confirm",
+                        "description": "Message captured",
+                        "destination_node_id": "confirm_message",
+                        "transition_condition": {
+                            "type": "prompt",
+                            "prompt": "All message information has been collected"
+                        }
+                    }
+                ]
             },
 
-            # ============ NODE 9a: CONFIRM MESSAGE ============
+            # ============ NODE 9b: CONFIRM MESSAGE ============
             {
                 "id": "confirm_message",
                 "type": "conversation",
-                "name": "Node 9a: Confirm Message",
+                "name": "Node 9b: Confirm Message",
                 "instruction": {
                     "type": "prompt",
                     "text": f"""I've got it. Let me confirm the details back to you:
@@ -873,13 +1127,14 @@ Can I get your name and the best number to reach you at?"""
 [Read back the name, phone number, and reason for calling]
 
 I'll make sure {owner_name} gets this message and calls you back as soon as possible.
+I'll also send you a text message confirming we received your message.
 Is there anything else you'd like me to add?"""
                 },
                 "edges": [
                     {
-                        "id": "edge_confirm_msg_to_end",
-                        "description": "Message confirmed",
-                        "destination_node_id": "end_message_taken",
+                        "id": "edge_confirm_msg_to_sms",
+                        "description": "Message confirmed - send SMS",
+                        "destination_node_id": "send_message_confirmation_sms",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller confirms the message is correct"
@@ -888,13 +1143,48 @@ Is there anything else you'd like me to add?"""
                     {
                         "id": "edge_confirm_msg_loop",
                         "description": "Needs correction",
-                        "destination_node_id": "take_message",
+                        "destination_node_id": "take_message_intro",
                         "transition_condition": {
                             "type": "prompt",
                             "prompt": "Caller wants to correct or change something in the message"
                         }
                     }
                 ]
+            },
+
+            # ============ NODE 9c: SEND MESSAGE CONFIRMATION SMS ============
+            {
+                "id": "send_message_confirmation_sms",
+                "type": "sms",
+                "name": "Node 9c: Send Message Confirmation SMS",
+                "instruction": {
+                    "type": "prompt",
+                    "text": f"""Send an SMS confirmation that their message was received:
+- Thank them for calling {config.company_name}
+- Confirm their message has been received
+- Let them know {owner_name} will call them back soon
+- Include the business phone number: {config.phone_number}
+
+Keep the message brief and reassuring."""
+                },
+                "success_edge": {
+                    "id": "edge_msg_sms_success",
+                    "description": "SMS sent successfully",
+                    "destination_node_id": "end_message_taken",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Sent successfully"
+                    }
+                },
+                "failed_edge": {
+                    "id": "edge_msg_sms_failed",
+                    "description": "SMS failed to send",
+                    "destination_node_id": "end_message_taken",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Failed to send"
+                    }
+                }
             },
 
             # ============ ENDING NODES ============
@@ -957,19 +1247,32 @@ Thanks for calling {config.company_name}, and have a wonderful day!"""
     def _create_voice_agent(self, config: GreenLineConfig, flow_id: str):
         """Create the voice agent and attach the conversation flow."""
 
-        return self.client.agent.create(
-            agent_name=f"{config.company_name} AI Receptionist",
-            response_engine={
+        agent_params = {
+            "agent_name": f"{config.company_name} AI Receptionist",
+            "response_engine": {
                 "type": "conversation-flow",
                 "conversation_flow_id": flow_id
             },
-            voice_id=config.voice_id,
-            language="en-US",
-        )
+            "voice_id": config.voice_id,
+            "language": "en-US",
+        }
+
+        # Add webhook URL for CRM integration
+        # This sends call data (including extracted lead info) to our backend
+        if config.webhook_url:
+            agent_params["webhook_url"] = config.webhook_url
+            print(f"Webhook configured: {config.webhook_url}")
+
+        return self.client.agent.create(**agent_params)
 
 
-def create_demo_agent():
-    """Create a demo agent with sample configuration."""
+def create_demo_agent(onboarding_id: str = None):
+    """
+    Create a demo agent with sample configuration.
+
+    Args:
+        onboarding_id: Optional business_onboarding UUID to link for CRM integration
+    """
 
     # Get API key from environment
     api_key = os.environ.get("RETELL_API_KEY")
@@ -997,7 +1300,7 @@ def create_demo_agent():
             "Encinitas",
             "Carlsbad"
         ],
-        webhook_base_url="https://your-webhook-server.com",
+        webhook_url=DEFAULT_WEBHOOK_URL,  # Auto-sends leads to GreenLine CRM
         transfer_number="+15551234567",
         owner_name="Mike",
         emergency_availability="24/7 for emergencies",
@@ -1005,9 +1308,9 @@ def create_demo_agent():
         model="gpt-4.1"
     )
 
-    # Create the agent
+    # Create the agent with CRM integration
     builder = GreenLineAgentBuilder(api_key)
-    result = builder.create_agent(config)
+    result = builder.create_agent(config, onboarding_id=onboarding_id)
 
     print("\n" + "=" * 50)
     print("GreenLine AI Agent Created Successfully!")
@@ -1015,9 +1318,97 @@ def create_demo_agent():
     print(f"Conversation Flow ID: {result['conversation_flow_id']}")
     print(f"Agent ID: {result['agent_id']}")
     print(f"Company: {config.company_name}")
+    print(f"Webhook URL: {config.webhook_url}")
+    print(f"CRM Linked: {result.get('onboarding_updated', False)}")
     print("=" * 50)
 
     return result
+
+
+def create_agent_for_onboarding(onboarding_id: str) -> dict:
+    """
+    Create an agent for a specific business_onboarding record.
+
+    This is the main function to use when deploying agents for new clients.
+    It reads the onboarding data from Supabase and creates a fully configured agent.
+
+    Args:
+        onboarding_id: UUID of the business_onboarding record
+
+    Returns:
+        dict with agent details and CRM link status
+    """
+    api_key = os.environ.get("RETELL_API_KEY")
+    if not api_key:
+        raise ValueError("RETELL_API_KEY environment variable not set")
+
+    builder = GreenLineAgentBuilder(api_key)
+
+    if not builder.supabase:
+        raise ValueError("Supabase not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY")
+
+    # Fetch onboarding data
+    result = builder.supabase.table("business_onboarding").select("*").eq("id", onboarding_id).single().execute()
+
+    if not result.data:
+        raise ValueError(f"No onboarding record found with id {onboarding_id}")
+
+    onboarding = result.data
+
+    # Build config from onboarding data
+    config = GreenLineConfig(
+        company_name=onboarding.get("greeting_name") or onboarding["business_name"],
+        business_type=onboarding["business_type"],
+        phone_number=onboarding["phone"],
+        business_hours=_build_business_hours(onboarding),
+        services=onboarding.get("services", []),
+        service_areas=[onboarding.get("city", ""), onboarding.get("state", "")],
+        webhook_url=DEFAULT_WEBHOOK_URL,
+        transfer_number=onboarding.get("phone", ""),
+        owner_name=onboarding["owner_name"],
+        voice_id=_map_voice_preference(onboarding.get("preferred_voice", "professional_male")),
+        model="gpt-4.1"
+    )
+
+    # Create the agent and link to onboarding
+    agent_result = builder.create_agent(config, onboarding_id=onboarding_id)
+
+    print(f"\nAgent created for {onboarding['business_name']}")
+    print(f"Leads from calls will appear in their CRM dashboard")
+
+    return agent_result
+
+
+def _build_business_hours(onboarding: dict) -> str:
+    """Build business hours string from onboarding data."""
+    days = []
+    day_map = {
+        "hours_monday": "Monday",
+        "hours_tuesday": "Tuesday",
+        "hours_wednesday": "Wednesday",
+        "hours_thursday": "Thursday",
+        "hours_friday": "Friday",
+        "hours_saturday": "Saturday",
+        "hours_sunday": "Sunday",
+    }
+
+    for field, day_name in day_map.items():
+        hours = onboarding.get(field)
+        if hours:
+            days.append(f"{day_name}: {hours}")
+
+    return "; ".join(days) if days else "8 AM to 6 PM, Monday through Friday"
+
+
+def _map_voice_preference(preference: str) -> str:
+    """Map voice preference to Retell voice ID."""
+    voice_map = {
+        "professional_male": "11labs-Adrian",
+        "professional_female": "11labs-Rachel",
+        "friendly_male": "11labs-Drew",
+        "friendly_female": "11labs-Sarah",
+    }
+    return voice_map.get(preference, "11labs-Adrian")
 
 
 if __name__ == "__main__":

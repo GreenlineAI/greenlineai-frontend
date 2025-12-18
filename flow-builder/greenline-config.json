@@ -1,7 +1,7 @@
 {
   "company_name": "GreenLine AI",
   "business_type": "landscaping",
-  "phone_number": "(555) 123-4567",
+  "phone_number": "(408) 365-4303",
   "business_hours": "8 AM to 6 PM, Monday through Saturday",
   "services": [
     "Lawn Mowing & Maintenance",
@@ -20,10 +20,10 @@
     "Encinitas",
     "Carlsbad"
   ],
-  "webhook_base_url": "",
+  "webhook_url": "https://www.greenline-ai.com/api/inbound/webhook",
   "calendly_url": "",
-  "transfer_number": "",
-  "owner_name": "",
+  "transfer_number": "+14083654303",
+  "owner_name": "the owner",
   "emergency_availability": "24/7 for emergencies",
   "voice_id": "11labs-Adrian",
   "model": "gpt-4.1"
