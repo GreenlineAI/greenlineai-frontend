@@ -16,9 +16,28 @@ Key Design Decisions:
 1. Questions are asked BEFORE extract_dynamic_variables nodes
 2. Custom webhook tools are used instead of built-in functions (more reliable)
 3. All transitions use prompt-based conditions for flexibility
+
+Usage:
+    cd flow-builder
+    python outbound_agent.py
 """
 
 import os
+from pathlib import Path
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Look for .env in parent directory (project root)
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+        print(f"Loaded environment from {env_path}")
+    else:
+        # Try current directory
+        load_dotenv()
+except ImportError:
+    print("Warning: python-dotenv not installed. Set environment variables manually.")
 from dataclasses import dataclass, field
 from typing import Optional
 from retell import Retell
@@ -309,6 +328,15 @@ When collecting email addresses over the phone:
 - Convert spoken format to proper email (e.g., "john at gmail dot com" → "john@gmail.com")
 - Common domains: gmail, yahoo, hotmail, outlook, icloud, aol
 - Watch for common confusions: "bee" vs "dee", "em" vs "en", "ess" vs "eff"
+
+## Phone Number Handling (Important!)
+When reading or confirming phone numbers:
+- Read numbers in groups: "five five five, one two three, four five six seven"
+- Say "area code" before the first three digits: "area code 555..."
+- Pause between groups for clarity
+- Always read back to confirm: "I have your number as 555-123-4567, is that correct?"
+- When collecting a new phone number, ask them to say it slowly
+- Common confusions: "fifteen" vs "fifty", "thirteen" vs "thirty", "nine" vs "five"
 
 ## Dynamic Variables Available
 You may have access to these variables from the CRM:
@@ -995,7 +1023,7 @@ Keep it brief and professional."""
                     "destination_node_id": "sms_success_response",
                     "transition_condition": {
                         "type": "prompt",
-                        "prompt": "SMS sent successfully"
+                        "prompt": "Sent successfully"
                     }
                 },
                 "failed_edge": {
@@ -1004,7 +1032,7 @@ Keep it brief and professional."""
                     "destination_node_id": "sms_failure_response",
                     "transition_condition": {
                         "type": "prompt",
-                        "prompt": "SMS failed to send"
+                        "prompt": "Failed to send"
                     }
                 }
             },
@@ -1134,7 +1162,7 @@ Let me send you a text with our scheduling link so you can book at your convenie
                     "destination_node_id": "booking_link_success",
                     "transition_condition": {
                         "type": "prompt",
-                        "prompt": "SMS sent successfully"
+                        "prompt": "Sent successfully"
                     }
                 },
                 "failed_edge": {
@@ -1143,7 +1171,7 @@ Let me send you a text with our scheduling link so you can book at your convenie
                     "destination_node_id": "verbal_booking",
                     "transition_condition": {
                         "type": "prompt",
-                        "prompt": "SMS failed"
+                        "prompt": "Failed to send"
                     }
                 }
             },
@@ -1669,7 +1697,7 @@ Or would a morning or afternoon work better for you?"""
                     "destination_node_id": "info_sms_success",
                     "transition_condition": {
                         "type": "prompt",
-                        "prompt": "SMS sent successfully"
+                        "prompt": "Sent successfully"
                     }
                 },
                 "failed_edge": {
@@ -1678,7 +1706,7 @@ Or would a morning or afternoon work better for you?"""
                     "destination_node_id": "info_sms_failure",
                     "transition_condition": {
                         "type": "prompt",
-                        "prompt": "SMS failed"
+                        "prompt": "Failed to send"
                     }
                 }
             },

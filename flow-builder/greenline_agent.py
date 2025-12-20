@@ -1,8 +1,19 @@
 import os
 import re
+from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, field
 from retell import Retell
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Look for .env in parent directory (project root)
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+except ImportError:
+    pass  # python-dotenv not installed, use environment variables directly
 
 
 def normalize_phone_to_e164(phone: str, default_country_code: str = "+1") -> str:
