@@ -15,6 +15,9 @@ import {
   Save,
   Clipboard,
   ExternalLink,
+  Rocket,
+  Loader2,
+  PhoneCall,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,12 +93,14 @@ interface OnboardingDetailProps {
 }
 
 export default function OnboardingDetail({ id }: OnboardingDetailProps) {
-  const { data: onboarding, isLoading } = useOnboarding(id);
+  const { data: onboarding, isLoading, refetch } = useOnboarding(id);
   const updateMutation = useUpdateOnboarding();
 
   const [status, setStatus] = useState<OnboardingStatus | ''>('');
   const [notes, setNotes] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployError, setDeployError] = useState<string | null>(null);
 
   // Initialize form when data loads
   useEffect(() => {
@@ -130,6 +135,45 @@ export default function OnboardingDetail({ id }: OnboardingDetailProps) {
       setHasChanges(false);
     } catch {
       toast.error('Failed to save changes');
+    }
+  };
+
+  const handleDeployAgent = async (assignPhone: boolean = false) => {
+    if (!onboarding) return;
+
+    setIsDeploying(true);
+    setDeployError(null);
+
+    try {
+      const response = await fetch('/api/agents/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          onboarding_id: onboarding.id,
+          assign_phone: assignPhone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create agent');
+      }
+
+      toast.success(
+        assignPhone
+          ? `Agent deployed with phone number ${data.phone_number}`
+          : 'Agent created successfully! Assign a phone number to activate.'
+      );
+
+      // Refresh the data
+      refetch();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Deployment failed';
+      setDeployError(message);
+      toast.error(message);
+    } finally {
+      setIsDeploying(false);
     }
   };
 
@@ -475,6 +519,84 @@ The agent should:
                     rows={4}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Deploy Agent */}
+            <Card className={onboarding.retell_agent_id ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Rocket className="h-5 w-5" />
+                  {onboarding.retell_agent_id ? 'Agent Deployed' : 'Deploy Agent'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {onboarding.retell_agent_id ? (
+                  <>
+                    <div className="text-sm space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Agent ID</span>
+                        <span className="font-mono text-xs">{onboarding.retell_agent_id.slice(0, 16)}...</span>
+                      </div>
+                      {onboarding.retell_phone_number && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Phone</span>
+                          <span className="font-medium">{onboarding.retell_phone_number}</span>
+                        </div>
+                      )}
+                    </div>
+                    {!onboarding.retell_phone_number && (
+                      <Button
+                        className="w-full"
+                        onClick={() => handleDeployAgent(true)}
+                        disabled={isDeploying}
+                      >
+                        {isDeploying ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <PhoneCall className="h-4 w-4 mr-2" />
+                        )}
+                        Assign Phone Number
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      Create the AI voice agent for this business. You can assign a phone number now or later.
+                    </p>
+                    {deployError && (
+                      <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{deployError}</p>
+                    )}
+                    <div className="space-y-2">
+                      <Button
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        onClick={() => handleDeployAgent(true)}
+                        disabled={isDeploying}
+                      >
+                        {isDeploying ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Rocket className="h-4 w-4 mr-2" />
+                        )}
+                        Deploy with Phone Number
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => handleDeployAgent(false)}
+                        disabled={isDeploying}
+                      >
+                        {isDeploying ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Bot className="h-4 w-4 mr-2" />
+                        )}
+                        Create Agent Only
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 

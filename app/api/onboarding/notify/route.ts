@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@greenlineai.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'contact@greenline-ai.com';
     const results: { email: boolean; webhook: boolean } = { email: false, webhook: false };
 
     // Send email notification via Resend
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'GreenLine AI <notifications@greenlineai.com>',
+            from: 'GreenLine AI <no-reply@greenline-ai.com>',
             to: adminEmail,
             subject: `New Business Onboarding: ${data.business_name}`,
             html: generateEmailHtml(data),
