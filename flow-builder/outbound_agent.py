@@ -207,7 +207,7 @@ class GreenLineOutboundAgentBuilder:
                         },
                         "attendee_phone": {
                             "type": "string",
-                            "description": "Business owner's phone number"
+                            "description": "Business owner's phone number in E.164 format (e.g., +14085551234). Prepend +1 to 10-digit US numbers."
                         },
                         "attendee_email": {
                             "type": "string",
@@ -337,6 +337,9 @@ When reading or confirming phone numbers:
 - Always read back to confirm: "I have your number as 555-123-4567, is that correct?"
 - When collecting a new phone number, ask them to say it slowly
 - Common confusions: "fifteen" vs "fifty", "thirteen" vs "thirty", "nine" vs "five"
+- ALWAYS format phone numbers in E.164 format: +1 followed by 10 digits (e.g., +14085551234)
+- Convert spoken numbers: "408-555-1234" → "+14085551234"
+- If they give 10 digits, prepend +1 for US numbers
 
 ## Dynamic Variables Available
 You may have access to these variables from the CRM:
@@ -345,7 +348,9 @@ You may have access to these variables from the CRM:
 - {{{{business_type}}}} - Type of business
 - {{{{city}}}} - Their city
 - {{{{state}}}} - Their state
-- {{{{phone}}}} - Phone number being called
+- {{{{phone}}}} - Phone number being called (already in E.164 format: +1XXXXXXXXXX)
+
+When using {{{{phone}}}} for bookings or callbacks, it's already properly formatted.
 """
 
     def _build_nodes(self, config: GreenLineOutboundConfig) -> list:
