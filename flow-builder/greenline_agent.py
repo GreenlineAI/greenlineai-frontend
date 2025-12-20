@@ -1,8 +1,129 @@
 import os
-import json
+import re
 from typing import Optional
 from dataclasses import dataclass, field
 from retell import Retell
+
+
+def normalize_phone_to_e164(phone: str, default_country_code: str = "+1") -> str:
+    """
+    Normalize a phone number to E.164 format for Retell AI.
+
+    E.164 format: +[country code][subscriber number]
+    Example: +14085551234
+
+    Handles various input formats:
+    - "408" -> "+1408" (incomplete, but preserves what's given)
+    - "4085551234" -> "+14085551234"
+    - "(408) 555-1234" -> "+14085551234"
+    - "408-555-1234" -> "+14085551234"
+    - "+1 408 555 1234" -> "+14085551234"
+    - "1-408-555-1234" -> "+14085551234"
+
+    Args:
+        phone: Phone number in any format
+        default_country_code: Country code to prepend if missing (default: +1 for US)
+
+    Returns:
+        Phone number in E.164 format
+    """
+    if not phone:
+        return ""
+
+    # Remove all non-digit characters except leading +
+    has_plus = phone.strip().startswith('+')
+    digits = re.sub(r'\D', '', phone)
+
+    if not digits:
+        return ""
+
+    # If already has country code (11+ digits starting with 1 for US)
+    if len(digits) >= 11 and digits.startswith('1'):
+        return f"+{digits}"
+
+    # If 10 digits (standard US number without country code)
+    if len(digits) == 10:
+        return f"{default_country_code}{digits}"
+
+    # If it had a + prefix, assume it's already formatted (international)
+    if has_plus:
+        return f"+{digits}"
+
+    # For partial numbers (like area code only), still format with country code
+    # This allows the system to at least attempt the call
+    return f"{default_country_code}{digits}"
+
+
+def validate_e164_phone(phone: str) -> tuple[bool, str]:
+    """
+    Validate that a phone number is in proper E.164 format.
+
+    Args:
+        phone: Phone number to validate
+
+    Returns:
+        Tuple of (is_valid, message)
+    """
+    if not phone:
+        return False, "Phone number is empty"
+
+    # E.164 format: + followed by 1-15 digits
+    e164_pattern = r'^\+[1-9]\d{1,14}$'
+
+    if not re.match(e164_pattern, phone):
+        return False, f"Phone '{phone}' is not in E.164 format (expected: +14085551234)"
+
+    # For US numbers, should be exactly 11 digits after +
+    if phone.startswith('+1') and len(phone) != 12:
+        return False, f"US phone number should be 11 digits (got {len(phone) - 1}): {phone}"
+
+    return True, "Valid E.164 format"
+
+
+def sanitize_company_name(name: str) -> str:
+    """
+    Sanitize a company/greeting name by removing common greeting phrases.
+
+    Users sometimes mistakenly enter the full greeting phrase like
+    "Thank you for calling Acme Corp" instead of just "Acme Corp".
+
+    Args:
+        name: The company/greeting name to sanitize
+
+    Returns:
+        Cleaned company name with proper title case
+    """
+    if not name:
+        return ""
+
+    # Common greeting phrases to strip (case-insensitive)
+    phrases_to_remove = [
+        r"^thank\s*you\s*for\s*calling\s*",
+        r"^thanks\s*for\s*calling\s*",
+        r"^welcome\s*to\s*",
+        r"^you'?ve\s*reached\s*",
+        r"^this\s*is\s*",
+        r"^hello,?\s*",
+        r"^hi,?\s*",
+    ]
+
+    cleaned = name.strip()
+    original = cleaned
+
+    for pattern in phrases_to_remove:
+        cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE)
+
+    # Strip any leading/trailing punctuation and whitespace
+    cleaned = cleaned.strip(' ,!.')
+
+    # Convert to title case if it looks like it's all lowercase or all uppercase
+    if cleaned.islower() or cleaned.isupper():
+        cleaned = cleaned.title()
+
+    if cleaned != original:
+        print(f"📝 Sanitized company name: '{original}' -> '{cleaned}'")
+
+    return cleaned
 
 # Optional Supabase import for CRM integration
 try:
@@ -62,6 +183,35 @@ class GreenLineAgentBuilder:
         Returns:
             dict with conversation_flow_id, agent_id, and onboarding_updated status
         """
+        # Sanitize company name (removes accidental greeting phrases)
+        config.company_name = sanitize_company_name(config.company_name)
+
+        # Normalize phone numbers to E.164 format
+        original_phone = config.phone_number
+        original_transfer = config.transfer_number
+
+        config.phone_number = normalize_phone_to_e164(config.phone_number)
+        config.transfer_number = normalize_phone_to_e164(config.transfer_number)
+
+        # Validate and warn about phone number issues
+        phone_valid, phone_msg = validate_e164_phone(config.phone_number)
+        transfer_valid, transfer_msg = validate_e164_phone(config.transfer_number)
+
+        if not phone_valid:
+            print(f"⚠️  WARNING: {phone_msg}")
+            print(f"   Original input: '{original_phone}' -> Normalized: '{config.phone_number}'")
+            print(f"   SMS confirmations may not work correctly.")
+
+        if config.transfer_number and not transfer_valid:
+            print(f"⚠️  WARNING: {transfer_msg}")
+            print(f"   Original input: '{original_transfer}' -> Normalized: '{config.transfer_number}'")
+            print(f"   Call transfers may fail.")
+
+        if phone_valid:
+            print(f"✓ Phone number formatted: {config.phone_number}")
+        if config.transfer_number and transfer_valid:
+            print(f"✓ Transfer number formatted: {config.transfer_number}")
+
         # Step 1: Create the conversation flow
         conversation_flow = self._create_conversation_flow(config)
         flow_id = conversation_flow.conversation_flow_id
@@ -1433,10 +1583,12 @@ def create_demo_agent(onboarding_id: str = None):
         raise ValueError("RETELL_API_KEY environment variable not set")
 
     # Sample configuration for a landscaping company
+    # Note: Phone numbers can be in any format - they'll be auto-converted to E.164
+    # Examples: "408-555-1234", "(408) 555-1234", "4085551234" all become "+14085551234"
     config = GreenLineConfig(
         company_name="Green Valley Landscaping",
         business_type="landscaping",
-        phone_number="(555) 123-4567",
+        phone_number="(619) 555-1234",  # Will be normalized to +16195551234
         business_hours="8 AM to 6 PM, Monday through Saturday",
         services=[
             "Lawn Mowing & Maintenance",
@@ -1454,7 +1606,7 @@ def create_demo_agent(onboarding_id: str = None):
             "Carlsbad"
         ],
         webhook_url=DEFAULT_WEBHOOK_URL,  # Auto-sends leads to GreenLine CRM
-        transfer_number="+15551234567",
+        transfer_number="619-555-1234",  # Will be normalized to +16195551234
         owner_name="Mike",
         emergency_availability="24/7 for emergencies",
         voice_id="11labs-Adrian",

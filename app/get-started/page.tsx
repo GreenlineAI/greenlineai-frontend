@@ -879,7 +879,7 @@ export default function GetStartedPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     <MessageSquare className="inline h-4 w-4 mr-1" />
-                    AI Greeting Name
+                    Company Name for Greeting
                   </label>
                   <Input
                     value={formData.greetingName}
@@ -887,7 +887,7 @@ export default function GetStartedPage() {
                     placeholder={formData.businessName || "e.g., Mike's Landscaping"}
                   />
                   <p className="mt-2 text-sm text-slate-500">
-                    How should the AI introduce itself? "Thank you for calling [greeting name]..."
+                    Enter your company name only. The AI will say: &quot;Thank you for calling <span className="font-medium">[your company name]</span>!&quot;
                   </p>
                 </div>
 

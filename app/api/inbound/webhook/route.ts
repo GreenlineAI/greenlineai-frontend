@@ -81,21 +81,6 @@ interface RetellInboundWebhook {
   };
 }
 
-interface LeadInsert {
-  user_id: string;
-  contact_name: string;
-  phone: string;
-  email?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  industry?: string;
-  status: 'new' | 'contacted' | 'interested' | 'meeting_scheduled';
-  score: 'hot' | 'warm' | 'cold';
-  notes?: string;
-  last_contacted?: string;
-}
-
 // Initialize Supabase client
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -154,7 +139,10 @@ async function handleFunctionCall(webhook: RetellInboundWebhook): Promise<NextRe
     agent_id: agentId,
   };
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.greenline-ai.com';
+  // Use localhost in development, otherwise use the configured base URL
+  const baseUrl = process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : (process.env.NEXT_PUBLIC_BASE_URL || 'https://www.greenline-ai.com');
 
   try {
     switch (functionName) {
@@ -340,7 +328,7 @@ function determineLeadScore(
 }
 
 function determineLeadStatus(
-  vars: RetellInboundWebhook['dynamic_variables'],
+  _vars: RetellInboundWebhook['dynamic_variables'],
   analysis: RetellInboundWebhook['call_analysis']
 ): 'new' | 'contacted' | 'interested' | 'meeting_scheduled' {
   if (analysis?.call_summary?.toLowerCase().includes('scheduled') ||

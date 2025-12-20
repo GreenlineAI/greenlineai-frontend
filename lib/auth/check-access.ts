@@ -34,6 +34,12 @@ export async function checkDashboardAccess(): Promise<AuthorizedUser> {
     .eq('is_active', true)
     .single();
 
+  // Debug logging - remove after fixing
+  console.log('[checkDashboardAccess] user.id:', user.id);
+  console.log('[checkDashboardAccess] user.email:', user.email);
+  console.log('[checkDashboardAccess] adminUser:', adminUser);
+  console.log('[checkDashboardAccess] error:', error);
+
   if (error || !adminUser) {
     redirect('/unauthorized');
   }
