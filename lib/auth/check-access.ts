@@ -41,7 +41,14 @@ export async function checkDashboardAccess(): Promise<AuthorizedUser> {
   console.log('[checkDashboardAccess] error:', error);
 
   if (error || !adminUser) {
-    redirect('/unauthorized');
+    // Temporary: redirect with debug info in URL
+    const debugInfo = encodeURIComponent(JSON.stringify({
+      userId: user.id,
+      email: user.email,
+      error: error?.message || error?.code || 'no error object',
+      hasAdminUser: !!adminUser
+    }));
+    redirect(`/unauthorized?debug=${debugInfo}`);
   }
 
   // Cast adminUser to expected shape
