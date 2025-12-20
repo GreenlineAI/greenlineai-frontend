@@ -34,21 +34,8 @@ export async function checkDashboardAccess(): Promise<AuthorizedUser> {
     .eq('is_active', true)
     .single();
 
-  // Debug logging - remove after fixing
-  console.log('[checkDashboardAccess] user.id:', user.id);
-  console.log('[checkDashboardAccess] user.email:', user.email);
-  console.log('[checkDashboardAccess] adminUser:', adminUser);
-  console.log('[checkDashboardAccess] error:', error);
-
   if (error || !adminUser) {
-    // Temporary: redirect with debug info in URL
-    const debugInfo = encodeURIComponent(JSON.stringify({
-      userId: user.id,
-      email: user.email,
-      error: error?.message || error?.code || 'no error object',
-      hasAdminUser: !!adminUser
-    }));
-    redirect(`/unauthorized?debug=${debugInfo}`);
+    redirect('/unauthorized');
   }
 
   // Cast adminUser to expected shape
