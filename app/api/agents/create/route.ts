@@ -711,10 +711,31 @@ Thanks for calling ${companyName}, and have a wonderful day!`,
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = getSupabaseAdmin();
-
+  // Top-level error boundary
   try {
+    console.log('[Create Agent] POST request received');
+
+    // Early validation of environment variables
+    if (!process.env.RETELL_API_KEY) {
+      console.error('[Create Agent] RETELL_API_KEY not configured');
+      return NextResponse.json(
+        { error: 'RETELL_API_KEY not configured' },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[Create Agent] SUPABASE_SERVICE_ROLE_KEY not configured');
+      return NextResponse.json(
+        { error: 'SUPABASE_SERVICE_ROLE_KEY not configured' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = getSupabaseAdmin();
+
     const body: CreateAgentRequest = await request.json();
+    console.log('[Create Agent] Request body:', JSON.stringify(body));
 
     if (!body.onboarding_id) {
       return NextResponse.json(
