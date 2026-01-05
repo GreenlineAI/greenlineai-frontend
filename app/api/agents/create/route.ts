@@ -808,7 +808,7 @@ export async function POST(request: NextRequest) {
     const tools = buildCalendarTools(webhookUrl);
     const globalPrompt = buildGlobalPrompt(onboarding);
 
-    const conversationFlow = await callRetellAPI('/v2/create-conversation-flow', 'POST', {
+    const conversationFlow = await callRetellAPI('/create-conversation-flow', 'POST', {
       model_choice: {
         type: 'cascading',
         model: 'gpt-4.1',
@@ -829,7 +829,7 @@ export async function POST(request: NextRequest) {
     console.log('[Create Agent] Creating voice agent...');
     const agentName = `${onboarding.greeting_name || onboarding.business_name} AI Receptionist`;
 
-    const agent = await callRetellAPI('/v2/create-agent', 'POST', {
+    const agent = await callRetellAPI('/create-agent', 'POST', {
       agent_name: agentName,
       response_engine: {
         type: 'conversation-flow',
@@ -851,7 +851,7 @@ export async function POST(request: NextRequest) {
         // Get area code from business location or use provided
         const areaCode = body.area_code || getAreaCodeForState(onboarding.state);
 
-        const phoneResult = await callRetellAPI('/v2/create-phone-number', 'POST', {
+        const phoneResult = await callRetellAPI('/create-phone-number', 'POST', {
           area_code: parseInt(areaCode),
           inbound_agent_id: agent.agent_id,
         });
