@@ -351,12 +351,30 @@ First, can you tell me what type of service you need? We offer ${servicesList}.`
       },
       edges: [
         {
-          id: 'edge_service_to_info',
-          description: 'Describes service needed',
+          id: 'edge_service_to_ask',
+          description: 'Caller describes service needed',
           destination_node_id: 'ask_service_info',
           transition_condition: {
             type: 'prompt',
             prompt: 'Caller has described what service or help they need',
+          },
+        },
+        {
+          id: 'edge_service_to_help',
+          description: 'Caller unsure what they need',
+          destination_node_id: 'help_identify_issue',
+          transition_condition: {
+            type: 'prompt',
+            prompt: "Caller is unsure what they need or can't describe the issue clearly",
+          },
+        },
+        {
+          id: 'edge_service_not_offered',
+          description: 'Service not offered',
+          destination_node_id: 'service_not_offered',
+          transition_condition: {
+            type: 'prompt',
+            prompt: "Caller is asking for a service we don't offer",
           },
         },
       ],
@@ -377,12 +395,55 @@ Also, is this urgent - do you need someone today or this week, or is your schedu
       },
       edges: [
         {
-          id: 'edge_info_to_extract',
-          description: 'Provides info',
+          id: 'edge_ask_to_extract',
+          description: 'Caller provides their info',
           destination_node_id: 'extract_service_info',
           transition_condition: {
             type: 'prompt',
-            prompt: 'Caller has provided their contact information',
+            prompt: 'Caller has provided their contact information and service details',
+          },
+        },
+        {
+          id: 'edge_ask_to_message',
+          description: 'Caller prefers callback',
+          destination_node_id: 'take_message_intro',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller would rather receive a callback than provide all details now',
+          },
+        },
+      ],
+    },
+
+    // Node 2c: Help Identify Issue
+    {
+      id: 'help_identify_issue',
+      type: 'conversation',
+      name: 'Help Identify Issue',
+      instruction: {
+        type: 'prompt',
+        text: `No problem! Let me help you figure out what you need.
+
+Can you describe what's happening? For example, is there something broken, not working right,
+or are you looking for maintenance, installation, or an upgrade?`,
+      },
+      edges: [
+        {
+          id: 'edge_help_to_ask',
+          description: 'Caller describes issue',
+          destination_node_id: 'ask_service_info',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller has described their issue or problem',
+          },
+        },
+        {
+          id: 'edge_help_to_message',
+          description: 'Still unclear, take message',
+          destination_node_id: 'take_message_intro',
+          transition_condition: {
+            type: 'prompt',
+            prompt: "Caller's needs are still unclear after trying to help - should take a message for callback",
           },
         },
       ],
@@ -466,30 +527,252 @@ Just to confirm - are you located in or near ${areasText}?`,
       ],
     },
 
-    // Node 3a: Scheduling Confirmation
+    // Node 3a: Scheduling Intro
     {
-      id: 'scheduling_confirmation',
+      id: 'scheduling_intro',
       type: 'conversation',
-      name: 'Scheduling Confirmation',
+      name: 'Scheduling Intro',
       instruction: {
         type: 'prompt',
-        text: `I've got all your information. Someone from our team will call you back shortly to confirm your appointment time.
+        text: `Perfect! I'd be happy to get you scheduled for an appointment.
 
-Is there anything else I can help you with today?`,
+Do you have a general idea of when works best for you - are you looking for something this week, or is it more flexible?`,
       },
       edges: [
         {
-          id: 'edge_scheduling_to_end',
-          description: 'Done',
-          destination_node_id: 'end_appointment_booked',
+          id: 'edge_scheduling_to_availability',
+          description: 'Provides timing preference',
+          destination_node_id: 'check_availability',
           transition_condition: {
             type: 'prompt',
-            prompt: 'Caller is satisfied and ready to end the call',
+            prompt: 'Caller has indicated their timing preference or availability',
           },
         },
         {
           id: 'edge_scheduling_to_questions',
-          description: 'Has questions',
+          description: 'Wants more info first',
+          destination_node_id: 'answer_questions',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller wants to know more about services or pricing before scheduling',
+          },
+        },
+        {
+          id: 'edge_scheduling_to_message',
+          description: 'Changed mind, wants callback',
+          destination_node_id: 'take_message_intro',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller changed their mind and prefers a callback instead of scheduling now',
+          },
+        },
+      ],
+    },
+
+    // Node 4: Check Availability (Function Node)
+    {
+      id: 'check_availability',
+      type: 'function',
+      name: 'Check Calendar Availability',
+      tool_id: 'check_calendar_availability',
+      tool_type: 'local',
+      wait_for_result: true,
+      speak_during_execution: true,
+      instruction: {
+        type: 'prompt',
+        text: 'Let me check our availability for you. One moment please...',
+      },
+      edges: [
+        {
+          id: 'edge_availability_to_offer',
+          description: 'Availability retrieved successfully',
+          destination_node_id: 'offer_times',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Calendar availability was retrieved successfully',
+          },
+        },
+        {
+          id: 'edge_availability_to_fallback',
+          description: 'Calendar not configured or error',
+          destination_node_id: 'availability_fallback',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Calendar is not configured or there was an error checking availability',
+          },
+        },
+      ],
+    },
+
+    // Node 4-fallback: Availability Fallback
+    {
+      id: 'availability_fallback',
+      type: 'conversation',
+      name: 'Availability Fallback',
+      instruction: {
+        type: 'prompt',
+        text: `I don't have direct access to the calendar right now, but I can take your information and have someone call you back to schedule.
+
+Would that work for you? I just need your name, phone number, and a general idea of when works best for you.`,
+      },
+      edges: [
+        {
+          id: 'edge_fallback_to_message',
+          description: 'Caller agrees to callback',
+          destination_node_id: 'take_message_intro',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller agrees to receive a callback to schedule',
+          },
+        },
+        {
+          id: 'edge_fallback_to_end',
+          description: 'Caller declines',
+          destination_node_id: 'end_info_provided',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller declines or wants to call back later',
+          },
+        },
+      ],
+    },
+
+    // Node 4a: Offer Times
+    {
+      id: 'offer_times',
+      type: 'conversation',
+      name: 'Offer Times',
+      instruction: {
+        type: 'prompt',
+        text: `I can see we have availability. Based on what you mentioned, would one of our upcoming openings work for you?
+
+Or I can check other times if those don't fit your schedule.`,
+      },
+      edges: [
+        {
+          id: 'edge_offer_to_booking',
+          description: 'Accepts offered time',
+          destination_node_id: 'create_booking',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller accepts an offered appointment time',
+          },
+        },
+        {
+          id: 'edge_offer_different_time',
+          description: 'Requests different time',
+          destination_node_id: 'extract_preferred_time',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller wants a different time than what was offered',
+          },
+        },
+        {
+          id: 'edge_offer_to_urgency',
+          description: 'Wants to speak to owner',
+          destination_node_id: 'check_urgency',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller wants to speak to owner instead of booking',
+          },
+        },
+      ],
+    },
+
+    // Node 4a-alt: Extract Preferred Time
+    {
+      id: 'extract_preferred_time',
+      type: 'conversation',
+      name: 'Extract Preferred Time',
+      instruction: {
+        type: 'prompt',
+        text: `No problem! What day and time would work better for you?
+
+I'll see if we have availability then.`,
+      },
+      edges: [
+        {
+          id: 'edge_preferred_to_booking',
+          description: 'Time extracted',
+          destination_node_id: 'create_booking',
+          transition_condition: {
+            type: 'prompt',
+            prompt: "Caller has specified their preferred time and it's available",
+          },
+        },
+        {
+          id: 'edge_preferred_to_message',
+          description: 'Unable to find matching time',
+          destination_node_id: 'take_message_intro',
+          transition_condition: {
+            type: 'prompt',
+            prompt: "Unable to find an available time that matches caller's preference",
+          },
+        },
+      ],
+    },
+
+    // Node 4b: Create Booking (Function Node)
+    {
+      id: 'create_booking',
+      type: 'function',
+      name: 'Create Calendar Booking',
+      tool_id: 'create_calendar_booking',
+      tool_type: 'local',
+      wait_for_result: true,
+      speak_during_execution: true,
+      instruction: {
+        type: 'prompt',
+        text: 'Let me book that appointment for you now. One moment please...',
+      },
+      edges: [
+        {
+          id: 'edge_booking_to_confirm',
+          description: 'Booking created successfully',
+          destination_node_id: 'booking_confirmation',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Booking was created successfully',
+          },
+        },
+        {
+          id: 'edge_booking_to_fallback',
+          description: 'Booking failed or calendar not configured',
+          destination_node_id: 'booking_fallback',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Booking failed or calendar is not configured',
+          },
+        },
+      ],
+    },
+
+    // Node 4b-fallback: Booking Fallback
+    {
+      id: 'booking_fallback',
+      type: 'conversation',
+      name: 'Booking Fallback',
+      instruction: {
+        type: 'prompt',
+        text: `I wasn't able to complete the booking in our system right now, but don't worry - I have all your information.
+
+I'll make sure someone calls you back shortly to confirm your appointment. You should hear from us within the hour.
+
+Is there anything else I can help you with?`,
+      },
+      edges: [
+        {
+          id: 'edge_booking_fallback_to_end',
+          description: 'Caller is satisfied',
+          destination_node_id: 'end_message_taken',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller acknowledges and is satisfied',
+          },
+        },
+        {
+          id: 'edge_booking_fallback_to_questions',
+          description: 'Caller has questions',
           destination_node_id: 'answer_questions',
           transition_condition: {
             type: 'prompt',
@@ -497,6 +780,75 @@ Is there anything else I can help you with today?`,
           },
         },
       ],
+    },
+
+    // Node 4c: Booking Confirmation
+    {
+      id: 'booking_confirmation',
+      type: 'conversation',
+      name: 'Booking Confirmation',
+      instruction: {
+        type: 'prompt',
+        text: `Your appointment is confirmed! I'll send you a text message with all the details right now.
+
+Is there anything else I can help you with today?`,
+      },
+      edges: [
+        {
+          id: 'edge_confirm_to_sms',
+          description: 'Send confirmation SMS',
+          destination_node_id: 'send_confirmation_sms',
+          transition_condition: {
+            type: 'prompt',
+            prompt: "Caller acknowledges the booking or says they're all set",
+          },
+        },
+        {
+          id: 'edge_confirm_to_questions',
+          description: 'Has another question',
+          destination_node_id: 'answer_questions',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller has additional questions before ending',
+          },
+        },
+      ],
+    },
+
+    // Node 4d: Send Confirmation SMS
+    {
+      id: 'send_confirmation_sms',
+      type: 'sms',
+      name: 'Send Confirmation SMS',
+      instruction: {
+        type: 'prompt',
+        text: `Send an SMS confirmation to the caller with the following information:
+- Company name: ${companyName}
+- Service type they requested
+- Their appointment date and time
+- A friendly reminder to call if they need to reschedule
+- The business phone number: ${phoneNumber}
+
+Keep the message concise and professional.`,
+      },
+      success_edge: {
+        id: 'edge_sms_success',
+        description: 'SMS sent successfully',
+        destination_node_id: 'end_appointment_booked',
+        transition_condition: {
+          type: 'prompt',
+          prompt: 'Sent successfully',
+        },
+      },
+      failed_edge: {
+        id: 'edge_sms_failed',
+        description: 'SMS failed to send',
+        destination_node_id: 'end_appointment_booked',
+        transition_condition: {
+          type: 'prompt',
+          prompt: 'Failed to send',
+        },
+      },
     },
 
     // Node 5: Answer Questions
@@ -509,29 +861,83 @@ Is there anything else I can help you with today?`,
         text: `Of course! I'm happy to help with any questions.
 
 Here's what I can tell you about ${companyName}:
-- Services we offer: ${servicesList}
-- Service area: ${areasText}
-- Hours: ${buildBusinessHours(onboarding)}
+
+**Services we offer**: ${servicesList}
+**Service area**: ${areasText}
+**Hours**: ${buildBusinessHours(onboarding)}
 
 What would you like to know more about?`,
       },
       edges: [
         {
           id: 'edge_questions_to_collect',
-          description: 'Wants to book',
+          description: 'Wants to book after questions',
           destination_node_id: 'collect_service_details',
           transition_condition: {
             type: 'prompt',
-            prompt: 'Caller now wants to schedule service',
+            prompt: 'Question answered and caller now wants to schedule service',
           },
         },
         {
           id: 'edge_questions_to_end',
-          description: 'Questions answered',
+          description: 'Questions answered, done',
           destination_node_id: 'end_info_provided',
           transition_condition: {
             type: 'prompt',
-            prompt: "Caller's questions are answered",
+            prompt: "Caller's questions are answered and they don't need to schedule",
+          },
+        },
+        {
+          id: 'edge_questions_to_urgency',
+          description: 'Wants to speak to owner',
+          destination_node_id: 'check_urgency',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller wants to speak to owner or a human',
+          },
+        },
+        {
+          id: 'edge_questions_to_pricing',
+          description: 'Has pricing question',
+          destination_node_id: 'pricing_response',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller is asking about pricing or costs',
+          },
+        },
+      ],
+    },
+
+    // Node 5a: Service Not Offered
+    {
+      id: 'service_not_offered',
+      type: 'conversation',
+      name: 'Service Not Offered',
+      instruction: {
+        type: 'prompt',
+        text: `I apologize, but ${companyName} doesn't offer that particular service.
+
+Our specialties are ${servicesList}.
+
+Is there something else I can help you with today?`,
+      },
+      edges: [
+        {
+          id: 'edge_not_offered_to_collect',
+          description: 'Has different need we can help',
+          destination_node_id: 'collect_service_details',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller has a different need that we can help with',
+          },
+        },
+        {
+          id: 'edge_not_offered_to_end',
+          description: 'Caller done',
+          destination_node_id: 'end_info_provided',
+          transition_condition: {
+            type: 'prompt',
+            prompt: "Caller doesn't need anything else",
           },
         },
       ],
@@ -545,7 +951,7 @@ What would you like to know more about?`,
       instruction: {
         type: 'static_text',
         text: `I'm sorry, but that location is outside our current service area.
-We primarily serve ${areasText} and surrounding areas.
+We primarily serve ${areasText}.
 
 Is there anything else I can help you with?`,
       },
@@ -556,7 +962,61 @@ Is there anything else I can help you with?`,
           destination_node_id: 'end_info_provided',
           transition_condition: {
             type: 'prompt',
-            prompt: 'Caller is done',
+            prompt: 'Caller is done or says goodbye',
+          },
+        },
+        {
+          id: 'edge_outside_continue',
+          description: 'Has other questions',
+          destination_node_id: 'answer_questions',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller has other questions or wants to check a different location',
+          },
+        },
+      ],
+    },
+
+    // Node 5c: Pricing Response
+    {
+      id: 'pricing_response',
+      type: 'conversation',
+      name: 'Pricing Response',
+      instruction: {
+        type: 'prompt',
+        text: `Great question! Pricing can vary depending on the specific situation.
+
+For an accurate quote, I'd recommend scheduling a quick evaluation appointment,
+or I can have ${ownerName} give you a call back to discuss pricing.
+
+Which would work better for you?`,
+      },
+      edges: [
+        {
+          id: 'edge_pricing_to_collect',
+          description: 'Wants appointment for quote',
+          destination_node_id: 'collect_service_details',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller wants to schedule an appointment for a quote or evaluation',
+          },
+        },
+        {
+          id: 'edge_pricing_to_message',
+          description: 'Wants callback',
+          destination_node_id: 'take_message_intro',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller prefers a callback to discuss pricing',
+          },
+        },
+        {
+          id: 'edge_pricing_to_end',
+          description: 'Done for now',
+          destination_node_id: 'end_info_provided',
+          transition_condition: {
+            type: 'prompt',
+            prompt: "Caller is done for now and doesn't want to schedule or get a callback",
           },
         },
       ],
@@ -576,8 +1036,17 @@ or would you prefer a callback when ${ownerName} is available?`,
       },
       edges: [
         {
+          id: 'edge_urgency_to_transfer',
+          description: 'Emergency - needs immediate help',
+          destination_node_id: 'transfer_call',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller has an emergency or urgent situation needing immediate attention',
+          },
+        },
+        {
           id: 'edge_urgency_to_message',
-          description: 'Not urgent',
+          description: 'Not urgent - callback is fine',
           destination_node_id: 'take_message_intro',
           transition_condition: {
             type: 'prompt',
@@ -585,12 +1054,68 @@ or would you prefer a callback when ${ownerName} is available?`,
           },
         },
         {
-          id: 'edge_urgency_to_message_urgent',
-          description: 'Urgent',
+          id: 'edge_urgency_to_questions',
+          description: 'Just had a quick question',
+          destination_node_id: 'answer_questions',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller just had a quick question that the AI can help with',
+          },
+        },
+      ],
+    },
+
+    // Node 8a: Call Transfer
+    {
+      id: 'transfer_call',
+      type: 'transfer_call',
+      name: 'Transfer to Owner',
+      transfer_destination: {
+        type: 'predefined',
+        number: phoneNumber,
+        ignore_e164_validation: false,
+      },
+      transfer_option: {
+        type: 'warm_transfer',
+        show_transferee_as_caller: true,
+      },
+      instruction: {
+        type: 'prompt',
+        text: `I'm transferring you to ${ownerName} now. Please hold for just a moment.`,
+      },
+      speak_during_execution: true,
+      edge: {
+        id: 'edge_transfer_failed',
+        description: 'Transfer failed - take message instead',
+        destination_node_id: 'transfer_failed_message',
+        transition_condition: {
+          type: 'prompt',
+          prompt: 'Transfer failed',
+        },
+      },
+    },
+
+    // Node 8b: Transfer Failed - Take Message
+    {
+      id: 'transfer_failed_message',
+      type: 'conversation',
+      name: 'Transfer Failed',
+      instruction: {
+        type: 'prompt',
+        text: `I apologize, but I wasn't able to connect you with ${ownerName} right now.
+
+Let me take down your information so ${ownerName} can call you back as soon as possible - this will be marked as urgent.
+
+Can I get your name and the best number to reach you at?`,
+      },
+      edges: [
+        {
+          id: 'edge_transfer_failed_to_message',
+          description: 'Collect caller info for urgent callback',
           destination_node_id: 'take_message_intro',
           transition_condition: {
             type: 'prompt',
-            prompt: 'Caller has an urgent situation',
+            prompt: 'Caller provides their information',
           },
         },
       ],
@@ -669,23 +1194,69 @@ Also, when is the best time for a callback - morning, afternoon, or evening?`,
       name: 'Confirm Message',
       instruction: {
         type: 'prompt',
-        text: `I've got it. Let me confirm the details back to you.
+        text: `I've got it. Let me confirm the details back to you:
+
+[Read back the name, phone number, and reason for calling]
 
 I'll make sure ${ownerName} gets this message and calls you back as soon as possible.
-
+I'll also send you a text message confirming we received your message.
 Is there anything else you'd like me to add?`,
       },
       edges: [
         {
-          id: 'edge_confirm_to_end',
-          description: 'Message confirmed',
-          destination_node_id: 'end_message_taken',
+          id: 'edge_confirm_msg_to_sms',
+          description: 'Message confirmed - send SMS',
+          destination_node_id: 'send_message_confirmation_sms',
           transition_condition: {
             type: 'prompt',
             prompt: 'Caller confirms the message is correct',
           },
         },
+        {
+          id: 'edge_confirm_msg_loop',
+          description: 'Needs correction',
+          destination_node_id: 'take_message_intro',
+          transition_condition: {
+            type: 'prompt',
+            prompt: 'Caller wants to correct or change something in the message',
+          },
+        },
       ],
+    },
+
+    // Node 9c: Send Message Confirmation SMS
+    {
+      id: 'send_message_confirmation_sms',
+      type: 'sms',
+      name: 'Send Message Confirmation SMS',
+      instruction: {
+        type: 'prompt',
+        text: `Send an SMS confirmation that their message was received:
+- Thank them for calling ${companyName}
+- Confirm their message has been received
+- Let them know ${ownerName} will call them back soon
+- Include the business phone number: ${phoneNumber}
+
+Keep the message brief and reassuring.`,
+      },
+      success_edge: {
+        id: 'edge_msg_sms_success',
+        description: 'SMS sent successfully',
+        destination_node_id: 'end_message_taken',
+        transition_condition: {
+          type: 'prompt',
+          prompt: 'Sent successfully',
+        },
+      },
+      failed_edge: {
+        id: 'edge_msg_sms_failed',
+        description: 'SMS failed to send',
+        destination_node_id: 'end_message_taken',
+        transition_condition: {
+          type: 'prompt',
+          prompt: 'Failed to send',
+        },
+      },
     },
 
     // End Nodes
@@ -706,8 +1277,9 @@ Have a great day!`,
       name: 'End - Appointment Booked',
       instruction: {
         type: 'prompt',
-        text: `Perfect! Your information has been recorded and someone will call you back to confirm.
+        text: `Your appointment is all set!
 Thanks for choosing ${companyName}!
+We look forward to helping you.
 Have a great day!`,
       },
     },
