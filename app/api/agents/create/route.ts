@@ -8,10 +8,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import Retell from 'retell-sdk';
 
 // Default webhook URL for CRM integration
 const DEFAULT_WEBHOOK_URL = 'https://www.greenline-ai.com/api/inbound/webhook';
+
+// Retell API base URL
+const RETELL_API_BASE = 'https://api.retellai.com';
 
 // Initialize Supabase with service role
 function getSupabaseAdmin() {
@@ -20,13 +22,36 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
-// Initialize Retell client
-function getRetellClient() {
+// Helper function to call Retell API using fetch
+async function callRetellAPI(
+  endpoint: string,
+  method: string,
+  body?: any
+): Promise<any> {
   const apiKey = process.env.RETELL_API_KEY;
   if (!apiKey) {
-    throw new Error('RETELL_API_KEY environment variable not set');
+    throw new Error('RETELL_API_KEY not configured');
   }
-  return new Retell({ apiKey });
+
+  const url = `${RETELL_API_BASE}${endpoint}`;
+
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Retell API error (${response.status}): ${errorText}`
+    );
+  }
+
+  return response.json();
 }
 
 interface OnboardingData {
@@ -774,7 +799,6 @@ export async function POST(request: NextRequest) {
       `[Create Agent] Starting for ${onboarding.business_name} (${body.onboarding_id})`
     );
 
-    const retell = getRetellClient();
     const webhookUrl = DEFAULT_WEBHOOK_URL;
     const voiceId = mapVoicePreference(onboarding.preferred_voice);
 
@@ -784,13 +808,13 @@ export async function POST(request: NextRequest) {
     const tools = buildCalendarTools(webhookUrl);
     const globalPrompt = buildGlobalPrompt(onboarding);
 
-    const conversationFlow = await retell.conversationFlow.create({
+    const conversationFlow = await callRetellAPI('/v2/create-conversation-flow', 'POST', {
       model_choice: {
         type: 'cascading',
         model: 'gpt-4.1',
       },
-      nodes: nodes as any,
-      tools: tools as any,
+      nodes: nodes,
+      tools: tools,
       start_speaker: 'agent',
       global_prompt: globalPrompt,
       start_node_id: 'greeting',
@@ -805,7 +829,7 @@ export async function POST(request: NextRequest) {
     console.log('[Create Agent] Creating voice agent...');
     const agentName = `${onboarding.greeting_name || onboarding.business_name} AI Receptionist`;
 
-    const agent = await retell.agent.create({
+    const agent = await callRetellAPI('/v2/create-agent', 'POST', {
       agent_name: agentName,
       response_engine: {
         type: 'conversation-flow',
@@ -827,7 +851,7 @@ export async function POST(request: NextRequest) {
         // Get area code from business location or use provided
         const areaCode = body.area_code || getAreaCodeForState(onboarding.state);
 
-        const phoneResult = await retell.phoneNumber.create({
+        const phoneResult = await callRetellAPI('/v2/create-phone-number', 'POST', {
           area_code: parseInt(areaCode),
           inbound_agent_id: agent.agent_id,
         });
