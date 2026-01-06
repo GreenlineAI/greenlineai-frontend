@@ -98,6 +98,40 @@ def build_nodes() -> list:
     """Build all conversation flow nodes for the GreenLine inbound agent."""
 
     nodes = [
+        # ============ FUNCTION NODE: CREATE BOOKING (Schema-correct) ============
+        {
+            "id": "create_booking",
+            "type": "function",
+            "name": "Node: Create Booking",
+            "tool_id": "create_calendar_booking",
+            "tool_type": "local",
+            "wait_for_result": True,
+            "speak_during_execution": True,
+            "instruction": {
+                "type": "static_text",
+                "text": "Let me book that for you now. One moment..."
+            },
+            "edges": [
+                {
+                    "id": "edge_booking_to_confirm",
+                    "description": "Booking successful",
+                    "destination_node_id": "confirm_booking",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Booking was created successfully"
+                    }
+                },
+                {
+                    "id": "edge_booking_to_fallback",
+                    "description": "Booking failed",
+                    "destination_node_id": "manual_scheduling",
+                    "transition_condition": {
+                        "type": "prompt",
+                        "prompt": "Booking failed or there was an error"
+                    }
+                }
+            ]
+        },
         # ============ NODE 1: GREETING ============
         {
             "id": "greeting",
@@ -747,15 +781,13 @@ Do you have your calendar handy? What day this week works best for you?"""
             "name": "Node 6c: Present Times",
             "instruction": {
                 "type": "prompt",
-                "text": """We have availability throughout the week. Based on what you mentioned, I can get you on the calendar.
-
-Does that time work for you? Or if you'd prefer a different day or time, just let me know and I'll find something that fits your schedule."""
+                "text": """We have availability throughout the week. Based on what you mentioned, I can get you on the calendar.\n\nDoes that time work for you? Or if you'd prefer a different day or time, just let me know and I'll find something that fits your schedule."""
             },
             "edges": [
                 {
-                    "id": "edge_times_to_confirm",
+                    "id": "edge_times_to_booking",
                     "description": "Selects a time",
-                    "destination_node_id": "confirm_booking",
+                    "destination_node_id": "create_booking",
                     "transition_condition": {
                         "type": "prompt",
                         "prompt": "Caller confirms a time works for them"

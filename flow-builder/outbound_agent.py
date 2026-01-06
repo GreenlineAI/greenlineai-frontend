@@ -196,7 +196,7 @@ class GreenLineOutboundAgentBuilder:
                 "tool_id": "create_calendar_booking",
                 "name": "create_calendar_booking",
                 "description": "Book a demo appointment on the calendar. Creates a confirmed booking and returns confirmation details.",
-                "url": config.webhook_url,
+                "url": "https://www.greenline-ai.com/api/calendar/create-booking-my-business",
                 "method": "POST",
                 "parameters": {
                     "type": "object",
